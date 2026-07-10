@@ -1,6 +1,6 @@
 ---
 name: Enhancement
-description: Propose an improvement to an existing audit category, CLI subcommand, or other tmaudit feature. Use this for C7, the cache, performance, ergonomics, etc.
+description: Improve an existing check, performance, or ergonomics (e.g., C6 threshold, cache).
 title: "[Enhancement]: "
 labels: ["enhancement", "needs-triage"]
 assignees: []

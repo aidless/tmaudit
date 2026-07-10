@@ -1,6 +1,6 @@
 ---
 name: Documentation
-description: Propose a documentation-only change (typos, clarifications, new docs, restructured section). Use this for README, CONTRIBUTING, CHANGELOG, etc. — no code change.
+description: Fix a typo, clarify a section, or add docs (README, CONTRIBUTING, CHANGELOG, etc.).
 title: "[Docs]: "
 labels: ["documentation", "needs-triage"]
 assignees: []
