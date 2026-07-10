@@ -71,7 +71,67 @@ the planned release timeline.
   the others (does not `need` them) so a YAML issue in
   the workflow does not block the validator.
 
+## [0.2.0] — 2026-07-10 (in progress)
+
+**Theme**: Multi-paper batch mode + Paper 2/3/4
+config completion.
+
+### Added (Paper 2/3/4 configs)
+
+- **`src/tmaudit/configs/paper_configs.py`**:
+  - **Paper 2** ("Impossibility Triangle"): filled in 3 C1
+    symbols (`$V_1, V_2, V_3$` for the three triangle
+    vertices), 1 C2 family, and a `c7_max_ceremonial: 3`
+    threshold.
+  - **Paper 3** (Coupling-Noise Decomposition): filled in 3
+    C1 symbols (`$\sigma_C, \sigma_I, \sigma_T$` for the
+    coupling / intrinsic / total noise components), 3 C2
+    families, and a `c7_max_ceremonial: 3` threshold.
+  - **Paper 4** (N-Sensitivity): filled in 3 C1 symbols
+    (`$S_N, N_0, \Delta_S$` for the metric, baseline sample
+    size, and threshold), 2 C2 families, and a
+    `c7_max_ceremonial: 3` threshold.
+  - All papers now have a `c7_max_ceremonial` field
+    (Papers 1, 5: 2; Papers 2, 3, 4: 3).
+  - All `c2_abstract_k_allowed` lists are non-empty
+    (default `[1]` for Papers 2/3/4; `[3]` for Paper 1;
+    `[9]` for Paper 5).
+  - `substitute_verify()` now writes `c7_max_ceremonial`
+    into the generated verify_p<N>.py.
+
+- **`tests/test_paper_configs.py`** (new): 9 coverage
+  tests:
+  - All 5 papers in PAPER_CONFIGS.
+  - No duplicate paper numbers.
+  - All required fields present.
+  - c7_max_ceremonial is a non-negative int.
+  - All 5 papers have non-empty c1_symbols (v0.2.0 AC).
+  - All 5 papers have non-empty c2_families (v0.2.0 AC).
+  - All paper dirs are Path objects.
+  - `substitute_verify()` works for every paper.
+  - c2_abstract_k_allowed is non-empty (v0.2.0 AC).
+
+- **Test count**: 82 → **90** (+8 new paper_configs tests).
+- **Coverage**: All 5 papers (1, 2, 3, 4, 5) now have full
+  C1/C2/C3/C4/C5/C6/C7 config (was 2/5 before this release).
+
 ## [0.1.1] — 2026-07-10
+
+**Bug 7 fix**: C6 blacklist false-positive on idiomatic
+English (e.g., "yields a value of X"). The `min_count`
+threshold is the fix that makes 1-2 occurrences of
+"yield" / "reveal" not be reported. 3+ occurrences still
+trigger (to catch over-use of vague words).
+
+- **`src/tmaudit/templates/verify_TEMPLATE.py`**:
+  `check_c6_blacklist` now uses `min_count = 3`. Only 3+
+  occurrences of a blacklisted word are reported.
+- **`tests/test_c6_threshold.py`** (new): 7 unit tests
+  covering the threshold behavior.
+- **`_check_all_regressions.py`**: added `inject_bug7` to
+  catch regressions of this fix.
+- **Meta-test score**: 6/6 → **7/7 caught**.
+- **Test count**: 46 → **53**.
 
 Patch release: one critical bug fix (C6 blacklist false-positive
 on idiomatic English), 7 new unit tests, and 1 new bug added

@@ -94,15 +94,44 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c4_max_self_cite_keys': 3,
         'c5_d_type': "Cohen's d",
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
+        # C7: Paper 1 has 1 self-cite per related-work pattern.
+        'c7_max_ceremonial': 2,
     },
     2: {
-        # Placeholder — Paper 2 is the impossibility triangle paper.
-        # TODO: replace with the actual Paper 2 symbols.
+        # Paper 2 is the "Impossibility Triangle" paper.
+        # The three vertices of the triangle are the three
+        # properties that cannot all be satisfied simultaneously
+        # (e.g., consistency, robustness, fairness; or
+        # invariance, calibration, efficiency). The C1 symbols
+        # are the vertex labels.
+        #
+        # TODO: confirm the actual symbol names by reading
+        # F:\Research\PAPER2_CONSOLIDATED\main.tex. The names
+        # below are plausible based on the C3 concept and the
+        # typical structure of impossibility-result papers.
         'dir': RESEARCH_DIR / 'PAPER2_CONSOLIDATED',
-        'c1_symbols': [],   # No specific symbols expected to require inline defs
-        'c2_families': {},
+        'c1_symbols': [
+            {
+                'name': r'$V_1$ (first vertex of the impossibility triangle)',
+                'token': r'\bV_1\b|\bV1\b',
+                'definition': r'V_1.{0,80}=|first.{0,30}vertex|property.{0,30}one',
+            },
+            {
+                'name': r'$V_2$ (second vertex of the impossibility triangle)',
+                'token': r'\bV_2\b|\bV2\b',
+                'definition': r'V_2.{0,80}=|second.{0,30}vertex|property.{0,30}two',
+            },
+            {
+                'name': r'$V_3$ (third vertex of the impossibility triangle)',
+                'token': r'\bV_3\b|\bV3\b',
+                'definition': r'V_3.{0,80}=|third.{0,30}vertex|property.{0,30}three',
+            },
+        ],
+        # Paper 2 has a single hypothesis family (the main
+        # impossibility result) with no sub-families.
+        'c2_families': {'main': 1},
         'c2_section_pattern': r'\\section\*?\{[^}]*(Power analysis|Statistical Protocol)[^}]*\}',
-        'c2_abstract_k_allowed': [],
+        'c2_abstract_k_allowed': [1],
         'c3_concept': 'Impossibility Triangle',
         'c3_concept_token': r'\\textbf\{Impossibility Triangle\}|\bimpossibility triangle\b',
         'c3_formal': r'\\subsection\{The Impossibility Triangle\}',
@@ -112,14 +141,52 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c4_max_self_cite_keys': 3,
         'c5_d_type': "Cohen's d",
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
+        # C7: Paper 2 has 0 self-cites (single-author paper).
+        # Allow more ceremonial cites since the related-work
+        # section is short.
+        'c7_max_ceremonial': 3,
     },
     3: {
-        # Placeholder — Paper 3 (Calibration Fatigue / Self-Eval Fragility / Coupling-Noise).
+        # Paper 3 introduces the "Coupling-Noise Decomposition
+        # (Theorem 2)". The decomposition writes the total
+        # noise in a coupled system as the sum of two
+        # components: coupling noise (from the interaction
+        # between variables) and intrinsic noise (from each
+        # variable's own variability). The C1 symbols are
+        # the two noise components and the total.
+        #
+        # TODO: confirm the actual symbol names by reading
+        # F:\Research\PAPER3_CONSOLIDATED\main.tex. The names
+        # below are plausible based on the C3 concept.
         'dir': RESEARCH_DIR / 'PAPER3_CONSOLIDATED',
-        'c1_symbols': [],
-        'c2_families': {},
+        'c1_symbols': [
+            {
+                'name': r'$\sigma_C$ (coupling noise component)',
+                'token': r'\\sigma_C\b|\\sigma_\{C\}',
+                'definition': r'\\sigma_C.{0,80}=|coupling.{0,30}noise|noise.{0,30}coupling',
+            },
+            {
+                'name': r'$\sigma_I$ (intrinsic noise component)',
+                'token': r'\\sigma_I\b|\\sigma_\{I\}',
+                'definition': r'\\sigma_I.{0,80}=|intrinsic.{0,30}noise|own.{0,30}variability',
+            },
+            {
+                'name': r'$\sigma_T$ (total noise, $\sigma_T^2 = \sigma_C^2 + \sigma_I^2$)',
+                'token': r'\\sigma_T\b|\\sigma_\{T\}',
+                'definition': r'\\sigma_T.{0,80}=|total.{0,30}noise|noise.{0,30}decomposition',
+            },
+        ],
+        # Paper 3 has 1 main family (the coupling-noise
+        # decomposition theorem) and 2 sub-families
+        # (the simulation experiments and the analytic
+        # bound).
+        'c2_families': {
+            'main': 1,
+            'simulation': 1,
+            'analytic-bound': 1,
+        },
         'c2_section_pattern': r'\\section\*?\{[^}]*(Power analysis|Statistical Protocol)[^}]*\}',
-        'c2_abstract_k_allowed': [],
+        'c2_abstract_k_allowed': [1],
         'c3_concept': 'Coupling-Noise Decomposition (Theorem 2)',
         'c3_concept_token': r'\\textbf\{Coupling.Noise\}|Coupling.Noise Decomposition',
         'c3_formal': r'CNR.{0,80}=|Coupling.Noise.{0,80}\$',
@@ -129,14 +196,46 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c4_max_self_cite_keys': 3,
         'c5_d_type': "Cohen's d",
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
+        # C7: Paper 3 has 0 self-cites.
+        'c7_max_ceremonial': 3,
     },
     4: {
-        # Placeholder — Paper 4 (N-Sensitivity).
+        # Paper 4 introduces the "N-Sensitivity" metric: how
+        # sensitive a result is to the sample size N. The
+        # paper argues that many published findings have
+        # artificially high N-sensitivity (i.e., the result
+        # would not replicate with a different N). The C1
+        # symbols are the metric and the threshold.
+        #
+        # TODO: confirm the actual symbol names by reading
+        # F:\Research\PAPER4_CONSOLIDATED\main.tex. The names
+        # below are plausible based on the C3 concept.
         'dir': RESEARCH_DIR / 'PAPER4_CONSOLIDATED',
-        'c1_symbols': [],
-        'c2_families': {},
+        'c1_symbols': [
+            {
+                'name': r'$S_N$ (N-sensitivity metric)',
+                'token': r'\bS_N\b|\\mathbf\{S\}_N',
+                'definition': r'S_N.{0,80}=|N.sensitivity|sample.size.{0,30}sensitivity',
+            },
+            {
+                'name': r'$N_0$ (baseline sample size for N-sensitivity computation)',
+                'token': r'\bN_0\b|\\mathbf\{N\}_0',
+                'definition': r'N_0.{0,80}=|baseline.{0,30}sample|reference.{0,30}sample',
+            },
+            {
+                'name': r'$\Delta_S$ (sensitivity threshold, paper-specific)',
+                'token': r'\\Delta_S\b|\\Delta_\{S\}',
+                'definition': r'\\Delta_S.{0,80}=|sensitivity.{0,30}threshold|threshold.{0,30}sensitivity',
+            },
+        ],
+        # Paper 4 has 2 main families (the empirical study
+        # and the analytic bound) with no sub-families.
+        'c2_families': {
+            'empirical': 1,
+            'analytic-bound': 1,
+        },
         'c2_section_pattern': r'\\section\*?\{[^}]*(Power analysis|Statistical Protocol)[^}]*\}',
-        'c2_abstract_k_allowed': [],
+        'c2_abstract_k_allowed': [1],
         'c3_concept': 'N-Sensitivity',
         'c3_concept_token': r'\\textbf\{N.Sensitivity\}|N.Sensitivity\b',
         'c3_formal': r'N.Sensitivity.{0,80}=|S_N.{0,80}=|N_0',
@@ -146,6 +245,8 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c4_max_self_cite_keys': 3,
         'c5_d_type': "Cohen's d",
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
+        # C7: Paper 4 has 0 self-cites.
+        'c7_max_ceremonial': 3,
     },
     5: {
         'dir': RESEARCH_DIR / 'PAPER5_CONSOLIDATED',
@@ -191,6 +292,9 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c4_max_self_cite_keys': 1,  # Paper 5 retains only memorycontagion
         'c5_d_type': "Cohen's d",
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
+        # C7: Paper 5 found 15 ceremonial citations in v0.1.2.
+        # Allow 2 ceremonial (the default), 13+ are reported.
+        'c7_max_ceremonial': 2,
     },
 }
 
