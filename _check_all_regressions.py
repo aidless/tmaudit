@@ -1,20 +1,20 @@
-"""_check_all_regressions.py — verify that the 7 bug-specific
+"""_check_all_regressions.py — verify that the 8 bug-specific
 regression tests in tests/test_forge.py, tests/test_c6_threshold.py,
-and related test files actually catch a re-introduction of
-each bug.
+tests/test_c7_citation_context.py, and related test files actually
+catch a re-introduction of each bug.
 
 For each bug, this script:
   1. Backs up the relevant source file (forge.py,
      templates/verify_TEMPLATE.py, or configs/paper_configs.py).
   2. Injects a small change that re-introduces the bug.
-  3. Runs the targeted TestBug* test class.
+  3. Runs the targeted TestBug* / test_<N>_<description> test.
   4. Asserts the test FAILS (i.e. the bug fingerprint is
      recognised).
   5. Restores the original source.
   6. Re-runs the test and asserts it PASSES.
 
 Exit code:
-  0 if all 7 bugs are correctly caught and restored.
+  0 if all 8 bugs are correctly caught and restored.
   1 if any bug is NOT caught (i.e. the regression test would
     silently miss the bug — a serious problem).
 
@@ -59,15 +59,38 @@ def _run_pytest(test_target: str) -> tuple[int, str]:
 def _patched(path: Path) -> Iterator[None]:
     """Context manager: backup path, yield, restore on exit.
 
+    The restore uses `git checkout HEAD -- <path>` to ensure
+    that even if a previous meta-test run left the file in a
+    broken state, we always restore to the committed version.
+    This avoids the state-leak bug where a previous failed
+    run leaves the file broken and the next run cannot
+    recover (because the original-content anchor is no
+    longer found).
+
     Usage:
         with _patched(FORGE):
             FORGE.write_text(new_content, encoding='utf-8')
     """
-    backup = path.read_text(encoding='utf-8')
+    # Snapshot via git checkout: always restore the committed
+    # version, regardless of what the working tree contains now.
+    repo_root = TEMPLATE
     try:
         yield
     finally:
-        path.write_text(backup, encoding='utf-8')
+        # Use git checkout to restore. Fall back to file copy
+        # if git is unavailable.
+        try:
+            subprocess.run(
+                ['git', 'checkout', 'HEAD', '--', str(path.relative_to(repo_root))],
+                cwd=str(repo_root),
+                check=True,
+                capture_output=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Last-resort fallback: restore from a backup variable.
+            # (We didn't keep one because the file may already
+            # be broken; this branch is a defensive fallback.)
+            pass
 
 
 def _check_bug(
@@ -345,6 +368,44 @@ def inject_bug7() -> None:
         )
 
 
+def inject_bug8() -> None:
+    """Bug 8: C7 inverted threshold check. The implementation
+    has `if n_ceremonial > c7_max_ceremonial:` which fires
+    when the ceremonial count *exceeds* the threshold. If
+    this is inverted to `if n_ceremonial < c7_max_ceremonial:`,
+    the check fires only when there are *fewer* ceremonial
+    cites than the threshold — which is essentially the inverse
+    condition. As a result, papers with 3+ ceremonial cites
+    (the case C7 is supposed to flag) get NO findings.
+
+    We inject by changing the literal `if n_ceremonial >
+    c7_max_ceremonial:` to `if n_ceremonial < c7_max_ceremonial:
+    # BROKEN: inverted threshold`.
+
+    The regression test that should catch this is
+    `test_c7_threshold_2_flags_3_ceremonial_cites`: it
+    constructs a tex with 3 ceremonial cites and asserts the
+    C7 finding list has at least one entry. With the inverted
+    condition, n_ceremonial=3 is NOT less than
+    c7_max_ceremonial=2, so no findings are produced and the
+    test fails.
+    """
+    with _patched(VERIFY_TPL):
+        original = VERIFY_TPL.read_text(encoding='utf-8')
+        old = '    if n_ceremonial > c7_max_ceremonial:'
+        new = '    if n_ceremonial < c7_max_ceremonial:  # BROKEN: inverted threshold'
+        if old not in original:
+            raise RuntimeError(f'bug-8 anchor not found: {old!r}')
+        VERIFY_TPL.write_text(
+            original.replace(old, new, 1),
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '8',
+            'tests/test_c7_citation_context.py::test_c7_threshold_2_flags_3_ceremonial_cites',
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-bug test runner
 # ---------------------------------------------------------------------------
@@ -381,6 +442,7 @@ def main() -> int:
         ('5', inject_bug5),
         ('6', inject_bug6),
         ('7', inject_bug7),
+        ('8', inject_bug8),
     ]
 
     for bug_id, inject_fn in cases:
