@@ -96,6 +96,12 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
         # C7: Paper 1 has 1 self-cite per related-work pattern.
         'c7_max_ceremonial': 2,
+        # C8: Paper 1 has 1 main effect (TTRL vs SFT, n=200,
+        # claimed d=0.5). The paper's actual numbers can be
+        # verified against this claim.
+        'c8_claimed_effects': [
+            {'name': 'TTRL_vs_SFT', 'd': 0.50, 'n1': 200, 'n2': 200, 'alpha': 0.05},
+        ],
         # C10: Paper 1 has 1 SOTA claim (TTRL) and 1 standard
         # benchmark claim (TQA). Both are verifiable in
         # principle.
@@ -151,6 +157,9 @@ PAPER_CONFIGS: dict[int, dict] = {
         # Allow more ceremonial cites since the related-work
         # section is short.
         'c7_max_ceremonial': 3,
+        # C8: Paper 2 is theoretical (impossibility result).
+        # No statistical tests, so no C8 effects to verify.
+        'c8_claimed_effects': [],
         # C10: Paper 2 makes a general "impossibility result"
         # claim, not a benchmark SOTA claim. No C10 consistency
         # checks to run.
@@ -208,6 +217,9 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
         # C7: Paper 3 has 0 self-cites.
         'c7_max_ceremonial': 3,
+        # C8: Paper 3 is theoretical (Theorem 2 about
+        # coupling-noise decomposition). No C8 effects to verify.
+        'c8_claimed_effects': [],
         # C10: Paper 3 is theoretical (Theorem 2 about
         # coupling-noise decomposition). No benchmark claims.
         'c10_reproducibility_claims': [],
@@ -260,6 +272,11 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
         # C7: Paper 4 has 0 self-cites.
         'c7_max_ceremonial': 3,
+        # C8: Paper 4 has 1 main effect (S_N on empirical,
+        # n=100, claimed d=0.4).
+        'c8_claimed_effects': [
+            {'name': 'S_N_empirical', 'd': 0.40, 'n1': 100, 'n2': 100, 'alpha': 0.05},
+        ],
         # C10: Paper 4 has 1 SOTA claim (S_N on the empirical
         # benchmark).
         'c10_reproducibility_claims': [
@@ -313,6 +330,14 @@ PAPER_CONFIGS: dict[int, dict] = {
         # C7: Paper 5 found 15 ceremonial citations in v0.1.2.
         # Allow 2 ceremonial (the default), 13+ are reported.
         'c7_max_ceremonial': 2,
+        # C8: Paper 5 has 3 main effects (dose-response,
+        # cross-model, authority-bias). Each is verifiable
+        # against a results table.
+        'c8_claimed_effects': [
+            {'name': 'dose_response', 'd': 0.50, 'n1': 50, 'n2': 50, 'alpha': 0.05},
+            {'name': 'cross_model', 'd': 0.40, 'n1': 30, 'n2': 30, 'alpha': 0.05},
+            {'name': 'authority_bias', 'd': 0.60, 'n1': 20, 'n2': 20, 'alpha': 0.05},
+        ],
         # C10: Paper 5 makes a "best in class" claim on the
         # length-bias benchmark. The dataset is real (paper
         # authors curated it), so the consistency check applies.
@@ -400,6 +425,21 @@ def _format_c10_claims(claims: list) -> str:
     return '\n'.join(lines)
 
 
+def _format_c8_claimed_effects(effects: list) -> str:
+    """Format the c8_claimed_effects list as Python source."""
+    if not effects:
+        return '    [],'
+    lines = ['    [']
+    for i, eff in enumerate(effects):
+        sep = ',' if i < len(effects) - 1 else ','
+        lines.append('        {')
+        for k, v in eff.items():
+            lines.append(f"            {k!r}: {v!r},")
+        lines.append(f'        }}{sep}')
+    lines.append('    ],')
+    return '\n'.join(lines)
+
+
 def substitute_verify(template: str, cfg: dict) -> str:
     """Substitute ROOT and CHECKS_CONFIG in the verify template."""
     out = template
@@ -433,6 +473,11 @@ def substitute_verify(template: str, cfg: dict) -> str:
     parts.append('')
     parts.append("    'c6_blacklist':")
     parts.append(_format_c6_blacklist(cfg.get('c6_blacklist', ['paradigm', 'yield', 'reveal'])))
+    parts.append('')
+    # C8 (added in v0.3.0): per-paper list of claimed effects
+    # to verify. If empty/None, C8 is a no-op.
+    parts.append("    'c8_claimed_effects':")
+    parts.append(_format_c8_claimed_effects(cfg.get('c8_claimed_effects', [])))
     parts.append('')
     # C10 (added in v0.3.0): per-paper list of reproducibility
     # claims. If empty/None, only the availability + metadata

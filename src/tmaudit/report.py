@@ -104,6 +104,7 @@ SEVERITY_MAP = {
     'C5': 'MEDIUM',
     'C6': 'LOW',
     'C7': 'MEDIUM',
+    'C8': 'MEDIUM',
     'C10': 'LOW',
 }
 

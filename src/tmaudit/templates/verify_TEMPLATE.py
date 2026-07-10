@@ -185,6 +185,9 @@ SEVERITY = {
     'C5': 'MEDIUM',
     'C6': 'LOW',
     'C7': 'MEDIUM',
+    # C8 is variable: HIGH for d-mismatch, MED for power
+    # issues. We default to MEDIUM.
+    'C8': 'MEDIUM',
     # C10 is variable: HIGH for missing availability, MED for
     # consistency / future-tense, LOW for missing metadata.
     # We default to LOW since most C10 findings are LOW; the
@@ -1087,6 +1090,353 @@ def check_c10_reproducibility(
 
 
 # ---------------------------------------------------------------------------
+# C8: Statistical Power (added in v0.3.0)
+# ---------------------------------------------------------------------------
+#
+# A paper's statistical claims are judged on 3 sub-categories:
+#   1. Effect size re-derivation: the claimed Cohen's d should
+#      be consistent with the (mean, sd, n) reported in the
+#      results table. A mismatch suggests misrepresentation.
+#   2. Statistical power: with the claimed d and n, the power
+#      should be at least 0.50 (else the study is underpowered)
+#      and at most 0.99 (else suspiciously overpowered).
+#   3. Significance claim: a "significantly different" claim
+#      should be accompanied by a p-value, and the p-value
+#      should be consistent with the claimed d.
+#
+# Severity:
+#   HIGH: d_claimed differs from d_actual by more than 0.10.
+#   MED:  power < 0.50 (underpowered) or power > 0.99 (overpowered).
+#   MED:  "significantly different" without a p-value.
+#   MED:  d_claimed is small but p_claimed is very small (inconsistent).
+#
+# The check is opt-in via the per-paper c8_claimed_effects
+# config. If the config is empty/None, C8 is a no-op.
+# ---------------------------------------------------------------------------
+
+# Heuristic constants (mirrored in tests/test_c8_statistical_power.py).
+_C8_D_MISMATCH_THRESHOLD = 0.10
+_C8_POWER_UNDERPOWERED = 0.50
+_C8_POWER_OVERPOWERED = 0.99
+_C8_SIGNIFICANCE_CONTEXT_CHARS = 200  # how many chars around the claim
+                                     # to search for a p-value.
+
+# Regex patterns.
+_C8_TABLE_RE = re.compile(
+    r'\\begin\{tabular\}.*?\\end\{tabular\}',
+    re.DOTALL,
+)
+_C8_ROW_SEP_RE = re.compile(r'\\\\')  # '\\' is the LaTeX row separator.
+_C8_COL_SEP_RE = re.compile(r'&')
+# Pattern for "significantly different" claims.
+_C8_SIG_DIFF_RE = re.compile(
+    r'significantly\s+different',
+    re.IGNORECASE,
+)
+# Pattern for p-values like 'p < 0.05', 'p = 0.03', 'p-value = 0.04'.
+_C8_P_VALUE_RE = re.compile(
+    r'p[\s\-]*(?:value)?\s*[<=<]\s*\d+\.\d+',
+    re.IGNORECASE,
+)
+# Pattern for "Cohen's d" (used to extract claimed d in body text).
+_C8_CLAIMED_D_RE = re.compile(
+    r"Cohen['\u2019]s\s+d\s*[=:<>]\s*(-?\d+\.?\d*)",
+    re.IGNORECASE,
+)
+# Pattern for numeric values (mean, sd, n) in a row.
+_C8_NUMBER_RE = re.compile(r'-?\d+\.?\d*')
+# Pattern for the label column (e.g., "A", "B").
+_C8_LABEL_RE = re.compile(r'^\s*([A-Za-z]\w*|\d+)\s*&')
+# Pattern for "n=NN per group" declarations outside the tabular.
+_C8_N_DECL_RE = re.compile(
+    r'n\s*[=:]\s*(\d+)\s*(?:per\s+group|per\s+condition|per\s+cell|each)?',
+    re.IGNORECASE,
+)
+
+
+def _c8_try_scipy():
+    """Try to import scipy.stats.norm. Return None if unavailable."""
+    try:
+        from scipy.stats import norm
+        return norm
+    except ImportError:
+        return None
+
+
+def _c8_compute_d(mean1: float, mean2: float, sd1: float, sd2: float,
+                  n1: int, n2: int) -> float:
+    """Compute Cohen's d from (mean, sd, n) of two groups.
+
+    d = (mean1 - mean2) / pooled_sd
+    pooled_sd = sqrt(((n1-1)*sd1^2 + (n2-1)*sd2^2) / (n1+n2-2))
+    """
+    if n1 + n2 - 2 <= 0:
+        return 0.0
+    pooled_var = ((n1 - 1) * sd1**2 + (n2 - 1) * sd2**2) / (n1 + n2 - 2)
+    if pooled_var <= 0:
+        return 0.0
+    return (mean1 - mean2) / (pooled_var ** 0.5)
+
+
+def _c8_compute_power(d: float, n1: int, n2: int, alpha: float = 0.05) -> float:
+    """Compute post-hoc power for a two-sample t-test.
+
+    Uses per-group n = min(n1, n2) for a conservative power estimate:
+      ncp = |d| * sqrt(n_per_group / 2)
+      power = Phi(ncp - z_alpha/2)
+    where z_alpha/2 = norm.ppf(1 - alpha/2).
+    """
+    norm = _c8_try_scipy()
+    if norm is None:
+        return 0.5  # fallback: assume adequate power
+    n_per_group = max(1, min(n1, n2))
+    z_alpha = norm.ppf(1 - alpha / 2)
+    return float(norm.cdf(abs(d) * (n_per_group / 2) ** 0.5 - z_alpha))
+
+
+def _c8_parse_table_row(row_text: str) -> dict:
+    """Parse a single table row, returning a dict with optional
+    fields: 'label', 'mean1', 'sd1', 'n1', 'mean2', 'sd2', 'n2'.
+
+    This is a best-effort parser. It assumes a 2-group design
+    (A vs B) with columns in some order. The row is the raw
+    LaTeX text between two `\\` separators.
+    """
+    cells = _C8_COL_SEP_RE.split(row_text)
+    cells = [c.strip() for c in cells if c.strip()]
+    if len(cells) < 2:
+        return {}
+    result = {}
+    # First cell is the label
+    label_match = _C8_LABEL_RE.match(row_text)
+    if label_match:
+        result['label'] = label_match.group(1)
+    # Extract all numbers from the cells
+    all_numbers = []
+    for cell in cells[1:]:  # skip label column
+        for m in _C8_NUMBER_RE.finditer(cell):
+            try:
+                val = float(m.group(0))
+                all_numbers.append(val)
+            except ValueError:
+                pass
+    # Heuristic: if 2 numbers, assume (mean, sd) per group.
+    # If 4 numbers, assume (mean, sd, n) per group.
+    # If 6 numbers, assume (mean, sd, n) for both groups.
+    if len(all_numbers) >= 2:
+        result['mean1'] = all_numbers[0]
+        result['sd1'] = all_numbers[1]
+    if len(all_numbers) >= 4:
+        result['mean2'] = all_numbers[2]
+        result['sd2'] = all_numbers[3]
+    if len(all_numbers) >= 6:
+        result['n1'] = int(all_numbers[4])
+        result['n2'] = int(all_numbers[5])
+    elif len(all_numbers) >= 5:
+        # 5 numbers: (mean1, sd1, n1, mean2, sd2) for first group with n
+        result['n1'] = int(all_numbers[2])
+        result['n2'] = 50  # default
+    else:
+        # default n
+        result['n1'] = result.get('n1', 50)
+        result['n2'] = result.get('n2', 50)
+    return result
+
+
+def _c8_find_table_for_effect(tex: str, effect_name: str) -> dict:
+    """Find a table row for the given effect.
+
+    The matching strategy is:
+    1. Look for a row whose label matches the effect_name
+       (case-insensitive substring match).
+    2. If no match, return the first 2 data rows combined
+       (assumes the table has 2 groups: A vs B, etc.).
+
+    Returns a dict with 'mean1', 'sd1', 'mean2', 'sd2', 'n1',
+    'n2' (or {} if not found).
+    """
+    for table_match in _C8_TABLE_RE.finditer(tex):
+        table_text = table_match.group(0)
+        # Split by row separator
+        rows = _C8_ROW_SEP_RE.split(table_text)
+        # First, try to find a row whose label matches the effect_name
+        for row in rows:
+            # Skip header rows
+            if 'Condition' in row or 'Group' in row or 'Mean' in row:
+                continue
+            parsed = _c8_parse_table_row(row)
+            label = parsed.get('label', '').lower()
+            # Require label to be at least 2 chars to avoid
+            # spurious matches like "a" in "main_effect".
+            if label and len(label) >= 2 and (
+                effect_name.lower() in label
+                or label in effect_name.lower()
+            ):
+                return parsed
+        # If no match, use the first 2 data rows (assuming A vs B).
+        data_rows = []
+        for row in rows:
+            if 'Condition' in row or 'Group' in row or 'Mean' in row:
+                continue
+            parsed = _c8_parse_table_row(row)
+            if parsed.get('mean1') is not None:
+                data_rows.append(parsed)
+        if len(data_rows) >= 2:
+            # Combine the first 2 data rows.
+            r1, r2 = data_rows[0], data_rows[1]
+            combined = {
+                'label': f"{r1.get('label', '?')}_vs_{r2.get('label', '?')}",
+                'mean1': r1['mean1'], 'sd1': r1.get('sd1', 0.0),
+                'mean2': r2['mean1'], 'sd2': r2.get('sd1', 0.0),
+                'n1': r1.get('n1', 50), 'n2': r2.get('n1', 50),
+            }
+            return combined
+    return {}
+
+
+def check_c8_statistical_power(
+    tex: str,
+    c8_claimed_effects: list = None,
+) -> list[tuple[str, str, int]]:
+    """C8: detect inconsistencies in statistical claims.
+
+    Sub-check 1: Effect size re-derivation
+      - For each claimed effect, find the corresponding table
+        row and extract (mean1, mean2, sd1, sd2, n1, n2).
+      - Compute d_actual.
+      - If |d_actual - d_claimed| > 0.10 -> emit HIGH.
+
+    Sub-check 2: Statistical power
+      - For each claimed effect, compute post-hoc power.
+      - If power < 0.50 -> emit MED (underpowered).
+      - If power > 0.99 -> emit MED (suspiciously overpowered).
+
+    Sub-check 3: Significance claim
+      - For each 'significantly different' claim in the body,
+        look for a p-value within 200 chars.
+      - If no p-value -> emit MED.
+      - If d_claimed is small but p is small -> emit MED
+        (inconsistency, possible p-hacking).
+
+    Returns:
+        A list of (category, message, line) tuples, one per
+        finding. Lines are -1 for global findings, positive
+        integers for findings tied to a specific source line.
+    """
+    findings = []
+    c8_claims = c8_claimed_effects or []
+
+    # Sub-checks 1 and 2 (effect-size and power) require
+    # c8_claimed_effects. Sub-check 3 (significance claim) is
+    # independent: it scans the body for "significantly
+    # different" claims regardless of c8_claims.
+
+    for claim in c8_claims:
+        effect_name = claim.get('name', '')
+        d_claimed = claim.get('d', 0.0)
+        n1 = claim.get('n1', 50)
+        n2 = claim.get('n2', 50)
+        alpha = claim.get('alpha', 0.05)
+
+        # Sub-check 1: Effect size re-derivation
+        # Find the table row for this effect.
+        row = _c8_find_table_for_effect(tex, effect_name)
+        if row and 'mean1' in row and 'mean2' in row:
+            d_actual = _c8_compute_d(
+                row['mean1'], row['mean2'],
+                row.get('sd1', 0.0), row.get('sd2', 0.0),
+                row.get('n1', n1), row.get('n2', n2),
+            )
+            d_diff = abs(d_actual - d_claimed)
+            if d_diff > _C8_D_MISMATCH_THRESHOLD:
+                findings.append((
+                    'C8',
+                    f"HIGH: claimed d={d_claimed:.2f} for '{effect_name}' is "
+                    f"inconsistent with reported table numbers "
+                    f"(computed d={d_actual:.2f}, diff={d_diff:.2f}). "
+                    f'Reviewer §5 #8.',
+                    -1,
+                ))
+
+        # Sub-check 2: Statistical power
+        # Sub-checks 1 and 2 are independent: an effect with both
+        # a d-mismatch (HIGH) and an underpowered design (MED)
+        # will produce both findings.
+        power = _c8_compute_power(d_claimed, n1, n2, alpha)
+        if power < _C8_POWER_UNDERPOWERED:
+            findings.append((
+                'C8',
+                f'MED: statistical power for {effect_name!r} is '
+                f'{power:.2f} (underpowered; recommend n >= '
+                f'{n1 * 4} for d={d_claimed:.2f} at '
+                f'alpha={alpha:.2f}). Reviewer §5 #8.',
+                -1,
+            ))
+        elif power > _C8_POWER_OVERPOWERED and d_claimed <= 0.50 \
+                and min(n1, n2) >= 1000:
+            # Suspiciously overpowered: only flag when claimed d
+            # is small (a tiny effect that becomes significant
+            # with N>1000 is a p-hacking tell).
+            findings.append((
+                'C8',
+                f'MED: statistical power for {effect_name!r} is '
+                f'{power:.4f} with n={min(n1, n2)} '
+                f'(suspiciously high for a small claimed d; '
+                f'possible p-hacking). Reviewer §5 #8.',
+                -1,
+            ))
+
+    # Sub-check 3: Significance claim
+    for sig_match in _C8_SIG_DIFF_RE.finditer(tex):
+        sig_start = sig_match.start()
+        # Look for a p-value within 200 chars after the
+        # 'significantly different' claim.
+        context_start = sig_start
+        context_end = min(len(tex), sig_start + _C8_SIGNIFICANCE_CONTEXT_CHARS)
+        context = tex[context_start:context_end]
+        if not _C8_P_VALUE_RE.search(context):
+            ln = line_of(tex, sig_start)
+            findings.append((
+                'C8',
+                f'MED: "significantly different" claim (line {ln}) has no '
+                f'p-value within {_C8_SIGNIFICANCE_CONTEXT_CHARS} chars. '
+                f'A significance claim should be accompanied by '
+                f'the actual p-value. Reviewer §5 #8.',
+                ln,
+            ))
+        else:
+            # Check for d/p inconsistency: tiny d but very small p
+            # (impossible without p-hacking).
+            p_match = _C8_P_VALUE_RE.search(context)
+            try:
+                p_value = float(p_match.group(0).split()[-1])
+            except (ValueError, IndexError):
+                p_value = 0.5
+            # Find the d in the same context.
+            d_match = _C8_CLAIMED_D_RE.search(context)
+            if d_match:
+                try:
+                    d_in_text = float(d_match.group(1))
+                except ValueError:
+                    d_in_text = 0.5
+                # If d < 0.10 (tiny) and p < 0.001 (very small),
+                # it's inconsistent.
+                if d_in_text < 0.10 and p_value <= 0.001:
+                    ln = line_of(tex, sig_start)
+                    findings.append((
+                        'C8',
+                        f'MED: d={d_in_text:.2f} with p<{p_value:.3f} on '
+                        f'line {ln} is internally inconsistent '
+                        f'(a tiny effect size cannot produce a very '
+                        f'small p without p-hacking). '
+                        f'Reviewer §5 #8.',
+                        ln,
+                    ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
 
@@ -1108,6 +1458,10 @@ def main() -> int:
     # C7: read the per-paper threshold from CHECKS_CONFIG.
     c7_threshold = int(CHECKS_CONFIG.get('c7_max_ceremonial', 2))
     all_findings += check_c7_citation_context(tex, c7_max_ceremonial=c7_threshold)
+    # C8 (added in v0.3.0): statistical power audit. Uses
+    # the per-paper c8_claimed_effects config.
+    c8_claims = CHECKS_CONFIG.get('c8_claimed_effects', []) or []
+    all_findings += check_c8_statistical_power(tex, c8_claims)
     # C10 (added in v0.3.0): reproducibility audit. Uses
     # the per-paper c10_reproducibility_claims config.
     c10_claims = CHECKS_CONFIG.get('c10_reproducibility_claims', []) or []
@@ -1126,7 +1480,7 @@ def main() -> int:
     print(f'Refs:   {bib_key_count} entries in refs.bib')
     print()
     print('Findings by category:')
-    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C10'):
+    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C10'):
         sev = SEVERITY[cat]
         n = summary[cat]
         marker = '[OK]' if n == 0 else f'[{sev}]'

@@ -412,16 +412,25 @@ def test_c8_malformed_latex_no_crash():
 # Test 16: Multiple effects, mixed pass/fail
 def test_c8_multiple_effects_mixed_findings():
     """3 effects: 1 matches, 1 mismatched, 1 underpowered.
-    Should produce 2 findings (mismatch + power)."""
+
+    All 3 reference the same table (A vs B with d=1.0).
+    - Effect 1 (d=1.0): matches -> no d-mismatch finding.
+    - Effect 2 (d=0.5): mismatch -> 1 HIGH finding.
+    - Effect 3 (d=0.5, n=5): mismatch AND underpowered ->
+      1 HIGH finding + 1 MED finding.
+
+    Total: 2 HIGH findings (effects 2 and 3) + 1 MED
+    (effect 3's underpowered power).
+    """
     findings = _fresh_check(TEX_TABLE_D_1_0, [
         # Effect 1: matches (d=1.0 vs d=1.0) -> no finding
         {'name': 'matches', 'd': 1.00, 'n1': 50, 'n2': 50, 'alpha': 0.05},
         # Effect 2: d-mismatch (claimed d=0.5, actual d=1.0) -> HIGH
         {'name': 'mismatch', 'd': 0.50, 'n1': 50, 'n2': 50, 'alpha': 0.05},
-        # Effect 3: underpowered (n=10, d=0.5 -> power=0.35) -> MED
+        # Effect 3: underpowered (n=5, d=0.5 -> power=0.35) -> MED
+        # Also d-mismatch (d=0.5 vs d_actual=1.0) -> HIGH
         {'name': 'underpowered', 'd': 0.50, 'n1': 5, 'n2': 5, 'alpha': 0.05},
     ])
-    # Expect 2 findings
     high_findings = [
         f for f in findings
         if f[0] == 'C8' and 'HIGH' in f[1]
@@ -430,9 +439,19 @@ def test_c8_multiple_effects_mixed_findings():
         f for f in findings
         if f[0] == 'C8' and 'MED' in f[1]
     ]
-    assert len(high_findings) == 1, (
-        f'Expected 1 HIGH finding (mismatch), got: {high_findings}'
+    # The 'matches' effect should NOT produce a finding.
+    matches_finding = [
+        f for f in findings
+        if 'matches' in f[1]
+    ]
+    assert len(matches_finding) == 0, (
+        f"'matches' effect should not produce any finding, got: {matches_finding}"
     )
+    # 'mismatch' and 'underpowered' both produce HIGH (d=0.5 vs actual=1.0).
+    assert len(high_findings) == 2, (
+        f'Expected 2 HIGH findings (mismatch + underpowered), got: {high_findings}'
+    )
+    # 'underpowered' produces MED (power < 0.50).
     assert len(med_findings) == 1, (
         f'Expected 1 MED finding (underpowered), got: {med_findings}'
     )
