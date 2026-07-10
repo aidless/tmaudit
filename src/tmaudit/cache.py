@@ -87,6 +87,33 @@ def cache_key(
     return h.hexdigest()
 
 
+def plugin_cache_key(
+    paper_n: int,
+    plugin_name: str,
+    plugin_version: str,
+    main_tex: str,
+) -> str:
+    """Compute the cache key for a single plugin's findings.
+
+    Added in v0.4.0 for the plugin API. The key is a
+    SHA-256 of:
+
+    - paper_n (which paper the plugin was run on),
+    - plugin_name + plugin_version (so an updated plugin
+      invalidates stale cached findings),
+    - main_tex content (so editing the paper invalidates
+      the cached findings).
+
+    The leading ``plugin:`` prefix separates these entries
+    from the legacy ``cache_key()`` entries.
+    """
+    tex_hash = hashlib.sha256(
+        main_tex.encode('utf-8', errors='replace')
+    ).hexdigest()
+    raw = f"plugin:{paper_n}:{plugin_name}:{plugin_version}:{tex_hash}"
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+
 class CacheDB:
     """SQLite-backed cache for audit results.
 
