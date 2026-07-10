@@ -4,6 +4,21 @@ All notable changes to `tmaudit` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Planned for v0.1.2
+
+Two enhancement issues are open and ready for community
+contribution. See [`.github/issues/16-c7-citation-context.md`](./.github/issues/16-c7-citation-context.md)
+and [`.github/issues/17-audit-cache.md`](./.github/issues/17-audit-cache.md)
+for the full proposals, and [`ROADMAP.md`](./ROADMAP.md) for
+the planned release timeline.
+
+| Issue | Title | Effort | Status |
+|---|---|---|---|
+| #16 | C7 audit category (citation context) | Medium | Ready for PR |
+| #17 | Audit-cache layer | Medium | Ready for PR |
+
 ## [0.1.1] — 2026-07-10
 
 Patch release: one critical bug fix (C6 blacklist false-positive
