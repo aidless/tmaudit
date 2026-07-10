@@ -242,6 +242,108 @@ def cmd_cache_clear(args: argparse.Namespace) -> int:
     return 0
 
 
+# ============================================================================
+# Plugin subcommands (added in v0.4.0)
+# ============================================================================
+
+def _format_plugin_table(plugins: dict) -> str:
+    """Render the plugin list as a 4-column table."""
+    if not plugins:
+        return "(no plugins registered)\n"
+    rows = [("NAME", "MODULE", "SEVERITY", "VERSION")]
+    for name, plugin in sorted(plugins.items()):
+        meta = plugin.__tmaudit_meta__
+        rows.append((
+            name,
+            getattr(plugin.fn, "__module__", "<unknown>"),
+            meta["severity"],
+            meta["version"],
+        ))
+    widths = [max(len(row[i]) for row in rows) for i in range(4)]
+    out = []
+    for i, row in enumerate(rows):
+        line = "  ".join(c.ljust(widths[j]) for j, c in enumerate(row))
+        out.append(line)
+        if i == 0:
+            out.append("  ".join("-" * widths[j] for j in range(4)))
+    return "\n".join(out) + "\n"
+
+
+def cmd_plugins_list(args: argparse.Namespace) -> int:
+    """List every discovered plugin (one per line)."""
+    from . import plugins as _plugins
+    _plugins.reset_loader_cache()
+    loaded = _plugins.load_plugins()
+    sys.stdout.write(_format_plugin_table(loaded))
+    return 0
+
+
+def cmd_plugins_info(args: argparse.Namespace) -> int:
+    """Show details for one plugin, looked up by name."""
+    from . import plugins as _plugins
+    _plugins.reset_loader_cache()
+    loaded = _plugins.load_plugins()
+    name = args.name
+    if name not in loaded:
+        sys.stderr.write(
+            f"Plugin {name!r} not registered. "
+            f"Known: {', '.join(sorted(loaded)) or '(none)'}\n"
+        )
+        return 1
+    plugin = loaded[name]
+    meta = plugin.__tmaudit_meta__
+    module = getattr(plugin.fn, "__module__", "<unknown>")
+    qualname = getattr(plugin.fn, "__qualname__", repr(plugin.fn))
+    sys.stdout.write(
+        f"Name:        {name}\n"
+        f"Module:      {module}\n"
+        f"Function:    {qualname}\n"
+        f"Severity:    {meta['severity']}\n"
+        f"Version:     {meta['version']}\n"
+        f"Help:        {meta['help_text']}\n"
+        f"Config:      {'required' if meta['requires_config'] else 'ignored'}\n"
+    )
+    return 0
+
+
+def cmd_plugins_run(args: argparse.Namespace) -> int:
+    """Run a single plugin against one paper's main.tex (no caching)."""
+    from . import plugins as _plugins
+    _plugins.reset_loader_cache()
+    loaded = _plugins.load_plugins()
+    name = args.name
+    if name not in loaded:
+        sys.stderr.write(
+            f"Plugin {name!r} not registered. "
+            f"Known: {', '.join(sorted(loaded)) or '(none)'}\n"
+        )
+        return 1
+    plugin = loaded[name]
+
+    paper_n = args.paper
+    if paper_n not in VERIFY_CONFIGS:
+        sys.stderr.write(f"Unknown paper {paper_n!r}\n")
+        return 1
+    paper_dir = Path(args.paper_dir or VERIFY_CONFIGS[paper_n]['dir'])
+    main_tex = paper_dir / 'main.tex'
+    if not main_tex.exists():
+        sys.stderr.write(f"main.tex not found at {main_tex}\n")
+        return 1
+    tex = main_tex.read_text(encoding='utf-8', errors='replace')
+
+    findings = _plugins.run_plugin(
+        plugin, tex=tex,
+        config=VERIFY_CONFIGS[paper_n],
+        paper_id=str(paper_n),
+    )
+    if not findings:
+        print(f"Plugin {name!r} emitted 0 findings on paper {paper_n}.")
+        return 0
+    for f in findings:
+        print(f"[{f.severity}] {f.category} L{f.line}: {f.message}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog='tmaudit',
@@ -317,6 +419,30 @@ def main(argv: list[str] | None = None) -> int:
         help='clear all cache entries',
     )
     p_cache_clear.set_defaults(func=cmd_cache_clear)
+
+    # Plugin subcommands (added in v0.4.0).
+    p_plugins = sub.add_parser(
+        'plugins',
+        help='manage user-written audit plugins',
+    )
+    p_plugins_sub = p_plugins.add_subparsers(
+        dest='plugins_command', required=True,
+    )
+    p_plugins_list = p_plugins_sub.add_parser(
+        'list', help='list every discovered plugin',
+    )
+    p_plugins_list.set_defaults(func=cmd_plugins_list)
+    p_plugins_info = p_plugins_sub.add_parser(
+        'info', help='show details for one plugin',
+    )
+    p_plugins_info.add_argument('name', help='plugin name (e.g. nips-pagecheck)')
+    p_plugins_info.set_defaults(func=cmd_plugins_info)
+    p_plugins_run = p_plugins_sub.add_parser(
+        'run', help='run a single plugin against one paper (no caching)',
+    )
+    p_plugins_run.add_argument('name', help='plugin name')
+    _add_paper_arg(p_plugins_run)
+    p_plugins_run.set_defaults(func=cmd_plugins_run)
 
     args = parser.parse_args(argv)
     return args.func(args)
