@@ -71,6 +71,77 @@ the planned release timeline.
   the others (does not `need` them) so a YAML issue in
   the workflow does not block the validator.
 
+## [0.3.0] — 2026-07-10 (in progress)
+
+**Theme**: Statistical-power audit (C8) + extended reproducibility
+checks (C10). Closes the 8-audit-category vision from
+[`ROADMAP.md`](./ROADMAP.md).
+
+### Added (C8 statistical power)
+
+- **`src/tmaudit/templates/verify_TEMPLATE.py`**:
+  - **C8 audit category** (NEW) — `check_c8_statistical_power`.
+    A paper's statistical claims are judged on 3 sub-categories:
+    1. **Effect-size re-derivation** (HIGH severity): for each
+       claimed Cohen's d in the per-paper `c8_claimed_effects`
+       config, parse the matching `\begin{tabular}` row and
+       recompute d_actual. If `|d_actual - d_claimed| > 0.10`,
+       emit a HIGH finding. The regex parser falls back to the
+       first two data rows when no label match is found, and
+       uses `min(n1, n2)` as the per-group n for power.
+    2. **Statistical power** (MED severity): post-hoc power via
+       `Phi(|d| * sqrt(n_per_group/2) - z_alpha/2)`. If
+       power < 0.50 the effect is *underpowered* (MED, recommend
+       n × 4). If power > 0.99 AND claimed d ≤ 0.50 AND
+       min(n1,n2) ≥ 1000 the result is *suspiciously overpowered*
+       (MED, possible p-hacking tell).
+    3. **Significance-claim scan** (MED severity): always runs
+       (independent of opt-in config). Scans the body for
+       `significantly\s+different` and emits a MED finding if
+       no p-value appears within 200 chars. Also flags
+       internally-inconsistent pairs (d < 0.10 with p < 0.001)
+       as a likely p-hacking signal.
+  - `_C8_D_MISMATCH_THRESHOLD = 0.10`, `_C8_POWER_UNDERPOWERED
+    = 0.50`, `_C8_POWER_OVERPOWERED = 0.99`,
+    `_C8_SIGNIFICANCE_CONTEXT_CHARS = 200` (heuristic constants,
+    mirrored in the test file).
+  - SEVERITY['C8'] = 'MEDIUM' (variable: HIGH for d-mismatch,
+    MED for power/significance).
+  - `main()` driver now wires `CHECKS_CONFIG['c8_claimed_effects']`
+    into the C8 call and prints a C8 row in the findings table.
+
+- **`src/tmaudit/configs/paper_configs.py`**:
+  - Papers 1, 3, and 5 now carry example `c8_claimed_effects`
+    entries (Paper 1: `main_effect`, d=1.00; Paper 3: `coupling`,
+    d=0.80; Paper 5: `accuracy`, d=0.50). Papers 2 and 4 carry
+    empty lists (C8 opt-in).
+  - `_format_c8_claimed_effects()` writer added.
+
+- **`tests/test_c8_statistical_power.py`** (NEW): 18 TDD tests
+  covering effect-size re-derivation, statistical power (under-,
+  adequately-, and over-powered regimes), significance-claim
+  text scan, multiple effects, malformed LaTeX, extra fields
+  in config, and a d-mismatch tolerance check. **All 18 pass.**
+
+- **`_check_all_regressions.py`**:
+  - **`inject_bug11()`** (NEW): Bug 11 — C8 inverted d-mismatch
+    threshold. Replaces `if d_diff > _C8_D_MISMATCH_THRESHOLD:`
+    with `if d_diff < ...: # BROKEN: inverted comparison`. The
+    regression test
+    `tests/test_c8_statistical_power.py::test_c8_effect_numbers_match_no_finding`
+    catches this (it expects 0 HIGH findings when d_claimed ==
+    d_actual; with the bug, a HIGH fires).
+
+- **Test count**: 142 → **160** (+18 C8 tests).
+- **Meta-test**: 10/10 → **11/11** (+1 with Bug 11).
+
+### Added (C10 reproducibility, carried over from v0.3.0 dev)
+
+The C10 reproducibility audit (with 20 regression tests and
+Bug 10 meta-test) shipped earlier in the v0.3.0 development
+cycle and is documented as part of v0.3.0 in
+[`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md).
+
 ## [0.2.0] — 2026-07-10 (in progress)
 
 **Theme**: Multi-paper batch mode + Paper 2/3/4
