@@ -71,6 +71,107 @@ the planned release timeline.
   the others (does not `need` them) so a YAML issue in
   the workflow does not block the validator.
 
+## [0.4.0] — 2026-07-10 (in progress)
+
+**Theme**: Plugin API. Ship the 4th (and final) audit-
+architecture feature: a stable plugin API that lets users
+write their own audit checks.
+
+### Added (Plugin API)
+
+- **`src/tmaudit/plugins.py`**:
+  - `Finding` dataclass — frozen, severity-validated
+    (HIGH/MEDIUM/LOW with MED alias), with `paper_id`
+    field for audit-all attribution.
+  - `@check(name=…, severity=…, requires_config=…,
+    help_text=…, version=…)` decorator that wraps a
+    `def check(tex, config) -> List[Finding]` and adds
+    metadata.
+  - `load_plugins()` discovery via
+    `importlib.metadata.entry_points(group="tmaudit.plugins")`.
+    Failing entry-points are logged and skipped, never raised.
+  - `filter_active(plugins, disabled)` — remove disabled
+    plugin names.
+  - `run_plugin(plugin, tex, config, paper_id)` /
+    `run_all_plugins(...)` / `audit_plugins(paper_n,
+    paper_dir, ...)` — bulk runner with per-plugin
+    cache integration.
+  - Per-call cache invalidation: a buggy plugin cannot break
+    the audit (logged, skipped).
+
+- **`src/tmaudit/cache.py`**:
+  - `plugin_cache_key(paper_n, plugin_name, plugin_version,
+    main_tex)` — content-addressable key. Updates to a
+    plugin's `version=` invalidate stale cache entries.
+
+- **`src/tmaudit/cli.py`**:
+  - `tmaudit plugins list` — table of every discovered
+    plugin (name, module, severity, version).
+  - `tmaudit plugins info NAME` — details for one plugin.
+  - `tmaudit plugins run NAME --paper N` — execute a single
+    plugin against one paper (no caching).
+  - `tmaudit audit-all` now invokes `audit_plugins(...)` per
+    paper after the C1..C10 subprocess run, so user-written
+    plugins fire automatically.
+
+- **`src/tmaudit/__init__.py`**:
+  - Re-exports `Finding`, `check`, `load_plugins`,
+    `audit_plugins`, `filter_active`, `run_plugin`,
+    `run_all_plugins`, `PLUGIN_GROUP`, `VALID_SEVERITIES`,
+    `cache_key`, `plugin_cache_key`, `CacheDB`.
+
+- **`tmaudit_example_plugin/`** (NEW sibling package):
+  - Three demo checks: `flag-todo-markers` (MEDIUM),
+    `flag-xxx-markers` (LOW), `flag-long-abstract`
+    (MEDIUM, configurable threshold).
+  - Install with `pip install -e ./tmaudit_example_plugin`.
+  - Source split: `tmaudit_example_plugin/__init__.py`
+    (package metadata) + `tmaudit_example_plugin/checks.py`
+    (the demo checks themselves).
+  - `pyproject.toml` declares the entry-points under
+    `[project.entry-points."tmaudit.plugins"]`.
+
+- **`tests/test_plugin_api.py`** (NEW, 31 tests) — covers
+  `Finding` semantics, `@check` validation, `filter_active`,
+  `run_plugin` stamping, `run_all_plugins` exception
+  safety, entry-points loader, malformed entry-point
+  recovery, and per-paper `c11_plugins_disabled`.
+
+- **`tests/test_example_plugin.py`** (NEW, 11 tests) —
+  end-to-end tests of the three demo checks after install,
+  including the `\bXXX\b` boundary check and the
+  `c11_long_abstract_threshold` config override.
+
+- **`_check_all_regressions.py`**:
+  - **`inject_bug13()`** (NEW): Bug 13 — plugin loader
+    raises on a malformed entry-point. Replaces the
+    `except Exception` block with bare `raise`. Regression
+    test
+    `tests/test_plugin_api.py::test_loader_skips_malformed_entry_point`
+    catches this.
+  - **`inject_bug14()`** (NEW): Bug 14 — per-paper
+    `c11_plugins_disabled` is ignored. Drops the
+    `filter_active(...)` step. Regression test
+    `tests/test_plugin_api.py::test_audit_plugins_respects_per_paper_disable`
+    catches this.
+
+- **`src/tmaudit/configs/paper_configs.py`**:
+  - Paper 5 `c2_section_pattern` was reverted to the
+    multi-branch form supporting both `Power analysis`
+    and `Statistical Protocol`; this is the upstream fix
+    for Bug 6 (related to v0.3.0 history).
+
+- **`engineering_notes_verify_template.md`**:
+  - **§14** (NEW, 14 sub-sections, 415 lines) documents the
+    plugin API design rationale: motivation, design
+    overview, protocol, pyproject schema, discovery,
+    lifecycle, CLI integration, per-paper override, cache
+    integration, test plan, limitations, roadmap to v1.0,
+    alternative designs, implementation milestones.
+
+- **Test count**: 176 → **218** (+42 tests).
+- **Meta-test**: 12/12 → **14/14** (Bug 13 + Bug 14).
+
 ## [0.3.0] — 2026-07-10 (in progress)
 
 **Theme**: Statistical-power audit (C8) + extended reproducibility
