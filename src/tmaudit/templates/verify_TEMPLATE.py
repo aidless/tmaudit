@@ -682,6 +682,7 @@ def _c7_is_engaged(sentence: str) -> bool:
 def check_c7_citation_context(
     tex: str,
     c7_max_ceremonial: int = 2,
+    c7_llm_budget: int = 0,
 ) -> list[tuple[str, str, int]]:
     """C7: detect ceremonial citations (cited but not engaged with).
 
@@ -691,6 +692,16 @@ def check_c7_citation_context(
     1-2 ceremonial cites are OK; only 3+ ceremonial cites
     produce a finding. Set c7_max_ceremonial=0 for strict mode
     (every ceremonial cite is flagged).
+
+    The optional `c7_llm_budget` parameter enables an LLM-based
+    second opinion for **borderline** ceremonial cites (citing
+    sentences that are 20-30 words long). When the LLM
+    says "engaged", the cite is demoted (removed from the
+    ceremonial set). When it says "ceremonial", the cite
+    is confirmed. The LLM fallback is opt-in: set
+    c7_llm_budget > 0 AND the TMAUDIT_LLM_ENDPOINT and
+    TMAUDIT_LLM_API_KEY env vars to enable. See
+    `src/tmaudit/llm_fallback.py` for details.
 
     Returns:
         0 or 1 finding of the form:
@@ -732,6 +743,47 @@ def check_c7_citation_context(
                 # Count unique keys, not occurrences.
                 if k not in ceremonial_keys:
                     ceremonial_keys[k] = ln
+
+    # 1b. (v0.2.0) Optional LLM-based second opinion for
+    # BORDERLINE ceremonial cites. A sentence is "borderline"
+    # if it's 20-30 words long and the heuristic marked it
+    # as ceremonial. For these cases, the heuristic is
+    # most likely to be wrong, so we ask an LLM for
+    # confirmation.
+    #
+    # The fallback is opt-in: it makes zero LLM calls unless
+    # the user has set TMAUDIT_LLM_* env vars and the driver
+    # has passed c7_llm_budget > 0.
+    if c7_llm_budget > 0:
+        try:
+            from .. import llm_fallback as _llm
+            fb = _llm.LLMFallback(budget=c7_llm_budget)
+            if fb.is_enabled():
+                # Collect borderline cites with their sentences.
+                # We need to re-extract the sentence for each
+                # ceremonial cite.
+                borderline_to_recheck: list[str] = []
+                for k, ln in ceremonial_keys.items():
+                    # Find a cite with this key (use first match)
+                    for m2 in re.finditer(
+                        r'\\cite[a-zA-Z]*\{[^}]*\b' + re.escape(k) + r'\b[^}]*\}',
+                        tex,
+                    ):
+                        sentence = _c7_extract_sentence(tex, m2.start())
+                        if _llm.is_borderline(sentence):
+                            borderline_to_recheck.append((k, sentence))
+                        break  # only first match per key
+                # Re-check each borderline cite
+                for k, sentence in borderline_to_recheck:
+                    try:
+                        result = fb.classify(sentence)
+                    except _llm.LLMBudgetExceeded:
+                        break  # out of budget
+                    if result is not None and result.engaged:
+                        # LLM says engaged: demote (remove from ceremonial).
+                        del ceremonial_keys[k]
+        except ImportError:
+            pass  # llm_fallback module not available
 
     # 2. Report per-ceremonial-cite findings, but only if count
     # exceeds the threshold. Up to `c7_max_ceremonial` ceremonial

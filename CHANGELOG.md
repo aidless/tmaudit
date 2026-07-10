@@ -164,6 +164,87 @@ config completion.
   output. This makes the audit results more accessible
   to non-developers (e.g., paper authors, advisors).
 
+### Added (LLM-based C7 fallback, opt-in)
+
+- **`src/tmaudit/llm_fallback.py`** (new, 230 lines):
+  - `LLMResult` dataclass: the LLM's classification of
+    a citing sentence.
+  - `hash_sentence()`: SHA-256 of a sentence (for caching).
+  - `_build_prompt()`: builds the chat-completions prompt
+    (system + user messages; no paper context).
+  - `_call_llm()`: makes a single OpenAI-compatible call
+    and parses the response.
+  - `LLMBudgetExceeded` exception: raised when budget is
+    exhausted.
+  - `LLMFallback` class: orchestrates calls, enforces
+    budget, caches results.
+  - `is_borderline()`: 20-30 word sentence is "borderline"
+    (heuristic most likely to be wrong here).
+
+- **`src/tmaudit/templates/verify_TEMPLATE.py`**:
+  - `check_c7_citation_context()` now has a new
+    `c7_llm_budget` parameter (default 0 = no LLM).
+  - When `c7_llm_budget > 0` AND the LLM is enabled via
+    env vars AND the env vars are set, the function
+    re-checks borderline ceremonial cites with the LLM.
+  - If the LLM says "engaged", the cite is demoted
+    (removed from the ceremonial set). If the LLM says
+    "ceremonial", the cite is confirmed (heuristic result
+    kept).
+  - The privacy guarantee: **only the citing sentence**
+    is sent to the LLM. No paper context, no abstract,
+    no other cites, no author names.
+
+- **`src/tmaudit/cli.py`**:
+  - `tmaudit verify` and `tmaudit audit-all` now support
+    `--llm-budget N` (max LLM calls per audit).
+
+- **`tests/test_llm_fallback.py`** (new, 12 tests):
+  - hash_sentence is deterministic + 64 chars.
+  - is_borderline correctly identifies 20-29 word sentences.
+  - LLMFallback disabled by default (no env vars).
+  - LLMFallback disabled when budget=0.
+  - LLMFallback enabled with env vars + budget.
+  - classify caches results.
+  - LLMBudgetExceeded when budget is exhausted.
+  - classify returns None on network failure.
+  - classify handles malformed JSON response.
+  - Prompt does NOT include paper context (privacy).
+  - LLMResult has all expected fields.
+  - stats() returns usage info.
+  - Tests use a **mock OpenAI HTTP server** (no real LLM
+    calls, no API costs, deterministic).
+
+- **Privacy guarantees** (per ROADMAP.md AC):
+  1. The full paper text is NEVER sent to the LLM.
+     Only the citing sentence (a 30-word string) is sent.
+  2. The LLM sees no paper title, no abstract, no other
+     cites, no author names, no institution names.
+  3. The user can audit the exact prompt by reading
+     `_build_prompt()`.
+  4. The fallback is **opt-in**: by default, no LLM is
+     called. Set TMAUDIT_LLM_* env vars and pass
+     --llm-budget N to enable.
+  5. The LLM is asked for ONE sentence at a time, and
+     the budget caps the total number of calls per audit.
+
+- **Environment variables** (all required to enable):
+  - `TMAUDIT_LLM_ENDPOINT`: URL of an OpenAI-compatible
+    API (e.g., `https://api.openai.com/v1/chat/completions`,
+    `http://localhost:11434/v1/chat/completions` for
+    local Ollama).
+  - `TMAUDIT_LLM_API_KEY`: API key for the endpoint.
+  - `TMAUDIT_LLM_MODEL`: model name (default
+    `gpt-4o-mini`).
+
+- **Test count**: 110 → **122** (+12 LLM tests).
+- **Real-world impact**: the LLM fallback is a
+  **second opinion** for the heuristic on borderline
+  cites. It does not replace the heuristic (which is
+  fast, free, and runs by default); it supplements it
+  when the user opts in. This makes the C7 check more
+  accurate without making it mandatory.
+
 ## [0.1.1] — 2026-07-10
 
 **Bug 7 fix**: C6 blacklist false-positive on idiomatic

@@ -268,6 +268,10 @@ def main(argv: list[str] | None = None) -> int:
         '--cache-info', action='store_true',
         help='show cache statistics after running',
     )
+    p_verify.add_argument(
+        '--llm-budget', type=int, default=0,
+        help='max number of LLM calls for C7 fallback (0 = no LLM)',
+    )
     p_verify.set_defaults(func=cmd_verify)
 
     p_compile = sub.add_parser(
@@ -295,6 +299,10 @@ def main(argv: list[str] | None = None) -> int:
     p_audit.add_argument(
         '--no-cache', action='store_true',
         help='bypass the cache (do not read or write audit results)',
+    )
+    p_audit.add_argument(
+        '--llm-budget', type=int, default=0,
+        help='max LLM calls per paper for C7 fallback (0 = no LLM)',
     )
     p_audit.set_defaults(func=cmd_audit_all)
 
