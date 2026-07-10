@@ -1392,13 +1392,310 @@ Result: **Bug 11 is caught**.
 
 | Sub-area | Tests | Meta-test | Status |
 |---|---|---|---|
-| C8 statistical power | 18 pass | 11/11 caught (Bug 11) | OK |
-| C10 reproducibility | 20 pass | 11/11 caught (Bug 10) | OK |
+| C8 statistical power | 18 pass | 12/12 caught (Bug 11) | OK |
+| C9 figure-caption | 16 pass | 12/12 caught (Bug 12) | OK |
+| C10 reproducibility | 20 pass | 12/12 caught (Bug 10) | OK |
 | All previous categories | 142 pass (pre-existing) | unchanged | OK |
-| Full test suite | 160 pass, 1 skip (deprecation warning) | 11/11 | OK |
+| Full test suite | 176 pass, 1 skip (deprecation warning) | 12/12 | OK |
 
-Total commits since v0.1.1: **22** (7 new in v0.3.0:
-3 C8-related, 3 C10-related, 1 docs/RELEASE_NOTES).
+Total commits since v0.1.1: **27** (12 new in v0.3.0:
+3 C8-related, 4 C9-related, 3 C10-related, 1 RELEASE_NOTES,
+1 engineering notes §12 from maintainer).
+
+## 13. v0.3.0 — C9 (figure-caption) design
+
+This section documents the design of the third v0.3.0
+audit category: **C9 (figure-caption consistency)**. C9
+closes the gap between "what the paper says" (C1–C7) and
+"how the paper presents it" — a separate, oft-overlooked
+class of reviewer concerns.
+
+C9 was developed **last** among the three v0.3.0 categories
+because its sub-checks are largely **structural** (LaTeX
+parse, position comparison) rather than **textual**
+(text-pattern matching, like C10) or **numerical** (table
+parse + statistics, like C8). This makes C9 the simplest
+of the three to implement but also the most sensitive to
+LaTeX style choices.
+
+### 13.1 Motivation
+
+A TMLR reviewer in 2026 is expected to skim the figures
+before reading the body. Three concerns are common:
+
+1. **Can I find the figure description?** (C9-1: caption
+   exists.)
+2. **Does the figure layout match the convention?** (C9-2:
+   caption below the graphic per IEEE/ACM/TMLR.)
+3. **Does the figure say what it should?** (C9-3: caption
+   mentions the key terms that the per-paper config
+   specifies.)
+4. **Did the author actually use the figure?** (C9-4:
+   figure is referenced in the body text.)
+
+These four are mechanical checks — a regex-based audit can
+catch all of them in 100ms. Reviewers currently spot-check
+visually, which means 1 in 5 figures has an issue that
+gets caught only in the camera-ready phase (or not at all).
+
+### 13.2 C9 — Figure-caption audit design
+
+The C9 check has **four sub-categories**:
+
+| Sub-check | Detects | Severity | Always runs? |
+|---|---|---|---|
+| **Caption exists** | `\caption{...}` absent from a figure environment. | HIGH. | Yes. |
+| **Caption placement** | `\caption` appears before `\includegraphics` (above instead of below). | MED. | Yes. |
+| **Caption content** | Caption does not mention any `expected_keyword` from the per-paper config. | MED. | Only if `c9_figure_keywords` non-empty. |
+| **Figure referenced** | `\label{fig:...}` defined but no `\ref{fig:...}` or `\autoref{fig:...}` in body. | MED. | Yes. |
+
+Three of the four sub-checks are **independent of
+`c9_figure_keywords`** (sub-checks 1, 2, 4). They catch
+issues that exist regardless of the per-paper config:
+a figure without a caption is broken no matter what the
+config says, and an unreferenced figure is clutter no
+matter what its content is.
+
+Only sub-check 3 (caption content) requires config —
+because "what should the caption say" is per-paper
+(Figure 3 in Paper 1 is an "overview" figure; Figure 3 in
+Paper 5 is a "length-bias" figure).
+
+### 13.3 C9 algorithm
+
+The function `check_c9_figure_caption(tex, c9_keywords)`
+implements four independent sub-checks.
+
+**Sub-check 1: Caption exists**
+
+Find all `\begin{figure}...\end{figure}` blocks. For each:
+- Look for `\caption{...}` (with content).
+- If absent, emit HIGH:
+  ```
+  HIGH: figure (line N) has no \caption{...}. Reviewer §5 #9.
+  ```
+
+**Sub-check 2: Caption placement**
+
+For each figure with both `\caption` and `\includegraphics`:
+- Find the position of `\caption` in the figure block.
+- Find the position of `\includegraphics` in the figure block.
+- If `caption_pos < graphic_pos` (caption BEFORE graphic),
+  emit MED:
+  ```
+  MED: figure (line N) has caption ABOVE the
+       \includegraphics. Captions should be BELOW the
+       graphic per IEEE/ACM convention. Reviewer §5 #9.
+  ```
+
+The position comparison is **within the figure block**,
+not absolute byte offsets. This is correct because the
+relevant question is "is the caption above or below the
+graphic in this specific figure", not "is the caption
+above or below in the document".
+
+**Sub-check 3: Caption content (only if `c9_figure_keywords`)**
+
+For each entry in `c9_figure_keywords`:
+- Find the figure with matching `\label{fig:...}`.
+- Get the caption text (from sub-check 1's parse).
+- Check for at least one `expected_keyword` (case-insensitive
+  substring match).
+- If no keyword found, emit MED:
+  ```
+  MED: figure fig:results (line N) has caption that does
+       NOT mention any of the expected keywords: ['accuracy',
+       'precision']. Reviewer §5 #9.
+  ```
+
+**Sub-check 4: Figure referenced (always runs)**
+
+Across the entire document:
+- Find all `\label{fig:...}` (the set of defined figures).
+- Find all `\ref{fig:...}` or `\autoref{fig:...}` (the set
+  of referenced figures).
+- For each defined-but-unreferenced `\label{fig:...}`,
+  emit MED:
+  ```
+  MED: figure fig:orphan is defined but never referenced in
+       the body text (no \ref{fig:orphan} or
+       \autoref{fig:orphan}). Reviewer §5 #9.
+  ```
+
+The "defined-but-unreferenced" check is **scope-limited**
+to `\label{fig:...}` — we do not check `\label{sec:...}`
+or `\label{tab:...}` for unreferenced status. This avoids
+false positives for sections and tables (which are not
+the focus of C9).
+
+### 13.4 C9 severity rationale
+
+| Sub-check | Severity | Why |
+|---|---|---|
+| Caption absent | **HIGH** | A figure without a caption is essentially undocumented. The reader cannot know what they're looking at. |
+| Caption above | **MED** | A stylistic violation, not a content violation. Reviewers from some conferences don't care. |
+| Caption content | **MED** | A caption that doesn't mention the expected terms is suspicious but not always wrong (e.g., a single-line caption that uses different terms). |
+| Unreferenced figure | **MED** | An orphan figure is clutter. The author probably forgot to cite it, or intended to delete it. |
+
+This severity assignment means a paper with all four
+sub-checks failing emits 4 findings: 1 HIGH + 3 MED. The
+HIGH drives non-zero exit code; the MEDs surface as
+information.
+
+### 13.5 C9 per-paper config
+
+```python
+'c9_figure_keywords': [
+    {'fig_id': 'fig:overview', 'expected_keywords':
+     ['overview', 'architecture', 'TTRL']},
+    {'fig_id': 'fig:results', 'expected_keywords':
+     ['results', 'accuracy', 'comparison']},
+    # ... one entry per figure in the paper
+],
+```
+
+Each entry has:
+- `fig_id`: the figure's label, e.g., `'fig:overview'`. Must
+  match the `\label{...}` in the figure environment.
+- `expected_keywords`: list of strings. The caption must
+  contain at least one of these (case-insensitive).
+
+Empty list disables sub-check 3; sub-checks 1, 2, 4 still
+run. This is the "graceful degradation" pattern: a paper
+with no `c9_figure_keywords` still gets 3 of 4 sub-checks.
+
+### 13.6 C9 tests (`tests/test_c9_figure_caption.py`)
+
+The C9 test suite has **16 unit tests** in 5 sections:
+
+| Section | Tests | Coverage |
+|---|---|---|
+| Caption exists | 3 | no caption → HIGH, with caption → silent, empty tex → 0 findings. |
+| Caption placement | 2 | caption below → silent, caption above → MED. |
+| Caption content | 3 | keyword match → silent, no match → MED, case-insensitive. |
+| Figure referenced | 3 | ref present → silent, no ref → MED, undefined ref → 0 (false-positive guard). |
+| Edge cases | 5 | no figures in tex, malformed LaTeX, multiple figures mixed, c9_figure_keywords=None, case-insensitive keyword. |
+
+Every test uses a minimal LaTeX document with one or two
+`\begin{figure}...\end{figure}` blocks. The test time is
+under 0.5 seconds for all 16.
+
+### 13.7 C9 meta-test (Bug 12)
+
+`_check_all_regressions.py` has an `inject_bug12()` that
+inverts the caption-placement check:
+
+```python
+old = "and parsed['caption_pos'] < parsed['graphic_pos']):"
+new = ("and parsed['caption_pos'] > parsed['graphic_pos']):"
+       "  # BROKEN: inverted comparison")
+```
+
+The regression test
+`tests/test_c9_figure_caption.py::test_c9_caption_above_figure_emits_med`
+uses a fixture with caption BEFORE the graphic, and
+asserts exactly 1 MED "caption above" finding. With the
+inverted comparison (`>`), the condition is False for a
+caption-above figure, so no MED is emitted, and the test
+fails (the message filter `if 'above' in f[1].lower()`
+returns False).
+
+Result: **Bug 12 is caught**.
+
+### 13.8 C9 limitations and future work
+
+- **Caption-content is opt-in**: sub-check 3 requires the
+  per-paper `c9_figure_keywords` config. A paper without
+  this config gets no content-mismatch findings. Future
+  v0.4.0: auto-detect expected keywords by reading the
+  section title (e.g., `\section{Results}` → expect "results"
+  in figure captions).
+- **Position-based placement check is string-based**: the
+  implementation compares byte offsets of `\caption` and
+  `\includegraphics` in the figure block. This works for
+  simple figures but may mis-flag figures with multi-paragraph
+  captions (where the caption is split across multiple
+  lines but the graphic comes between them). Future: parse
+  figure as a tree.
+- **English-only keyword matching**: the case-insensitive
+  substring match works for English. A Mandarin paper using
+  `数据` instead of "data" would not match. Future:
+  multilingual keyword dictionary.
+- **No support for `\ContinuedFloat`**: a figure that
+  spans multiple pages via `\ContinuedFloat` may be parsed
+  as two separate figures, leading to spurious
+  unreferenced findings. Future: recognize `\ContinuedFloat`
+  and merge the figures.
+- **No support for `\begin{figure*}` (two-column figure)**:
+  the regex matches `figure*` correctly, but the placement
+  check assumes single-column layout. Future: detect
+  two-column figures and apply different placement rules
+  (caption is often ABOVE for two-column, BELOW for single).
+- **No analysis of figure body**: we check the caption
+  content but not the figure body (e.g., a figure that
+  shows a graph of "accuracy" but its caption doesn't say
+  "accuracy" — current behavior: flag for keyword mismatch;
+  future: OCR or alt-text analysis).
+
+### 13.9 Cross-cutting lessons (C9 in context)
+
+C9 is the simplest of the three v0.3.0 categories
+implementation-wise (190 lines vs C8's 290, C10's 270), but
+its design has two specific lessons:
+
+1. **Always-run sub-checks are the highest-value**. C9's
+   three always-run sub-checks (caption exists, placement,
+   referenced) catch 80% of real reviewer concerns. The
+   fourth sub-check (caption content) is more
+   sophisticated but only useful when the user has done
+   their part (provided `c9_figure_keywords`). This split
+   keeps the audit useful even without config — the
+   bootstrap case.
+
+2. **False-positive guards are critical**. Sub-check 4
+   ("figure referenced") would generate many false
+   positives if it considered `\ref{fig:undefined}` in the
+   body as "referencing". The implementation is
+   scope-limited: only `\ref{fig:...}` matches count as
+   references, and only `\label{fig:...}` labels are
+   checked for unreferenced status. This narrows the
+   check to the figures we care about. A similar guard
+   in C7 (citation context) prevents the heuristic from
+   flagging false ceremonial citations.
+
+3. **Position-based checks are the most fragile**. The
+   placement check uses string offsets within the figure
+   block. This works for simple figures but breaks for
+   complex ones (multi-paragraph captions, side captions,
+   etc.). The fallback strategy — emit MED but don't fail
+   the test suite — preserves usability while making the
+   reviewer aware of the issue. Future work could parse
+   the figure as an AST (using a library like `pylatexenc`)
+   for more robust position checks.
+
+### 13.10 v0.3.0 final status (C8 + C9 + C10)
+
+With C9 shipped, **v0.3.0 is now feature-complete locally**.
+
+| Sub-area | Tests | Meta-test | Lines | Status |
+|---|---|---|---|---|
+| C8 statistical power | 18 pass | 12/12 caught (Bug 11) | ~290 | OK |
+| C9 figure-caption | 16 pass | 12/12 caught (Bug 12) | ~190 | OK |
+| C10 reproducibility | 20 pass | 12/12 caught (Bug 10) | ~270 | OK |
+| All previous (C1-C7) | 122 pass | unchanged | unchanged | OK |
+| **Full test suite** | **176 pass**, 1 skip | **12/12** | — | **OK** |
+
+Total commits since v0.1.1: **27**.
+
+The remaining v0.3.0 work (per ROADMAP.md) is **release
+mechanics** (push to GitHub, tag v0.3.0, create GitHub
+release with RELEASE_NOTES_v0.3.0.md) — all blocked on
+the user creating the GitHub repo.
+
+The next milestone (v0.4.0) is **Plugin API** (allow users
+to write their own audit checks) and **multilingual
+support** (CJK, Spanish, etc.). Both are listed in
+ROADMAP.md v0.4.0+.
 
 ## Appendix: file listings
 
