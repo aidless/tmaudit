@@ -91,7 +91,7 @@ def test_c7_engaged_cite_with_extend_verb_no_finding():
 
 
 # =====================================================================
-# Test 2: ceremonial cite (basic) -> 1 finding
+# Test 2: ceremonial cite (basic) -> 1 finding (with threshold=0)
 # =====================================================================
 def test_c7_ceremonial_cite_basic_finding():
     """A cite in a short sentence with no engaged signal is ceremonial.
@@ -99,13 +99,17 @@ def test_c7_ceremonial_cite_basic_finding():
     Example:
         Recent work has studied this problem \cite{smith2020}.
 
-    This is the canonical ceremonial pattern: 'X studied this.'
-    No engage verb, no comparison, short sentence.
+    With c7_max_ceremonial=0, even 1 ceremonial cite is flagged
+    (useful for strict mode or for users who want to fix every
+    ceremonial cite). The default threshold is 2, so under the
+    default 1 ceremonial cite is OK (see test_c7_default_threshold).
     """
     tex = "Recent work has studied this problem \\cite{smith2020}.\n"
-    findings = verify_TEMPLATE.check_c7_citation_context(tex)
+    findings = verify_TEMPLATE.check_c7_citation_context(
+        tex, c7_max_ceremonial=0
+    )
     assert len(findings) == 1, (
-        f"Expected 1 finding for ceremonial cite, got: {findings}"
+        f"Expected 1 finding for ceremonial cite (threshold=0), got: {findings}"
     )
     assert findings[0][0] == 'C7'
     assert 'smith2020' in findings[0][1], (
@@ -170,16 +174,20 @@ def test_c7_cite_with_long_sentence_no_verb_engaged():
 
 
 # =====================================================================
-# Test 5: cite with short sentence (no signal) -> 1 finding
+# Test 5: cite with short sentence (no signal) -> 1 finding (threshold=0)
 # =====================================================================
 def test_c7_cite_with_short_sentence_no_signal_ceremonial():
     """A cite in a short sentence with no engaged signal is ceremonial.
 
     Example:
         Prior work \cite{smith2020} exists.
+
+    With c7_max_ceremonial=0, even 1 ceremonial cite is flagged.
     """
     tex = "Prior work \\cite{smith2020} exists.\n"
-    findings = verify_TEMPLATE.check_c7_citation_context(tex)
+    findings = verify_TEMPLATE.check_c7_citation_context(
+        tex, c7_max_ceremonial=0
+    )
     assert len(findings) == 1
     assert findings[0][0] == 'C7'
 

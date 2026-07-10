@@ -10,7 +10,7 @@ This is the GENERIC TEMPLATE. To use:
 Or, run `python gen_verify_scripts.py --paper N` from
 F:/Research/TEMPLATE/ to fork this template automatically.
 
-The six categories of checks are:
+The seven categories of checks are:
 
   C1  Abstract symbol definitions
       - For each entry in CHECKS_CONFIG['c1_symbols'], verify that the
@@ -38,6 +38,15 @@ The six categories of checks are:
   C6  Blacklisted vocabulary (generic)
       - Every word in CHECKS_CONFIG['c6_blacklist'] is flagged for
         replacement.
+  C7  Citation context (ceremonial vs engaged) (generic, v0.1.2)
+      - For each \\cite{...} in main.tex, classify the citing
+        sentence as "engaged" or "ceremonial". A ceremonial
+        citation has no engage verb (show, demonstrate, extend,
+        build on, ...), no comparison word (however, while, ...),
+        and the citing sentence is < 30 words. The check is
+        lenient by default: up to c7_max_ceremonial (default 2)
+        ceremonial cites are silent; (N+1)+ are reported as
+        MED severity.
 
 Exit codes:
     0 = no HIGH-severity findings
@@ -148,6 +157,14 @@ CHECKS_CONFIG: dict = {
     'c5_d_type': "Cohen's d",
 
     'c6_blacklist': ['paradigm', 'yield', 'reveal'],
+
+    # C7 (citation context): maximum number of ceremonial
+    # citations allowed before C7 is reported as MED severity.
+    # A ceremonial citation is one whose citing sentence does
+    # not engage with the cited work (no engage verb, no
+    # comparison word, no elaboration >= 30 words). Per-paper
+    # threshold; the default 2 is lenient.
+    'c7_max_ceremonial': 2,
 }
 # ============================================================================
 
@@ -167,6 +184,7 @@ SEVERITY = {
     'C4': 'MEDIUM',
     'C5': 'MEDIUM',
     'C6': 'LOW',
+    'C7': 'MEDIUM',
 }
 
 
@@ -530,6 +548,220 @@ def check_c6_blacklist(tex: str) -> list[tuple[str, str, int]]:
 
 
 # ---------------------------------------------------------------------------
+# C7: Citation context (ceremonial vs engaged)
+# ---------------------------------------------------------------------------
+#
+# A citation is "ceremonial" if it appears in the text but the
+# citing sentence does not actually engage with the cited work.
+# Reviewers notice this and dock the paper for it. The check
+# detects citations whose citing sentence has no engagement
+# signal (no engage verb, no comparison word, short sentence).
+#
+# Engagement signals (a sentence is "engaged" if ANY of these hold):
+#   1. contains an engage verb (show, demonstrate, extend, ...)
+#   2. contains a comparison word (however, in contrast, while, ...)
+#   3. is 30+ words long (elaboration = engagement by length)
+#
+# Per-paper threshold (c7_max_ceremonial, default 2):
+#   0 = strict (every ceremonial cite flagged)
+#   1 = one ceremonial OK, two+ flagged
+#   2 = up to two ceremonial OK, three+ flagged
+#
+# Severity: MEDIUM (stylistic, not correctness).
+# ---------------------------------------------------------------------------
+
+# Engagement signals (lowercase, matched as substrings).
+_C7_ENGAGE_VERBS = (
+    'show', 'shows', 'showed', 'demonstrate', 'demonstrates',
+    'demonstrated', 'extend', 'extends', 'extended',
+    'build on', 'builds on', 'built on', 'follow', 'follows',
+    'followed', 'use', 'uses', 'used', 'apply', 'applies',
+    'applied', 'compare', 'compares', 'compared',
+    'improve', 'improves', 'improved', 'outperform',
+    'outperforms', 'outperformed', 'validate', 'validates',
+    'validated', 'verify', 'verifies', 'verified',
+    'propose', 'proposes', 'proposed', 'argue', 'argues',
+    'argued', 'claim', 'claims', 'claimed',
+    'find', 'finds', 'found', 'observe', 'observes', 'observed',
+    'measure', 'measures', 'measured', 'report', 'reports',
+    'reported', 'confirm', 'confirms', 'confirmed',
+    'exploit', 'exploits', 'exploited',
+    'leverage', 'leverages', 'leveraged',
+    'utilize', 'utilizes', 'utilized',
+    'adopt', 'adopts', 'adopted',
+    'generalize', 'generalizes', 'generalized',
+    'specialize', 'specializes', 'specialized',
+    'reduce', 'reduces', 'reduced',
+    'combine', 'combines', 'combined',
+    'investigate', 'investigates', 'investigated',
+    'analyze', 'analyzes', 'analyzed', 'analysis',
+    'examine', 'examines', 'examined',
+    'introduce', 'introduces', 'introduced',
+    'present', 'presents', 'presented',
+    'derive', 'derives', 'derived',
+    'compute', 'computes', 'computed',
+)
+
+_C7_COMPARISON_WORDS = (
+    'however', 'in contrast', 'unlike', 'while',
+    'although', 'whereas', 'but ', 'conversely',
+    'on the other hand', 'nevertheless', 'nonetheless',
+)
+
+_C7_MIN_CITED_SENTENCE_WORDS = 30
+
+
+def _c7_extract_sentence(tex: str, pos: int) -> str:
+    r"""Extract the sentence containing position ``pos`` in ``tex``.
+
+    A "sentence" is the text between the nearest sentence-end
+    punctuation (`. `, `! `, `? `, `.\n`, `!\\n`, `?\\n`) before
+    pos and the nearest one after pos. Periods that are part of
+    common abbreviations (e.g., "et al.", "e.g.", "i.e.") are
+    NOT treated as sentence boundaries.
+
+    To handle the common LaTeX pattern where the cite is at the
+    END of a sentence (after the engagement verb), the function
+    returns up to TWO sentences: the current sentence plus the
+    previous one. This way, a sentence like
+
+        We extend Smith et al. \cite{smith2020} by ...
+
+    is correctly identified as engaged (because "extend" is in
+    the previous sentence).
+    """
+    sentence_end_re = re.compile(r'[.!?](?:\s|\n)')
+
+    # Find all sentence-end positions.
+    ends = [m.end() for m in sentence_end_re.finditer(tex)]
+
+    # The end of the current sentence is the smallest end > pos.
+    end_idx = None
+    for i, e in enumerate(ends):
+        if e > pos:
+            end_idx = i
+            break
+    if end_idx is None:
+        end = len(tex)
+    else:
+        end = ends[end_idx]
+
+    # The start of the current sentence is the largest end <= pos.
+    # If end_idx is 0, the start is 0. Otherwise it's ends[end_idx - 1].
+    if end_idx is None or end_idx == 0:
+        start = 0
+        # No previous sentence.
+        return tex[start:end]
+
+    # Otherwise, start at the previous sentence boundary.
+    start = ends[end_idx - 1]
+
+    return tex[start:end]
+
+
+def _c7_is_engaged(sentence: str) -> bool:
+    """True if ``sentence`` engages with the cited work.
+
+    Engagement is any of:
+      1. an engage verb (substring match, case-insensitive)
+      2. a comparison word (substring match, case-insensitive)
+      3. sentence is 30+ words long (elaboration heuristic)
+    """
+    s = sentence.lower()
+    for verb in _C7_ENGAGE_VERBS:
+        if verb in s:
+            return True
+    for comp in _C7_COMPARISON_WORDS:
+        if comp in s:
+            return True
+    if len(s.split()) >= _C7_MIN_CITED_SENTENCE_WORDS:
+        return True
+    return False
+
+
+def check_c7_citation_context(
+    tex: str,
+    c7_max_ceremonial: int = 2,
+) -> list[tuple[str, str, int]]:
+    """C7: detect ceremonial citations (cited but not engaged with).
+
+    A citation is "ceremonial" if the citing sentence does not
+    engage with the cited work (no engage verb, no comparison
+    word, short sentence). The check is **lenient** by default:
+    1-2 ceremonial cites are OK; only 3+ ceremonial cites
+    produce a finding. Set c7_max_ceremonial=0 for strict mode
+    (every ceremonial cite is flagged).
+
+    Returns:
+        0 or 1 finding of the form:
+            ('C7', 'MED: <N> ceremonial citation(s) ...', first_line)
+        The finding message includes the threshold, the count of
+        ceremonial cites, and the first 5 keys (sorted).
+
+    Acceptance criteria:
+      - Per-cite classification (engaged vs ceremonial) is
+        correct (see tests/test_c7_citation_context.py).
+      - Per-paper threshold (c7_max_ceremonial) is respected.
+      - All cite variants (\\cite, \\citep, \\citet) are detected.
+      - Multi-key cites (\\cite{a,b,c}) are counted per key.
+      - Unique keys are counted, not occurrences.
+    """
+    findings: list[tuple[str, str, int]] = []
+
+    # The threshold is taken from the function argument (caller
+    # decides). The per-paper CHECKS_CONFIG['c7_max_ceremonial'] is
+    # NOT used here because it would override the function arg,
+    # which the unit tests rely on. The driver (main) is
+    # responsible for reading CHECKS_CONFIG and passing it as the
+    # function arg.
+
+    # 1. Find all \cite{...} matches and classify each citing sentence.
+    ceremonial_keys: dict[str, int] = {}  # key -> first line
+    all_cited_keys: set[str] = set()
+
+    for m in re.finditer(r'\\cite[a-zA-Z]*\{([^}]+)\}', tex):
+        for k in m.group(1).split(','):
+            k = k.strip()
+            if not k or any(c in k for c in '$&'):
+                continue
+            all_cited_keys.add(k)
+            # Extract the citing sentence.
+            sentence = _c7_extract_sentence(tex, m.start())
+            if not _c7_is_engaged(sentence):
+                ln = line_of(tex, m.start())
+                # Count unique keys, not occurrences.
+                if k not in ceremonial_keys:
+                    ceremonial_keys[k] = ln
+
+    # 2. Report per-ceremonial-cite findings, but only if count
+    # exceeds the threshold. Up to `c7_max_ceremonial` ceremonial
+    # cites are silently OK (default 2); (N+1)+ ceremonial cites
+    # each get a per-cite finding.
+    n_ceremonial = len(ceremonial_keys)
+    if n_ceremonial > c7_max_ceremonial:
+        # Per-cite findings (sorted by line, then key for stability).
+        sorted_keys = sorted(
+            ceremonial_keys.items(), key=lambda kv: (kv[1], kv[0])
+        )
+        # Only report the (N+1)+ ceremonial cites that exceed
+        # the threshold. The first N are silent.
+        excess = sorted_keys[c7_max_ceremonial:]
+        for k, ln in excess:
+            findings.append((
+                'C7',
+                f'MED: citation {k!r} at line {ln} is ceremonial '
+                f'(citing sentence does not engage with the cited '
+                f'work: no engage verb, no comparison, no '
+                f'elaboration >= {_C7_MIN_CITED_SENTENCE_WORDS} '
+                f'words). {n_ceremonial} ceremonial cite(s) total '
+                f'(threshold: {c7_max_ceremonial}). Reviewer §5 #6.',
+                ln,
+            ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
 
@@ -548,6 +780,9 @@ def main() -> int:
     all_findings += check_c4_citation_hygiene(tex, bib)
     all_findings += check_c5_sample_size_and_test(tex)
     all_findings += check_c6_blacklist(tex)
+    # C7: read the per-paper threshold from CHECKS_CONFIG.
+    c7_threshold = int(CHECKS_CONFIG.get('c7_max_ceremonial', 2))
+    all_findings += check_c7_citation_context(tex, c7_max_ceremonial=c7_threshold)
 
     summary = {k: 0 for k in SEVERITY}
     for cat, _, _ in all_findings:
@@ -562,7 +797,7 @@ def main() -> int:
     print(f'Refs:   {bib_key_count} entries in refs.bib')
     print()
     print('Findings by category:')
-    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6'):
+    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'):
         sev = SEVERITY[cat]
         n = summary[cat]
         marker = '[OK]' if n == 0 else f'[{sev}]'
