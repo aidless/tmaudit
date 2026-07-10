@@ -334,7 +334,8 @@ PAPER_CONFIGS: dict[int, dict] = {
             'authority-bias': 3,
         },
         'c2_section_pattern': (
-            r'\\section\*?\{[^}]*Power analysis[^}]*\}'
+            r'\\section\*?\{[^}]*Power analysis[^}]*\}|'
+            r'\\subsection\*?\{[^}]*Statistical Protocol[^}]*\}'
         ),
         'c2_abstract_k_allowed': [9],
         'c3_concept': 'crossover',

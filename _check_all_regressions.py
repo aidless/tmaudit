@@ -335,11 +335,11 @@ def inject_bug6() -> None:
     """
     with _patched(PAPER_CONFIGS):
         original = PAPER_CONFIGS.read_text(encoding='utf-8')
-        # The Paper 5 c2_section_pattern is a multi-line string. We
-        # remove the "Statistical Protocol" branch by replacing the
-        # whole pattern with a narrower one.
+        # The Paper 5 c2_section_pattern is a multi-line string
+        # with an alternation branch for "Statistical Protocol".
+        # We remove that branch, leaving only the "Power analysis"
+        # branch (which does NOT match Paper 5's section).
         old_pat = (
-            "        # Paper 5's section is named \"Statistical Protocol\", not \"Power analysis\".\n"
             "        'c2_section_pattern': (\n"
             "            r'\\\\section\\*?\\{[^}]*Power analysis[^}]*\\}|'\n"
             "            r'\\\\subsection\\*?\\{[^}]*Statistical Protocol[^}]*\\}'\n"
