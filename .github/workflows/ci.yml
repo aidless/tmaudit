@@ -84,9 +84,9 @@ jobs:
           python -m pip install -e .
           python -m pip install pytest
 
-      - name: Run meta-test (8-bug regression-injection)
+      - name: Run meta-test (9-bug regression-injection)
         # Runs _check_all_regressions.py, which:
-        #   1. For each of 8 historical bugs (Bug 1..Bug 8), injects
+        #   1. For each of 9 historical bugs (Bug 1..Bug 9), injects
         #      a small change into the source code that re-introduces
         #      the bug.
         #   2. Runs the targeted regression test and asserts the test
@@ -94,7 +94,7 @@ jobs:
         #   3. Restores the source (via 'git checkout HEAD') and
         #      re-runs the test, asserting it PASSES.
         #
-        # Exit code 0 iff all 8 bugs are correctly caught.
+        # Exit code 0 iff all 9 bugs are correctly caught.
         # Exit code 1 if any bug is NOT caught (a serious problem
         # because the regression test would silently miss the bug
         # in production).
