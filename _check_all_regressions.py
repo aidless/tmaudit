@@ -1,8 +1,9 @@
-"""_check_all_regressions.py — verify that the 11 bug-specific
+"""_check_all_regressions.py — verify that the 12 bug-specific
 regression tests in tests/test_forge.py, tests/test_c6_threshold.py,
 tests/test_c7_citation_context.py, tests/test_cache.py,
 tests/test_c10_reproducibility.py, tests/test_c8_statistical_power.py,
-and related test files actually catch a re-introduction of each bug.
+tests/test_c9_figure_caption.py, and related test files
+actually catch a re-introduction of each bug.
 
 For each bug, this script:
   1. Backs up the relevant source file (forge.py,
@@ -16,7 +17,7 @@ For each bug, this script:
   6. Re-runs the test and asserts it PASSES.
 
 Exit code:
-  0 if all 11 bugs are correctly caught and restored.
+  0 if all 12 bugs are correctly caught and restored.
   1 if any bug is NOT caught (i.e. the regression test would
     silently miss the bug — a serious problem).
 

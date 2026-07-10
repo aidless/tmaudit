@@ -333,10 +333,8 @@ PAPER_CONFIGS: dict[int, dict] = {
             'cross-model': 6,
             'authority-bias': 3,
         },
-        # Paper 5's section is named "Statistical Protocol", not "Power analysis".
         'c2_section_pattern': (
-            r'\\section\*?\{[^}]*Power analysis[^}]*\}|'
-            r'\\subsection\*?\{[^}]*Statistical Protocol[^}]*\}'
+            r'\\section\*?\{[^}]*Power analysis[^}]*\}'
         ),
         'c2_abstract_k_allowed': [9],
         'c3_concept': 'crossover',
