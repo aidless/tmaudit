@@ -1,8 +1,8 @@
-"""_check_all_regressions.py — verify that the 10 bug-specific
+"""_check_all_regressions.py — verify that the 11 bug-specific
 regression tests in tests/test_forge.py, tests/test_c6_threshold.py,
 tests/test_c7_citation_context.py, tests/test_cache.py,
-tests/test_c10_reproducibility.py, and related test files
-actually catch a re-introduction of each bug.
+tests/test_c10_reproducibility.py, tests/test_c8_statistical_power.py,
+and related test files actually catch a re-introduction of each bug.
 
 For each bug, this script:
   1. Backs up the relevant source file (forge.py,
@@ -16,7 +16,7 @@ For each bug, this script:
   6. Re-runs the test and asserts it PASSES.
 
 Exit code:
-  0 if all 10 bugs are correctly caught and restored.
+  0 if all 11 bugs are correctly caught and restored.
   1 if any bug is NOT caught (i.e. the regression test would
     silently miss the bug — a serious problem).
 
@@ -505,6 +505,38 @@ def inject_bug10() -> None:
         )
 
 
+def inject_bug11() -> None:
+    """Bug 11: C8 inverted d-mismatch threshold. The
+    implementation has `_C8_D_MISMATCH_THRESHOLD = 0.10`,
+    meaning a HIGH finding is emitted when |d_actual - d_claimed|
+    > 0.10. If we change this to 0.10 < threshold (e.g.,
+    change `> 0.10` to `< 0.10` in the comparison), the bug
+    flips: a d-mismatch is now reported when |diff| is
+    SMALL, not LARGE. For the test fixture, d_claimed=0.5 and
+    d_actual=0.5, so the test expects 0 HIGH findings. With
+    the bug (`< 0.10`), the test would emit a HIGH finding
+    for a non-existent mismatch, and the test would fail.
+
+    The anchor is the line `if d_diff > _C8_D_MISMATCH_THRESHOLD:`
+    in check_c8_statistical_power. The injection changes
+    `>` to `<`.
+    """
+    with _patched(VERIFY_TPL):
+        original = VERIFY_TPL.read_text(encoding='utf-8')
+        old = 'if d_diff > _C8_D_MISMATCH_THRESHOLD:'
+        new = 'if d_diff < _C8_D_MISMATCH_THRESHOLD:  # BROKEN: inverted comparison'
+        if old not in original:
+            raise RuntimeError(f'bug-11 anchor not found: {old!r}')
+        VERIFY_TPL.write_text(
+            original.replace(old, new, 1),
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '11',
+            'tests/test_c8_statistical_power.py::test_c8_effect_numbers_match_no_finding',
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-bug test runner
 # ---------------------------------------------------------------------------
@@ -544,6 +576,7 @@ def main() -> int:
         ('8', inject_bug8),
         ('9', inject_bug9),
         ('10', inject_bug10),
+        ('11', inject_bug11),
     ]
 
     for bug_id, inject_fn in cases:
