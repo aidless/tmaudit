@@ -102,6 +102,14 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c8_claimed_effects': [
             {'name': 'TTRL_vs_SFT', 'd': 0.50, 'n1': 200, 'n2': 200, 'alpha': 0.05},
         ],
+        # C9: Paper 1 has 3 figures (overview, results,
+        # analysis). Each caption should mention the expected
+        # keywords.
+        'c9_figure_keywords': [
+            {'fig_id': 'fig:overview', 'expected_keywords': ['overview', 'architecture', 'TTRL']},
+            {'fig_id': 'fig:results', 'expected_keywords': ['results', 'accuracy', 'comparison']},
+            {'fig_id': 'fig:analysis', 'expected_keywords': ['analysis', 'ablation']},
+        ],
         # C10: Paper 1 has 1 SOTA claim (TTRL) and 1 standard
         # benchmark claim (TQA). Both are verifiable in
         # principle.
@@ -160,6 +168,9 @@ PAPER_CONFIGS: dict[int, dict] = {
         # C8: Paper 2 is theoretical (impossibility result).
         # No statistical tests, so no C8 effects to verify.
         'c8_claimed_effects': [],
+        # C9: Paper 2 is theoretical; no figures with
+        # keywords to verify.
+        'c9_figure_keywords': [],
         # C10: Paper 2 makes a general "impossibility result"
         # claim, not a benchmark SOTA claim. No C10 consistency
         # checks to run.
@@ -220,6 +231,11 @@ PAPER_CONFIGS: dict[int, dict] = {
         # C8: Paper 3 is theoretical (Theorem 2 about
         # coupling-noise decomposition). No C8 effects to verify.
         'c8_claimed_effects': [],
+        # C9: Paper 3 has 1-2 figures (theorem illustration,
+        # decomposition diagram).
+        'c9_figure_keywords': [
+            {'fig_id': 'fig:decomposition', 'expected_keywords': ['decomposition', 'theorem']},
+        ],
         # C10: Paper 3 is theoretical (Theorem 2 about
         # coupling-noise decomposition). No benchmark claims.
         'c10_reproducibility_claims': [],
@@ -276,6 +292,11 @@ PAPER_CONFIGS: dict[int, dict] = {
         # n=100, claimed d=0.4).
         'c8_claimed_effects': [
             {'name': 'S_N_empirical', 'd': 0.40, 'n1': 100, 'n2': 100, 'alpha': 0.05},
+        ],
+        # C9: Paper 4 has 2 figures (S_N distribution, N effect).
+        'c9_figure_keywords': [
+            {'fig_id': 'fig:S_N_distribution', 'expected_keywords': ['S_N', 'distribution', 'sensitivity']},
+            {'fig_id': 'fig:N_effect', 'expected_keywords': ['N', 'effect', 'replication']},
         ],
         # C10: Paper 4 has 1 SOTA claim (S_N on the empirical
         # benchmark).
@@ -337,6 +358,14 @@ PAPER_CONFIGS: dict[int, dict] = {
             {'name': 'dose_response', 'd': 0.50, 'n1': 50, 'n2': 50, 'alpha': 0.05},
             {'name': 'cross_model', 'd': 0.40, 'n1': 30, 'n2': 30, 'alpha': 0.05},
             {'name': 'authority_bias', 'd': 0.60, 'n1': 20, 'n2': 20, 'alpha': 0.05},
+        ],
+        # C9: Paper 5 has 4 figures (architecture, results,
+        # length-bias, authority-bias).
+        'c9_figure_keywords': [
+            {'fig_id': 'fig:memorycontagion_arch', 'expected_keywords': ['memorycontagion', 'architecture', 'spread']},
+            {'fig_id': 'fig:length_bias_results', 'expected_keywords': ['length', 'bias', 'results']},
+            {'fig_id': 'fig:authority_bias_results', 'expected_keywords': ['authority', 'bias', 'attribution']},
+            {'fig_id': 'fig:cross_model_comparison', 'expected_keywords': ['cross-model', 'comparison', 'GPT-4']},
         ],
         # C10: Paper 5 makes a "best in class" claim on the
         # length-bias benchmark. The dataset is real (paper
@@ -440,6 +469,21 @@ def _format_c8_claimed_effects(effects: list) -> str:
     return '\n'.join(lines)
 
 
+def _format_c9_figure_keywords(figures: list) -> str:
+    """Format the c9_figure_keywords list as Python source."""
+    if not figures:
+        return '    [],'
+    lines = ['    [']
+    for i, fig in enumerate(figures):
+        sep = ',' if i < len(figures) - 1 else ','
+        lines.append('        {')
+        for k, v in fig.items():
+            lines.append(f"            {k!r}: {v!r},")
+        lines.append(f'        }}{sep}')
+    lines.append('    ],')
+    return '\n'.join(lines)
+
+
 def substitute_verify(template: str, cfg: dict) -> str:
     """Substitute ROOT and CHECKS_CONFIG in the verify template."""
     out = template
@@ -478,6 +522,12 @@ def substitute_verify(template: str, cfg: dict) -> str:
     # to verify. If empty/None, C8 is a no-op.
     parts.append("    'c8_claimed_effects':")
     parts.append(_format_c8_claimed_effects(cfg.get('c8_claimed_effects', [])))
+    parts.append('')
+    # C9 (added in v0.3.0): per-paper list of figure
+    # expected keywords. If empty/None, sub-checks 1, 2, 4
+    # still run; sub-check 3 (content) is skipped.
+    parts.append("    'c9_figure_keywords':")
+    parts.append(_format_c9_figure_keywords(cfg.get('c9_figure_keywords', [])))
     parts.append('')
     # C10 (added in v0.3.0): per-paper list of reproducibility
     # claims. If empty/None, only the availability + metadata

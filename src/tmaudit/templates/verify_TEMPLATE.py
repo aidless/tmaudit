@@ -188,6 +188,9 @@ SEVERITY = {
     # C8 is variable: HIGH for d-mismatch, MED for power
     # issues. We default to MEDIUM.
     'C8': 'MEDIUM',
+    # C9 is variable: HIGH for missing caption, MED for
+    # placement/content/referenced. We default to MEDIUM.
+    'C9': 'MEDIUM',
     # C10 is variable: HIGH for missing availability, MED for
     # consistency / future-tense, LOW for missing metadata.
     # We default to LOW since most C10 findings are LOW; the
@@ -1437,6 +1440,197 @@ def check_c8_statistical_power(
 
 
 # ---------------------------------------------------------------------------
+# C9: Figure-Caption Consistency (added in v0.3.0)
+# ---------------------------------------------------------------------------
+#
+# A paper's figures are judged on 4 sub-categories:
+#   1. Caption exists: each figure should have a \caption{...}.
+#   2. Caption placement: the caption should be BELOW the
+#      \includegraphics (per IEEE/ACM/TMLR convention).
+#   3. Caption content: the caption should mention at least
+#      one expected_keyword (per the c9_figure_keywords config).
+#   4. Figure referenced: each figure with a \label{fig:...}
+#      should be referenced in the body via \ref or \autoref.
+#
+# Severity:
+#   HIGH: missing caption.
+#   MED:  wrong placement, content mismatch, unreferenced.
+#
+# The check is opt-in via the per-paper c9_figure_keywords
+# config. Sub-checks 1, 2, 4 are independent of the config
+# (they don't need the keywords); sub-check 3 is skipped
+# when c9_figure_keywords is None or empty.
+# ---------------------------------------------------------------------------
+
+# Regex patterns for figure environments.
+_C9_FIGURE_RE = re.compile(
+    r'\\begin\{figure\*?\}.*?\\end\{figure\*?\}',
+    re.DOTALL,
+)
+# Pattern for \caption{...}. Captures the position and the content.
+_C9_CAPTION_RE = re.compile(
+    r'\\caption\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}',
+    re.DOTALL,
+)
+# Pattern for \includegraphics (or other graphic body).
+# The optional `[key=value]` option block (e.g. `[width=0.9\textwidth]`)
+# may appear between the command name and the `{filename}`.
+_C9_GRAPHIC_RE = re.compile(
+    r'\\(?:includegraphics|includegraphixt\*?|includegraphics\*?)'
+    r'(?:\[[^\]]*\])?\s*\{|'
+    r'\\begin\{tikzpicture\}',
+)
+# Pattern for \label{fig:...}.
+_C9_LABEL_RE = re.compile(
+    r'\\label\{(fig:[^}]+)\}',
+)
+# Pattern for \ref{fig:...} or \autoref{fig:...}.
+_C9_REF_RE = re.compile(
+    r'\\(?:ref|autoref|cref|Cref)\{((?:fig:)?[^}]+)\}',
+)
+
+
+def _c9_parse_figure_block(figure_text: str) -> dict:
+    """Parse a single figure environment.
+
+    Returns a dict with optional fields:
+      - 'has_caption': bool (whether \caption{...} exists)
+      - 'caption_text': str (the text inside \caption{...})
+      - 'caption_pos': int (position of \caption in figure_text)
+      - 'graphic_pos': int (position of \includegraphics or tikzpicture)
+      - 'label': str (the fig:... label, if any)
+    """
+    result = {
+        'has_caption': False,
+        'caption_text': '',
+        'caption_pos': -1,
+        'graphic_pos': -1,
+        'label': '',
+    }
+    # Find caption
+    cap_match = _C9_CAPTION_RE.search(figure_text)
+    if cap_match:
+        result['has_caption'] = True
+        result['caption_text'] = cap_match.group(1)
+        result['caption_pos'] = cap_match.start()
+    # Find graphic
+    graph_match = _C9_GRAPHIC_RE.search(figure_text)
+    if graph_match:
+        result['graphic_pos'] = graph_match.start()
+    # Find label
+    label_match = _C9_LABEL_RE.search(figure_text)
+    if label_match:
+        result['label'] = label_match.group(1)
+    return result
+
+
+def check_c9_figure_caption(
+    tex: str,
+    c9_figure_keywords: list = None,
+) -> list[tuple[str, str, int]]:
+    """C9: detect figure-caption issues.
+
+    Sub-check 1: Caption exists (HIGH if missing)
+    Sub-check 2: Caption placement (MED if above graphic)
+    Sub-check 3: Caption content (MED if no expected_keyword)
+    Sub-check 4: Figure referenced (MED if label has no \ref)
+
+    Returns:
+        A list of (category, message, line) tuples, one per
+        finding. Lines are -1 for global findings, positive
+        integers for findings tied to a specific source line.
+    """
+    findings = []
+    c9_keywords = c9_figure_keywords or []
+
+    # Build a map from label -> keyword entries for sub-check 3.
+    keyword_map = {}
+    for kw in c9_keywords:
+        fig_id = kw.get('fig_id', '')
+        if fig_id:
+            keyword_map[fig_id] = kw.get('expected_keywords', [])
+
+    # Track all defined labels and referenced labels for sub-check 4.
+    all_labels = set()  # \label{fig:...} defined
+    referenced_labels = set()  # \ref{fig:...} or \autoref{...} in body
+    for m in _C9_LABEL_RE.finditer(tex):
+        all_labels.add(m.group(1))
+    for m in _C9_REF_RE.finditer(tex):
+        ref = m.group(1)
+        # \ref can refer to any label (e.g., sec:, tab:); only
+        # count fig: refs for unreferenced-figure check.
+        if ref.startswith('fig:'):
+            referenced_labels.add(ref)
+        # Also add without prefix in case the ref doesn't use
+        # the prefix (some styles use just 'overview' instead
+        # of 'fig:overview').
+        all_labels.add(ref)  # mark as referenced even if not fig:
+
+    # Sub-checks 1, 2, 3 (per figure).
+    for fig_match in _C9_FIGURE_RE.finditer(tex):
+        figure_text = fig_match.group(0)
+        parsed = _c9_parse_figure_block(figure_text)
+        fig_line = line_of(tex, fig_match.start())
+
+        # Sub-check 1: Caption exists
+        if not parsed['has_caption']:
+            findings.append((
+                'C9',
+                f'HIGH: figure (line {fig_line}) has no \\caption{{...}}. '
+                f'Reviewer §5 #9.',
+                fig_line,
+            ))
+
+        # Sub-check 2: Caption placement (above vs below graphic)
+        # Only check if both caption and graphic are present.
+        if (parsed['has_caption']
+                and parsed['graphic_pos'] >= 0
+                and parsed['caption_pos'] >= 0
+                and parsed['caption_pos'] < parsed['graphic_pos']):
+            findings.append((
+                'C9',
+                f'MED: figure (line {fig_line}) has caption ABOVE the '
+                f'\\includegraphics (line {fig_line + figure_text[:parsed["caption_pos"]].count(chr(10))}). '
+                f'Captions should be BELOW the graphic per IEEE/ACM '
+                f'convention. Reviewer §5 #9.',
+                fig_line,
+            ))
+
+        # Sub-check 3: Caption content (matches expected keywords)
+        if parsed['label'] and parsed['label'] in keyword_map:
+            expected_kws = keyword_map[parsed['label']]
+            caption_text_lower = parsed['caption_text'].lower()
+            found = any(
+                kw.lower() in caption_text_lower
+                for kw in expected_kws
+            )
+            if not found and expected_kws:
+                findings.append((
+                    'C9',
+                    f'MED: figure {parsed["label"]} (line {fig_line}) has '
+                    f'caption that does NOT mention any of the '
+                    f'expected keywords: {expected_kws}. '
+                    f'Reviewer §5 #9.',
+                    fig_line,
+                ))
+
+    # Sub-check 4: Figure referenced (unreferenced figures)
+    # Only check fig: labels (not sec:, tab:, eq:).
+    fig_labels = {lbl for lbl in all_labels if lbl.startswith('fig:')}
+    unreferenced = fig_labels - referenced_labels
+    for lbl in sorted(unreferenced):
+        findings.append((
+            'C9',
+            f'MED: figure {lbl} is defined but never referenced in the '
+            f'body text (no \\ref{{{lbl}}} or \\autoref{{{lbl}}}). '
+            f'Reviewer §5 #9.',
+            -1,
+        ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
 
@@ -1462,6 +1656,10 @@ def main() -> int:
     # the per-paper c8_claimed_effects config.
     c8_claims = CHECKS_CONFIG.get('c8_claimed_effects', []) or []
     all_findings += check_c8_statistical_power(tex, c8_claims)
+    # C9 (added in v0.3.0): figure-caption audit. Uses
+    # the per-paper c9_figure_keywords config.
+    c9_keywords = CHECKS_CONFIG.get('c9_figure_keywords', []) or []
+    all_findings += check_c9_figure_caption(tex, c9_keywords)
     # C10 (added in v0.3.0): reproducibility audit. Uses
     # the per-paper c10_reproducibility_claims config.
     c10_claims = CHECKS_CONFIG.get('c10_reproducibility_claims', []) or []
@@ -1480,7 +1678,7 @@ def main() -> int:
     print(f'Refs:   {bib_key_count} entries in refs.bib')
     print()
     print('Findings by category:')
-    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C10'):
+    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10'):
         sev = SEVERITY[cat]
         n = summary[cat]
         marker = '[OK]' if n == 0 else f'[{sev}]'

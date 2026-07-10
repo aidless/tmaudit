@@ -537,6 +537,48 @@ def inject_bug11() -> None:
         )
 
 
+def inject_bug12() -> None:
+    """Bug 12: C9 inverted caption-placement condition. The
+    implementation has
+        if (parsed['has_caption']
+                and parsed['graphic_pos'] >= 0
+                and parsed['caption_pos'] >= 0
+                and parsed['caption_pos'] < parsed['graphic_pos']):
+    which fires when the caption is ABOVE the graphic
+    (caption_pos < graphic_pos). If we change `<` to `>`,
+    the bug fires when the caption is BELOW the graphic
+    instead — the opposite of what we want.
+
+    For test_c9_caption_above_figure_emits_med (the
+    caption-above test), the buggy `>` condition would NOT
+    fire (caption_pos is < graphic_pos, not >), so the test
+    would fail because no MED finding is emitted. The bug
+    also affects test_c9_caption_below_figure_ok: with the
+    inverted condition, a below-figure caption would fire
+    the MED (a false positive).
+
+    The anchor is the line
+        and parsed['caption_pos'] < parsed['graphic_pos']):
+    in check_c9_figure_caption. The injection changes
+    `<` to `>`.
+    """
+    with _patched(VERIFY_TPL):
+        original = VERIFY_TPL.read_text(encoding='utf-8')
+        old = 'and parsed[\'caption_pos\'] < parsed[\'graphic_pos\']):'
+        new = ('and parsed[\'caption_pos\'] > parsed[\'graphic_pos\']):'
+               '  # BROKEN: inverted comparison')
+        if old not in original:
+            raise RuntimeError(f'bug-12 anchor not found: {old!r}')
+        VERIFY_TPL.write_text(
+            original.replace(old, new, 1),
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '12',
+            'tests/test_c9_figure_caption.py::test_c9_caption_above_figure_emits_med',
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-bug test runner
 # ---------------------------------------------------------------------------
@@ -577,6 +619,7 @@ def main() -> int:
         ('9', inject_bug9),
         ('10', inject_bug10),
         ('11', inject_bug11),
+        ('12', inject_bug12),
     ]
 
     for bug_id, inject_fn in cases:

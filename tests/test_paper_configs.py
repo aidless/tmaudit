@@ -52,6 +52,7 @@ REQUIRED_FIELDS = [
     'c6_blacklist',
     'c7_max_ceremonial',  # added in v0.1.2
     'c8_claimed_effects',  # added in v0.3.0
+    'c9_figure_keywords',  # added in v0.3.0
     'c10_reproducibility_claims',  # added in v0.3.0
 ]
 
@@ -225,6 +226,11 @@ def test_substitute_verify_works_for_every_paper():
         assert "'c8_claimed_effects'" in out, (
             f'Paper {paper} substitute_verify output is missing '
             f"c8_claimed_effects. The C8 field is not being "
+            f'passed through to the verify script.'
+        )
+        assert "'c9_figure_keywords'" in out, (
+            f'Paper {paper} substitute_verify output is missing '
+            f"c9_figure_keywords. The C9 field is not being "
             f'passed through to the verify script.'
         )
 
