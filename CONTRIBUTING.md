@@ -368,8 +368,17 @@ For local CI simulation, see the "Local CI simulation
   `bug` + `needs-triage` labels.
 - **Feature requests**: open a GitHub issue using the
   [feature request template](.github/ISSUE_TEMPLATE/feature_request.md).
-  The chooser will apply the `enhancement` + `needs-triage`
-  labels.
+  Use this for a **new** audit category, **new** CLI
+  subcommand, or **new** paper config. The chooser will
+  apply the `enhancement` + `needs-triage` labels.
+- **Enhancements**: open a GitHub issue using the
+  [enhancement template](.github/ISSUE_TEMPLATE/enhancement.md).
+  Use this for **improving an existing check** (e.g., C6
+  threshold), making the CLI more ergonomic, performance
+  improvements (e.g., the cache), or better error messages.
+  This template asks for a "before vs after" example, a
+  risk assessment, and a migration path. The chooser will
+  apply the `enhancement` + `needs-triage` labels.
 - **Security vulnerabilities**: do **not** open a public
   issue. See [SECURITY.md](./SECURITY.md) for the private
   disclosure process.

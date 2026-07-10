@@ -6,11 +6,23 @@
 # Field semantics:
 #   - blank_issues_enabled: true = users can also open a blank
 #     issue (no template). We DISABLE this because every issue
-#     should at least be a bug or a feature.
+#     should at least be a bug, a feature, or an enhancement.
 #   - contact_links: external links shown at the bottom of the
 #     chooser (e.g., Discussions, security advisory).
-#   - The two template files (bug_report.md, feature_request.md)
-#     are referenced by their relative paths.
+#   - The three template files (bug_report.md, feature_request.md,
+#     enhancement.md) are auto-discovered by GitHub from the
+#     ISSUE_TEMPLATE/ directory and listed in the chooser in
+#     alphabetical order. We do not explicitly list them here.
+#
+# Issue-type guidance:
+#   - **Bug report**: for crashes, false positives/negatives,
+#     broken CI / pre-commit hook.
+#   - **Feature request**: for a NEW audit category (C7+),
+#     NEW CLI subcommand, NEW paper config.
+#   - **Enhancement**: for improving an EXISTING check,
+#     making the CLI more ergonomic, performance improvements.
+#     Use this for the C7 threshold, the cache, the error
+#     messages, etc.
 
 blank_issues_enabled: false
 

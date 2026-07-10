@@ -19,6 +19,23 @@ the planned release timeline.
 | #16 | C7 audit category (citation context) | Medium | Ready for PR |
 | #17 | Audit-cache layer | Medium | Ready for PR |
 
+### Added (templates)
+
+- **`.github/ISSUE_TEMPLATE/enhancement.md`** — 13-section
+  template for enhancement issues (improvements to existing
+  features). Distinct from `feature_request.md`, which is
+  for **new** audit categories, subcommands, or paper
+  configs. The new template asks for a "before vs after"
+  example, a risk assessment, a migration path, and a
+  per-file affected-component checklist. 35 checkboxes
+  total. Auto-applies `enhancement` + `needs-triage` labels.
+- **`.github/ISSUE_TEMPLATE/config.yml`** (updated) —
+  comments now mention the third template and explain the
+  bug-vs-feature-vs-enhancement distinction.
+- **`_demo_c7_enhancement_filled.md`** — example of a C6
+  threshold enhancement issue filled out using the new
+  template. Useful as a worked example.
+
 ## [0.1.1] — 2026-07-10
 
 Patch release: one critical bug fix (C6 blacklist false-positive
