@@ -1697,6 +1697,421 @@ to write their own audit checks) and **multilingual
 support** (CJK, Spanish, etc.). Both are listed in
 ROADMAP.md v0.4.0+.
 
+## 14. v0.4.0 → v1.0.0 — Plugin API design
+
+This section documents the design of the **plugin API**,
+the 12th and final entry in the [`ROADMAP.md`](./ROADMAP.md)
+v0.4.0+ theme. Plugins let users write their own audit
+checks (above and beyond C1–C10) and register them via
+`pyproject.toml`, without forking the auditor.
+
+The plugin API is the bridge between **v0.3.0** (all 10
+core categories implemented, stable per-paper configs)
+and **v1.0.0** (the first stable release, where the API
+must not break for 6 months). The plugin surface is the
+only new "API"; the audit logic itself is frozen.
+
+### 14.1 Motivation
+
+`tmaudit` today ships **10 core audit categories (C1–C10)**
+that cover the most common reviewer concerns: abstract
+symbol definitions, statistical-power, reproducibility, etc.
+Each one was carefully designed, tested, and meta-tested.
+But researchers have concerns that don't fit those 10:
+
+- A **specific venue** (NeurIPS 2026) requires page-length
+  vs reference-count ratio — that's a C11 candidate.
+- A **specific lab** (Smith Lab at University of Foo)
+  wants every paper to use the lab's nomenclature
+  conventions — that becomes a C12 candidate.
+- A **specific workflow** (reproducibility on Hugging Face
+  Spaces) requires a third-party service URL in the
+  availability statement — that's a C13 candidate.
+
+Forcing every such concern into the core (1) slows down
+releases, (2) bloats the auditor for users who don't need
+the niche check, and (3) gives the maintainer veto power
+over what counts as a "real" audit category.
+
+The **plugin API** solves this: a user can write a Python
+function with a stable signature, register it via
+`pyproject.toml`, and `tmaudit` will run it on every paper
+the same way it runs the core C1–C10 checks.
+
+### 14.2 Design overview
+
+The plugin API is built on three primitives:
+
+1. **`Finding` dataclass** — the standard return type for
+   every check (replaces the loose `tuple[str, str, int]`
+   currently used by C1–C10; plugins use the dataclass
+   from day one).
+2. **`@check` decorator** — turns a Python function into a
+   registerable plugin, attaching metadata (name, severity,
+   requires_config) without forcing boilerplate.
+3. **`[tool.tmaudit.plugins]` entry-points table** — the
+   discovery mechanism. Installed Python packages can
+   declare plugin functions via the standard `entry_points`
+   mechanism, and `tmaudit` will discover them at startup.
+
+Plugins are **side-effect-free** (no file writes, no
+network calls). They take a single `Finding` list back.
+This keeps the audit reproducible and the cache safe.
+
+### 14.3 Plugin protocol
+
+Every plugin is a Python callable with this signature:
+
+```python
+from tmaudit.plugins import Finding, Context
+from typing import List
+
+def my_check(
+    tex: str,
+    config: dict | None = None,
+) -> List[Finding]:
+    """Return a list of Finding objects."""
+    findings = []
+    if "TODO" in tex:
+        findings.append(Finding(
+            category="X1",
+            severity="MED",
+            message="TODO marker found in main.tex; "
+                    "resolve before submission.",
+            line=tex.count("\n") + 1,
+        ))
+    return findings
+```
+
+The **decorator** adds metadata:
+
+```python
+from tmaudit.plugins import check
+
+@check(
+    name="todo-marker",
+    severity="MEDIUM",
+    requires_config=False,
+    help_text="Flag any TODO markers in main.tex",
+)
+def find_todos(tex, config=None):
+    return [
+        Finding(
+            category="TODO",
+            severity="MED",
+            message="TODO marker found; resolve before "
+                    "submission.",
+            line=line_no,
+        )
+        for line_no, _ in enumerate_todos(tex)
+    ]
+```
+
+The `Finding` dataclass:
+
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Finding:
+    category: str           # short identifier, e.g., "C8" or "TODO"
+    severity: str           # "HIGH" | "MED" | "LOW"
+    message: str            # human-readable finding message
+    line: int = -1          # 1-based line number, -1 = global
+    paper_id: str | None = None  # set by the loader, not the plugin
+
+    def to_tuple(self) -> tuple[str, str, int]:
+        """Backward-compat shim for the C1..C10 tuple-based code."""
+        return (self.category, self.message, self.line)
+```
+
+Plugins **must**:
+
+- Be deterministic (same input → same output).
+- Be fast (target: < 100 ms per call).
+- Return `[]` (not raise) when the input doesn't apply.
+- Use the `@check` decorator (the loader rejects bare functions).
+
+Plugins **must not**:
+
+- Write to disk, make network calls, or change global state.
+- Import other plugins (plugins compose via the public
+  `Finding` list, not via private imports).
+- Catch `KeyboardInterrupt` or `SystemExit`.
+
+### 14.4 pyproject.toml schema
+
+A plugin package declares its registration in `pyproject.toml`:
+
+```toml
+[project]
+name = "tmaudit-nips2026-pagecheck"
+version = "0.1.0"
+dependencies = ["tmaudit>=0.4"]
+
+[project.entry-points."tmaudit.plugins"]
+nips_pagecheck = "tmaudit_nips2026_pagecheck:check_page_length"
+nips_abstract = "tmaudit_nips2026_pagecheck:check_abstract_length"
+```
+
+`setup.py` equivalent (for legacy build backends):
+
+```python
+setup(
+    ...,
+    entry_points={
+        "tmaudit.plugins": [
+            "nips_pagecheck = tmaudit_nips2026_pagecheck:check_page_length",
+            "nips_abstract = tmaudit_nips2026_pagecheck:check_abstract_length",
+        ],
+    },
+)
+```
+
+The entry-point name (e.g., `nips_pagecheck`) is the unique
+plugin identifier. Plugins from different packages cannot
+collide on the same name (the loader raises on duplicate).
+
+The entry-point VALUE is `module:func`. The function is
+imported by the loader; it must be a registered plugin (i.e.,
+already wrapped by `@check`).
+
+### 14.5 Plugin discovery & loading
+
+The loader uses `importlib.metadata.entry_points()`:
+
+```python
+# src/tmaudit/plugins.py
+from importlib.metadata import entry_points
+
+def discover_plugins() -> dict[str, "CheckFn"]:
+    """Return {name: check_fn} for every registered plugin."""
+    eps = entry_points(group="tmaudit.plugins")
+    plugins = {}
+    for ep in eps:
+        try:
+            obj = ep.load()
+        except Exception as e:
+            # Surface the error in `tmaudit plugins list` but
+            # don't crash the audit.
+            log.warning("plugin %s failed to load: %s", ep.name, e)
+            continue
+        if not isinstance(obj, CheckFn):
+            log.warning("plugin %s is not a CheckFn: %r", ep.name, obj)
+            continue
+        plugins[ep.name] = obj
+    return plugins
+```
+
+`discover_plugins()` is called once per `tmaudit` invocation
+(subprocess startup is the natural cache boundary). The
+discovered dict is then merged with per-paper `c11_*_plugins`
+config to produce the **active plugin list** for that paper.
+
+### 14.6 Plugin lifecycle
+
+A plugin goes through three states:
+
+1. **Discovered** — registered via entry_points but not yet
+   loaded.
+2. **Loaded** — function imported and validated as a `CheckFn`.
+   Available via `tmaudit plugins list`.
+3. **Active** — actually runs on a given paper. Active by
+   default; can be toggled off via:
+   - CLI: `--disable-plugin nips_pagecheck`
+   - Per-paper: `c11_plugins_disabled: ["nips_pagecheck"]` in
+     `CHECKS_CONFIG`
+   - Global: in the user config file (Future Work).
+
+A plugin that fails to import is **logged but never crashes
+the audit**. This keeps a buggy plugin from blocking everyone.
+
+### 14.7 CLI integration
+
+Three new subcommands under the `plugins` namespace:
+
+```
+$ tmaudit plugins list
+NAME                    PACKAGE                       SEVERITY   STATUS
+nips_pagecheck          tmaudit-nips2026-pagecheck    MED        active
+todo-marker             tmaudit-local                 MED        active
+neurips_abstract        tmaudit-nips2026-pagecheck    LOW        disabled (per-paper: paper-1)
+
+$ tmaudit plugins info nips_pagecheck
+Name:        nips_pagecheck
+Module:      tmaudit_nips2026_pagecheck
+Function:    check_page_length
+Severity:    MEDIUM
+Help:        Page-length check for NeurIPS 2026
+
+$ tmaudit plugins run nips_pagecheck --paper 1
+[output identical to a single plugin's findings, no caching]
+```
+
+These subcommands mirror the structure used by `tmaudit cache
+list/info/clear` and `tmaudit audit-all` — discoverable,
+script-friendly, JSON output for machines.
+
+### 14.8 Per-paper override
+
+`CHECKS_CONFIG['c11_plugins_disabled']` is a list of
+plugin names that should NOT run on that paper:
+
+```python
+'c11_plugins_disabled': [
+    'nips_pagecheck',     # skip page-length on this paper
+    'neurips_abstract',   # uses different venue's requirements
+],
+```
+
+Future v1.0: `c11_plugins_enabled` (whitelist) takes
+precedence over the disabled list and over the entry-points
+table. This lets a paper opt into a curated subset without
+needing to uninstall packages.
+
+### 14.9 Cache integration
+
+Plugin findings are cacheable **per (paper_config_hash,
+plugin_name, plugin_version, tex_hash)** tuple. The cache
+key is computed by the loader; the cache module needs a small
+extension to handle plugin fingerprints.
+
+```python
+# cache.py
+def make_cache_key(paper_n: int, plugin_name: str, tex_hash: str) -> str:
+    return f"plugin:{paper_n}:{plugin_name}:{tex_hash}"
+```
+
+The cache entry stores the `List[Finding]` plus a timestamp.
+A plugin re-run is automatic when:
+- The tex file changes (tex_hash mismatch).
+- The plugin code changes (version-based invalidation;
+  plugins should expose `__version__ = "0.1.0"`).
+- The user runs `tmaudit cache clear`.
+
+### 14.10 Test plan + example plugin
+
+The **example plugin** ships as `tmaudit_example_plugin/`:
+
+```
+tmaudit_example_plugin/
+├── pyproject.toml
+└── tmaudit_example_plugin/
+    ├── __init__.py
+    └── checks.py
+```
+
+It registers 3 demo checks:
+
+1. `no_todo_markers` — flag `TODO` strings in `main.tex`.
+2. `no_xxx_comments` — flag debug `XXX` markers.
+3. `word_count_check` — flag if abstract > 300 words.
+
+The **tests** live in `tests/test_plugin_api.py` and
+`tests/test_example_plugin.py`. Two test files serve
+different audiences:
+
+- `test_plugin_api.py` tests the **loader**: discovery,
+  loading, lifecycle, CLI. It does NOT depend on the
+  example plugin.
+- `test_example_plugin.py` tests the **example**: that
+  each demo check returns the expected findings on
+  sample input.
+
+The meta-test (`_check_all_regressions.py`) gains two
+bugs:
+
+- **Bug 13**: Plugin loader skips a malformed entry-point.
+- **Bug 14**: Per-paper `c11_plugins_disabled` is ignored.
+
+Both rely on regression tests that exercise the full
+plugin flow end-to-end.
+
+### 14.11 Limitations and future work
+
+- **No sandbox.** Plugins run with the user's full Python
+  permissions. A malicious plugin could read arbitrary
+  files. We document this prominently; v2.0+ may add a
+  RestrictedPython-based sandbox.
+- **No versioning enforcement.** A plugin with
+  `__version__ = "0.1.0"` could be installed next to a
+  later version, and the cache will treat both as different.
+  v1.0 should adopt `packaging.specifiers.SpecifierSet` for
+  range constraints.
+- **No async plugins.** Plugins are synchronous. v1.0
+  stays sync; v2.0 may consider `async def` for I/O-heavy
+  plugins (e.g., calling a remote linting service).
+- **Plugins cannot import other plugins.** The composition
+  model is via the public `Finding` list. We may relax this
+  in v2.0 with a typed inter-plugin API.
+- **No plugin-level configuration schema.** Plugins can
+  ask for free-form `config` dict but cannot declare what
+  keys they expect. v2.0 should add a JSON-Schema-based
+  config validator.
+
+### 14.12 Roadmap to v1.0.0
+
+The plugin API itself ships in **v0.4.0** (3-month target).
+The v1.0.0 freeze (no API changes for 6 months) is the
+**v0.4.0 release date + 3 months** (i.e., v1.0.0 ships
+~6 months after v0.4.0 with the plugin API already
+"stabilized in practice"). The release sequence:
+
+| Version | Plugin API state | Notes |
+|---|---|---|
+| **v0.4.0** | First release. `@check` decorator, `Finding` dataclass, entry-points, per-paper disable. | Feature-complete for v1.0 plans. |
+| **v0.5.0** | API adjustments based on feedback. Incompatible changes allowed (still 0.x phase). | Receive community input. |
+| **v0.6.0** | Lock API; require `__version__` on plugins. | Last 0.x release. |
+| **v1.0.0** | API frozen. No changes for 6 months. | First stable release. |
+
+If we discover a serious API bug after v0.4.0, we ship v0.4.1
+(patch only, no behavior change) and v0.5.0 (next minor with
+the fix). The **plugin API itself cannot change in v0.4.x**.
+
+### 14.13 Why this design
+
+A few alternatives were considered and rejected:
+
+- **YAML-based plugin definition.** Rejected: requires users
+  to learn both Python and YAML. Entry-points (a PEP 621
+  standard) are recognised by `pip` tooling already.
+- **Plugins as directories with an `__init__.py` shim.**
+  Rejected: implicit, hard to discover, conflicts with
+  `pip install -e .` workflows. Entry-points are explicit.
+- **Built-in plugin DSL (custom mini-language).** Rejected:
+  users already know Python; another language is dead weight.
+  The `@check` decorator gives them 95% of the value with
+  zero new syntax.
+- **Plugin as a `setup.cfg` `[options.entry_points]` section.**
+  Rejected: `pyproject.toml` is the modern canonical place.
+  setup.py and setup.cfg are legacy.
+
+The chosen design **maximises leverage of standard Python
+tooling** (entry-points, importlib.metadata, dataclasses) and
+**minimises new surface area**. The only new API the user
+learns is `@check` and `Finding`; everything else is Python.
+
+### 14.14 Implementation milestones
+
+| Milestone | Effort | Status |
+|---|---|---|
+| `Finding` dataclass in `src/tmaudit/plugins.py` | Small | Not started |
+| `@check` decorator + `CheckFn` protocol | Small | Not started |
+| `discover_plugins()` via `importlib.metadata` | Medium | Not started |
+| CLI subcommands (`plugins list/info/run`) | Medium | Not started |
+| Per-paper `c11_plugins_disabled` config | Small | Not started |
+| Cache key extension (`make_cache_key`) | Small | Not started |
+| Example plugin (`tmaudit_example_plugin`) | Medium | Not started |
+| Tests (`test_plugin_api.py`, `test_example_plugin.py`) | Medium | Not started |
+| Meta-test (Bug 13 + Bug 14) | Small | Not started |
+| `CHANGELOG.md` + `RELEASE_NOTES_v0.4.0.md` | Small | Not started |
+| GitHub issue / Discussion thread | Small | Not started |
+| §14 (this section) review | Small | Done (this commit) |
+
+Total estimated effort: 3-5 working days (1 calendar week).
+The bulk is the example plugin + tests, which exist as
+both documentation and smoke tests for the new API.
+
 ## Appendix: file listings
 
 `F:\Research\TEMPLATE\` after this work:
