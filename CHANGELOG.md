@@ -45,6 +45,32 @@ the planned release timeline.
   fix filled out using `docs.md` (shows that the template
   is fast to fill for trivial changes).
 
+### Added (CI integration)
+
+- **`_check_github_templates.py`** — community-files validator
+  that runs in CI. Validates 9 dimensions:
+  1. `.github/` directory structure
+  2. `ISSUE_TEMPLATE/config.yml` (YAML, blank_issues,
+     contact_links)
+  3. 4 issue templates (frontmatter, name, description,
+     title, labels, assignees, body)
+  4. `PULL_REQUEST_TEMPLATE.md` (H2 count, checkbox count,
+     mentions of "test" and "checklist")
+  5. `CODEOWNERS` (presence, rule count)
+  6. `dependabot.yml` (YAML, updates list)
+  7. `CODE_OF_CONDUCT.md` (presence, line count)
+  8. `SUPPORT.md` (presence, line count)
+  9. `workflows/*.yml` (YAML, name, on, jobs)
+  Supports `--strict` (warnings fail) and `--json` (machine-
+  readable output) flags. Currently 44/44 OK, 0 FAIL.
+- **`.github/workflows/ci.yml`** (updated) — added
+  `validate-community-files` job that runs the new
+  validator. Also writes JSON to
+  `community-files-validation.json` and uploads as a CI
+  artifact (retention 7 days). The job is independent of
+  the others (does not `need` them) so a YAML issue in
+  the workflow does not block the validator.
+
 ## [0.1.1] — 2026-07-10
 
 Patch release: one critical bug fix (C6 blacklist false-positive

@@ -94,7 +94,59 @@ jobs:
           python tmaudit.pyz list
 
   # --------------------------------------------------------------------------
-  # Job 3: lint (skip if dev not installed; cheap)
+  # Job 3: validate GitHub community files
+  # --------------------------------------------------------------------------
+  validate-community-files:
+    name: validate community files (.github/)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML (for the validator)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml
+
+      - name: Run community-files validator
+        # Validates:
+        #   - .github/ISSUE_TEMPLATE/config.yml (YAML, blank_issues, links)
+        #   - 4 issue templates (frontmatter, name, description, title,
+        #     labels, body)
+        #   - .github/PULL_REQUEST_TEMPLATE.md (sections, mentions of
+        #     "test" and "checklist")
+        #   - .github/CODEOWNERS (presence, rule count)
+        #   - .github/dependabot.yml (YAML, updates list)
+        #   - .github/CODE_OF_CONDUCT.md (presence, line count)
+        #   - .github/SUPPORT.md (presence, line count)
+        #   - .github/workflows/*.yml (YAML, name, on, jobs)
+        #
+        # Exit 0 on OK/WARN, exit 1 on any FAIL.
+        run: |
+          python _check_github_templates.py
+
+      - name: Save validator JSON output
+        if: always()
+        run: |
+          python _check_github_templates.py --json > community-files-validation.json
+          cat community-files-validation.json | head -20
+
+      - name: Upload validator JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-files-validation
+          path: community-files-validation.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  # --------------------------------------------------------------------------
+  # Job 4: lint (skip if dev not installed; cheap)
   # --------------------------------------------------------------------------
   lint:
     name: lint (pyflakes)
