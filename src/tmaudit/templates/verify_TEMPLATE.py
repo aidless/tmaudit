@@ -185,6 +185,12 @@ SEVERITY = {
     'C5': 'MEDIUM',
     'C6': 'LOW',
     'C7': 'MEDIUM',
+    # C10 is variable: HIGH for missing availability, MED for
+    # consistency / future-tense, LOW for missing metadata.
+    # We default to LOW since most C10 findings are LOW; the
+    # function itself emits the per-finding severity in the
+    # message.
+    'C10': 'LOW',
 }
 
 
@@ -814,6 +820,273 @@ def check_c7_citation_context(
 
 
 # ---------------------------------------------------------------------------
+# C10: Reproducibility (added in v0.3.0)
+# ---------------------------------------------------------------------------
+#
+# A paper's reproducibility is judged on 3 sub-categories:
+#   1. Availability statement: does the paper say where the
+#      code/data can be obtained?
+#   2. Statement consistency: if the paper claims "we achieve
+#      SOTA on dataset X" but the availability statement says
+#      "we do not release", that's a real reviewer concern.
+#   3. Reproducibility metadata: hyperparameters, random seed,
+#      hardware, library version.
+#
+# Severity:
+#   HIGH: no availability statement at all.
+#   MED:  consistency issue or future-tense release.
+#   LOW:  one or more metadata categories missing.
+#
+# The check is opt-in via the per-paper c10_reproducibility_claims
+# config. If the config is empty/None, only the availability
+# and metadata checks run (the consistency check is skipped).
+# ---------------------------------------------------------------------------
+
+# Regex patterns for the availability statement.
+_C10_AVAILABILITY_SECTION_RE = re.compile(
+    r'\\section\*?\{[^}]*Availability[^}]*\}',
+    re.IGNORECASE,
+)
+# URLs pointing to known code/data hosting sites.
+_C10_AVAILABILITY_URL_RES = [
+    re.compile(r'github\.com/[^\s\)\}\]]+', re.IGNORECASE),
+    re.compile(r'gitlab\.com/[^\s\)\}\]]+', re.IGNORECASE),
+    re.compile(r'huggingface\.co/[^\s\)\}\]]+', re.IGNORECASE),
+    re.compile(r'doi\.org/[^\s\)\}\]]+', re.IGNORECASE),
+    re.compile(r'dx\.doi\.org/[^\s\)\}\]]+', re.IGNORECASE),
+    re.compile(r'zenodo\.org/[^\s\)\}\]]+', re.IGNORECASE),
+    re.compile(r'anonymous\.4open\.science/[^\s\)\}\]]+', re.IGNORECASE),
+    re.compile(r'openreview\.net/[^\s\)\}\]]+', re.IGNORECASE),
+]
+# Phrases indicating a release statement.
+_C10_AVAILABILITY_PHRASE_RES = [
+    re.compile(r'code\s+is\s+available\s+at', re.IGNORECASE),
+    re.compile(r'data\s+is\s+available\s+at', re.IGNORECASE),
+    re.compile(r'source\s+code\s+is\s+released', re.IGNORECASE),
+    re.compile(r'we\s+release\s+', re.IGNORECASE),
+    re.compile(r'we\s+make\s+available', re.IGNORECASE),
+    re.compile(r'publicly\s+available', re.IGNORECASE),
+    re.compile(r'open[\s\-]source', re.IGNORECASE),
+]
+# Phrases indicating NO release (used for consistency check).
+_C10_NO_RELEASE_PHRASE_RES = [
+    re.compile(r'we\s+do\s+not\s+release', re.IGNORECASE),
+    re.compile(r'will\s+not\s+release', re.IGNORECASE),
+    re.compile(r'not\s+publicly\s+available', re.IGNORECASE),
+    re.compile(r'proprietary\s+restrictions', re.IGNORECASE),
+    re.compile(r'cannot\s+be\s+released', re.IGNORECASE),
+]
+# Phrases indicating future-tense release.
+_C10_FUTURE_TENSE_RES = [
+    re.compile(r'we\s+will\s+release', re.IGNORECASE),
+    re.compile(r'we\s+plan\s+to\s+release', re.IGNORECASE),
+    re.compile(r'will\s+be\s+released', re.IGNORECASE),
+    re.compile(r'upon\s+(?:paper\s+)?acceptance', re.IGNORECASE),
+]
+
+# Reproducibility metadata patterns.
+# Each is a (pattern, label) tuple. The label is used in
+# the LOW finding message.
+_C10_HYPERPARAM_PATTERNS = [
+    re.compile(r'\blearning[\s_]rate\b', re.IGNORECASE),
+    re.compile(r'\bbatch[\s_]size\b', re.IGNORECASE),
+    re.compile(r'\boptimizer\b', re.IGNORECASE),
+    re.compile(r'\bepochs?\b', re.IGNORECASE),
+    re.compile(r'\blearning[\s_]rate[\s=]+\d', re.IGNORECASE),
+]
+_C10_SEED_PATTERNS = [
+    re.compile(r'\brandom[\s_]seed\b', re.IGNORECASE),
+    re.compile(r'\bseed[\s=]+\d', re.IGNORECASE),
+    re.compile(r'torch\.manual_seed', re.IGNORECASE),
+    re.compile(r'np\.random\.seed', re.IGNORECASE),
+    re.compile(r'\bset[\s_]seed\(', re.IGNORECASE),
+]
+_C10_HARDWARE_PATTERNS = [
+    re.compile(r'\bGPU\b'),
+    re.compile(r'\bRTX[\s\-]?\d{4}', re.IGNORECASE),
+    re.compile(r'\bA\d{2,4}\b'),  # A100, A1000, etc.
+    re.compile(r'\bV\d{2,4}\b'),  # V100, V1000, etc.
+    re.compile(r'\bT\d{1,2}\b'),   # T4, T40, etc.
+    re.compile(r'\bTesla\s+[A-Z]?\d+', re.IGNORECASE),
+    re.compile(r'\bH\d{2}\b'),     # H100, H200
+    re.compile(r'\bnvidia[\s\-]?tesla\b', re.IGNORECASE),
+    re.compile(r'\bcuda\b', re.IGNORECASE),
+]
+_C10_LIBRARY_VERSION_PATTERNS = [
+    re.compile(r'PyTorch\s+\d', re.IGNORECASE),
+    re.compile(r'TensorFlow\s+\d', re.IGNORECASE),
+    re.compile(r'transformers\s+\d', re.IGNORECASE),
+    re.compile(r'pytorch\s+\d', re.IGNORECASE),
+    re.compile(r'tensorflow\s+\d', re.IGNORECASE),
+    re.compile(r'scikit[\s\-]learn\s+\d', re.IGNORECASE),
+    re.compile(r'pandas\s+\d', re.IGNORECASE),
+    re.compile(r'numpy\s+\d', re.IGNORECASE),
+    re.compile(r'CUDA\s+\d', re.IGNORECASE),
+]
+
+
+def _c10_has_availability_statement(tex: str) -> bool:
+    """Return True if tex contains any of the availability patterns."""
+    if _C10_AVAILABILITY_SECTION_RE.search(tex):
+        return True
+    for pat in _C10_AVAILABILITY_URL_RES:
+        if pat.search(tex):
+            return True
+    for pat in _C10_AVAILABILITY_PHRASE_RES:
+        if pat.search(tex):
+            return True
+    return False
+
+
+def _c10_has_no_release_phrase(tex: str) -> bool:
+    """Return True if tex says 'we do not release' (or similar)."""
+    for pat in _C10_NO_RELEASE_PHRASE_RES:
+        if pat.search(tex):
+            return True
+    return False
+
+
+def _c10_has_future_tense_release(tex: str) -> bool:
+    """Return True if tex says 'we will release' (or similar)."""
+    for pat in _C10_FUTURE_TENSE_RES:
+        if pat.search(tex):
+            return True
+    return False
+
+
+def _c10_has_metadata(pattern_list, tex: str) -> bool:
+    """Return True if any pattern in the list matches in tex."""
+    for pat in pattern_list:
+        if pat.search(tex):
+            return True
+    return False
+
+
+def check_c10_reproducibility(
+    tex: str,
+    c10_reproducibility_claims: list = None,
+) -> list[tuple[str, str, int]]:
+    """C10: detect missing or inconsistent reproducibility info.
+
+    Sub-check 1: Availability statement
+      - If no \\section{...Availability...}, no GitHub/GitLab/
+        Zenodo/anonymous URL, and no "code is available" phrase:
+        emit HIGH finding.
+      - If a future-tense release ("we will release",
+        "upon acceptance"): emit MED finding (the release is
+        conditional, not a real release).
+
+    Sub-check 2: Statement consistency
+      - For each entry in c10_reproducibility_claims:
+        - If the body makes a "SOTA" or "state-of-the-art" claim
+          and the availability statement says "we do not release":
+          emit MED finding (inconsistency).
+      - This sub-check is SKIPPED if c10_reproducibility_claims
+        is None or empty.
+
+    Sub-check 3: Reproducibility metadata
+      - For each missing category (hyperparameters, random seed,
+        hardware, library version): emit LOW finding.
+
+    Severity:
+      - HIGH: no availability statement at all
+      - MED:  consistency issue or future-tense release
+      - LOW:  missing metadata category
+
+    Returns:
+        A list of (category, message, line) tuples, one per
+        finding. Lines are -1 for global findings, positive
+        integers for findings tied to a specific source line.
+    """
+    findings = []
+    c10_claims = c10_reproducibility_claims or []
+
+    # Sub-check 1: Availability statement exists
+    has_availability = _c10_has_availability_statement(tex)
+    if not has_availability:
+        # No availability statement at all -> HIGH
+        findings.append((
+            'C10',
+            'HIGH: paper has no code/data availability statement '
+            '(no \\section{...Availability...}, no GitHub/GitLab/Zenodo '
+            'URL, and no "code is available" phrase). Reviewer §5 #10.',
+            -1,
+        ))
+    else:
+        # Has a statement, but is it future-tense? -> MED
+        if _c10_has_future_tense_release(tex):
+            findings.append((
+                'C10',
+                'MED: availability statement uses future tense '
+                '("we will release" or "upon acceptance"). The release '
+                'is conditional, not a real release. Reviewer §5 #10.',
+                -1,
+            ))
+
+    # Sub-check 2: Statement consistency with claims
+    # Only run if c10_claims is non-empty.
+    if c10_claims:
+        for claim in c10_claims:
+            claim_type = claim.get('type', '')
+            if claim_type == 'claims_sota':
+                # Check if the paper claims SOTA and the statement
+                # says "we do not release".
+                # First, find a SOTA claim in the body.
+                sota_pat = re.compile(
+                    r'(state[\s\-]of[\s\-]the[\s\-]art|SOTA|best[\s\-]in[\s\-]class)',
+                    re.IGNORECASE,
+                )
+                sota_match = sota_pat.search(tex)
+                if sota_match and _c10_has_no_release_phrase(tex):
+                    ln = line_of(tex, sota_match.start())
+                    findings.append((
+                        'C10',
+                        f'MED: paper claims SOTA (line {ln}) but the '
+                        f'availability statement says "we do not release". '
+                        f'This is an inconsistency: a SOTA claim should be '
+                        f'verifiable. Reviewer §5 #10.',
+                        ln,
+                    ))
+
+    # Sub-check 3: Reproducibility metadata
+    has_hyperparams = _c10_has_metadata(_C10_HYPERPARAM_PATTERNS, tex)
+    has_seed = _c10_has_metadata(_C10_SEED_PATTERNS, tex)
+    has_hardware = _c10_has_metadata(_C10_HARDWARE_PATTERNS, tex)
+    has_lib_version = _c10_has_metadata(_C10_LIBRARY_VERSION_PATTERNS, tex)
+
+    if not has_hyperparams:
+        findings.append((
+            'C10',
+            'LOW: no hyperparameters reported (no "learning rate", '
+            '"batch size", or "optimizer" found). Reviewer §5 #10.',
+            -1,
+        ))
+    if not has_seed:
+        findings.append((
+            'C10',
+            'LOW: no random seed reported (no "random seed" or '
+            '"torch.manual_seed" found). Reviewer §5 #10.',
+            -1,
+        ))
+    if not has_hardware:
+        findings.append((
+            'C10',
+            'LOW: no hardware specs reported (no "GPU", "RTX", "A100", '
+            'or "T4" found). Reviewer §5 #10.',
+            -1,
+        ))
+    if not has_lib_version:
+        findings.append((
+            'C10',
+            'LOW: no library version reported (no "PyTorch 2", '
+            '"TensorFlow 2", or "transformers 4" found). Reviewer §5 #10.',
+            -1,
+        ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
 
@@ -835,6 +1108,10 @@ def main() -> int:
     # C7: read the per-paper threshold from CHECKS_CONFIG.
     c7_threshold = int(CHECKS_CONFIG.get('c7_max_ceremonial', 2))
     all_findings += check_c7_citation_context(tex, c7_max_ceremonial=c7_threshold)
+    # C10 (added in v0.3.0): reproducibility audit. Uses
+    # the per-paper c10_reproducibility_claims config.
+    c10_claims = CHECKS_CONFIG.get('c10_reproducibility_claims', []) or []
+    all_findings += check_c10_reproducibility(tex, c10_claims)
 
     summary = {k: 0 for k in SEVERITY}
     for cat, _, _ in all_findings:
@@ -849,7 +1126,7 @@ def main() -> int:
     print(f'Refs:   {bib_key_count} entries in refs.bib')
     print()
     print('Findings by category:')
-    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'):
+    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C10'):
         sev = SEVERITY[cat]
         n = summary[cat]
         marker = '[OK]' if n == 0 else f'[{sev}]'

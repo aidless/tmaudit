@@ -92,6 +92,10 @@ class PaperAuditResult:
 
 
 # Severity mapping (from verify_TEMPLATE.SEVERITY).
+# C10 is variable: HIGH for missing availability, MED for
+# consistency / future-tense, LOW for missing metadata.
+# We default to LOW here; the per-finding severity is
+# embedded in the message itself.
 SEVERITY_MAP = {
     'C1': 'HIGH',
     'C2': 'HIGH',
@@ -100,6 +104,7 @@ SEVERITY_MAP = {
     'C5': 'MEDIUM',
     'C6': 'LOW',
     'C7': 'MEDIUM',
+    'C10': 'LOW',
 }
 
 

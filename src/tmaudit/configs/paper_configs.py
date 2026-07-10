@@ -96,6 +96,12 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
         # C7: Paper 1 has 1 self-cite per related-work pattern.
         'c7_max_ceremonial': 2,
+        # C10: Paper 1 has 1 SOTA claim (TTRL) and 1 standard
+        # benchmark claim (TQA). Both are verifiable in
+        # principle.
+        'c10_reproducibility_claims': [
+            {'type': 'claims_sota', 'dataset': 'TQA', 'expected_section': 'code'},
+        ],
     },
     2: {
         # Paper 2 is the "Impossibility Triangle" paper.
@@ -145,6 +151,10 @@ PAPER_CONFIGS: dict[int, dict] = {
         # Allow more ceremonial cites since the related-work
         # section is short.
         'c7_max_ceremonial': 3,
+        # C10: Paper 2 makes a general "impossibility result"
+        # claim, not a benchmark SOTA claim. No C10 consistency
+        # checks to run.
+        'c10_reproducibility_claims': [],
     },
     3: {
         # Paper 3 introduces the "Coupling-Noise Decomposition
@@ -198,6 +208,9 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
         # C7: Paper 3 has 0 self-cites.
         'c7_max_ceremonial': 3,
+        # C10: Paper 3 is theoretical (Theorem 2 about
+        # coupling-noise decomposition). No benchmark claims.
+        'c10_reproducibility_claims': [],
     },
     4: {
         # Paper 4 introduces the "N-Sensitivity" metric: how
@@ -247,6 +260,11 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c6_blacklist': ['paradigm', 'yield', 'reveal'],
         # C7: Paper 4 has 0 self-cites.
         'c7_max_ceremonial': 3,
+        # C10: Paper 4 has 1 SOTA claim (S_N on the empirical
+        # benchmark).
+        'c10_reproducibility_claims': [
+            {'type': 'claims_sota', 'dataset': 'N-Sensitivity benchmark', 'expected_section': 'code'},
+        ],
     },
     5: {
         'dir': RESEARCH_DIR / 'PAPER5_CONSOLIDATED',
@@ -295,6 +313,12 @@ PAPER_CONFIGS: dict[int, dict] = {
         # C7: Paper 5 found 15 ceremonial citations in v0.1.2.
         # Allow 2 ceremonial (the default), 13+ are reported.
         'c7_max_ceremonial': 2,
+        # C10: Paper 5 makes a "best in class" claim on the
+        # length-bias benchmark. The dataset is real (paper
+        # authors curated it), so the consistency check applies.
+        'c10_reproducibility_claims': [
+            {'type': 'claims_sota', 'dataset': 'length-bias benchmark', 'expected_section': 'data'},
+        ],
     },
 }
 
@@ -361,6 +385,21 @@ def _format_c6_blacklist(words: list[str]) -> str:
     return '    ' + repr(words) + ','
 
 
+def _format_c10_claims(claims: list) -> str:
+    """Format the c10_reproducibility_claims list as Python source."""
+    if not claims:
+        return '    [],'
+    lines = ['    [']
+    for i, claim in enumerate(claims):
+        sep = ',' if i < len(claims) - 1 else ','
+        lines.append('        {')
+        for k, v in claim.items():
+            lines.append(f"            {k!r}: {v!r},")
+        lines.append(f'        }}{sep}')
+    lines.append('    ],')
+    return '\n'.join(lines)
+
+
 def substitute_verify(template: str, cfg: dict) -> str:
     """Substitute ROOT and CHECKS_CONFIG in the verify template."""
     out = template
@@ -394,6 +433,12 @@ def substitute_verify(template: str, cfg: dict) -> str:
     parts.append('')
     parts.append("    'c6_blacklist':")
     parts.append(_format_c6_blacklist(cfg.get('c6_blacklist', ['paradigm', 'yield', 'reveal'])))
+    parts.append('')
+    # C10 (added in v0.3.0): per-paper list of reproducibility
+    # claims. If empty/None, only the availability + metadata
+    # checks run; the consistency check is skipped.
+    parts.append("    'c10_reproducibility_claims':")
+    parts.append(_format_c10_claims(cfg.get('c10_reproducibility_claims', [])))
     parts.append('}')
 
     new_block = '\n'.join(parts)
