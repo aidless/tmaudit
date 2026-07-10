@@ -379,6 +379,13 @@ For local CI simulation, see the "Local CI simulation
   This template asks for a "before vs after" example, a
   risk assessment, and a migration path. The chooser will
   apply the `enhancement` + `needs-triage` labels.
+- **Documentation**: open a GitHub issue using the
+  [documentation template](.github/ISSUE_TEMPLATE/docs.md).
+  Use this for **docs-only changes**: typos, clarifications,
+  new sections, restructures, and translations. No code
+  change. This is the fastest template to fill and the
+  easiest to merge. The chooser will apply the
+  `documentation` + `needs-triage` labels.
 - **Security vulnerabilities**: do **not** open a public
   issue. See [SECURITY.md](./SECURITY.md) for the private
   disclosure process.

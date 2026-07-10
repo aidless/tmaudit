@@ -21,20 +21,29 @@ the planned release timeline.
 
 ### Added (templates)
 
-- **`.github/ISSUE_TEMPLATE/enhancement.md`** — 13-section
-  template for enhancement issues (improvements to existing
-  features). Distinct from `feature_request.md`, which is
-  for **new** audit categories, subcommands, or paper
-  configs. The new template asks for a "before vs after"
-  example, a risk assessment, a migration path, and a
-  per-file affected-component checklist. 35 checkboxes
-  total. Auto-applies `enhancement` + `needs-triage` labels.
+- **`.github/ISSUE_TEMPLATE/docs.md`** — 14-section template
+  for documentation-only issues (typos, clarifications, new
+  sections, restructures, translations). Distinct from
+  `enhancement.md` (which is for code changes that improve
+  existing features). The new template asks for a "rendered
+  output (before vs after)" section, a "spell / grammar /
+  style check" list, a "link / cross-reference check" list,
+  and a "backwards compatibility" check. 72 checkboxes total
+  (most of any template). Auto-applies `documentation` +
+  `needs-triage` labels.
+- **`.github/ISSUE_TEMPLATE/enhancement.md`** (already
+  added in v0.1.1) — 13-section template for enhancement
+  issues. 35 checkboxes. Auto-applies `enhancement` +
+  `needs-triage` labels.
 - **`.github/ISSUE_TEMPLATE/config.yml`** (updated) —
-  comments now mention the third template and explain the
-  bug-vs-feature-vs-enhancement distinction.
+  comments now mention the 4 templates and explain the
+  bug-vs-feature-vs-enhancement-vs-docs distinction.
 - **`_demo_c7_enhancement_filled.md`** — example of a C6
-  threshold enhancement issue filled out using the new
-  template. Useful as a worked example.
+  threshold enhancement issue filled out using
+  `enhancement.md`.
+- **`_demo_docs_filled.md`** — example of a 1-word typo
+  fix filled out using `docs.md` (shows that the template
+  is fast to fill for trivial changes).
 
 ## [0.1.1] — 2026-07-10
 
