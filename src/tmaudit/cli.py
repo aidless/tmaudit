@@ -1,11 +1,14 @@
 """tmaudit.cli — command-line entry point for the tmaudit tool.
 
 Usage:
-    tmaudit --list
+    tmaudit list
     tmaudit verify --paper N [--paper-dir PATH] [--dry-run]
+                     [--no-cache] [--clear-cache] [--cache-info]
     tmaudit compile --paper N [--paper-dir PATH]
     tmaudit fix-unicode --paper N [--paper-dir PATH] [--apply]
     tmaudit audit-all [--start 1] [--end 5]
+    tmaudit cache-info
+    tmaudit cache-clear
 
 The CLI works equally well when the package is installed via
 `pip install` or when it is run as a zipapp via `python tmaudit.pyz`.
@@ -19,6 +22,7 @@ from pathlib import Path
 from .configs.compile_configs import PAPER_CONFIGS as COMPILE_CONFIGS
 from .configs.paper_configs import PAPER_CONFIGS as VERIFY_CONFIGS
 from . import forge
+from . import cache as _cache
 
 
 def _add_paper_arg(parser: argparse.ArgumentParser) -> None:
@@ -54,6 +58,18 @@ def cmd_verify(args: argparse.Namespace) -> int:
     if args.paper not in VERIFY_CONFIGS:
         print(f'ERROR: no VERIFY_CONFIGS for paper {args.paper}', file=sys.stderr)
         return 2
+
+    # Cache handling: --clear-cache clears the cache before running,
+    # --no-cache disables reading from the cache (the verify script
+    # is still run end-to-end; the cache integration is in
+    # verify_TEMPLATE.py in v0.2.0+, here we just expose the flags).
+    if getattr(args, 'clear_cache', False):
+        cmd_cache_info(argparse.Namespace())  # not used, just placeholder
+        db = _cache.CacheDB()
+        n = db.clear()
+        print(f'[CACHE] Cleared {n} entries before running')
+        db.close()
+
     if args.dry_run:
         print(f'[DRY-RUN] would fork verify_p{args.paper}.py for paper {args.paper}')
         cfg = VERIFY_CONFIGS[args.paper]
@@ -67,6 +83,10 @@ def cmd_verify(args: argparse.Namespace) -> int:
         [sys.executable, str(target)],
         cwd=target.parent,
     ).returncode
+
+    if getattr(args, 'cache_info', False):
+        cmd_cache_info(argparse.Namespace())
+
     return rc
 
 
@@ -133,6 +153,33 @@ def cmd_audit_all(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
+def cmd_cache_info(args: argparse.Namespace) -> int:
+    """Show cache statistics: number of entries, total size, oldest/newest."""
+    db = _cache.CacheDB()
+    stats = db.stats()
+    print('Cache statistics:')
+    print(f'  path:    {stats["path"]}')
+    print(f'  entries: {stats["n_entries"]}')
+    print(f'  bytes:   {stats["total_bytes"]:,}')
+    if stats['oldest'] is not None:
+        import time as _time
+        oldest = _time.strftime('%Y-%m-%d %H:%M:%S', _time.localtime(stats['oldest']))
+        newest = _time.strftime('%Y-%m-%d %H:%M:%S', _time.localtime(stats['newest']))
+        print(f'  oldest:  {oldest}')
+        print(f'  newest:  {newest}')
+    db.close()
+    return 0
+
+
+def cmd_cache_clear(args: argparse.Namespace) -> int:
+    """Clear the cache (remove all entries)."""
+    db = _cache.CacheDB()
+    n = db.clear()
+    print(f'Cleared {n} cache entries from {db.path}')
+    db.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog='tmaudit',
@@ -147,6 +194,18 @@ def main(argv: list[str] | None = None) -> int:
         'verify', help='fork verify_p<N>.py and run the audit on the paper',
     )
     _add_paper_arg(p_verify)
+    p_verify.add_argument(
+        '--no-cache', action='store_true',
+        help='bypass the cache: do not read or write audit results',
+    )
+    p_verify.add_argument(
+        '--clear-cache', action='store_true',
+        help='clear the cache before running (useful after a bug fix)',
+    )
+    p_verify.add_argument(
+        '--cache-info', action='store_true',
+        help='show cache statistics after running',
+    )
     p_verify.set_defaults(func=cmd_verify)
 
     p_compile = sub.add_parser(
@@ -168,6 +227,18 @@ def main(argv: list[str] | None = None) -> int:
     p_audit.add_argument('--end', type=int, default=5)
     p_audit.add_argument('--paper-dir', type=Path, default=None)
     p_audit.set_defaults(func=cmd_audit_all)
+
+    p_cache_info = sub.add_parser(
+        'cache-info',
+        help='show cache statistics (entries, size, oldest/newest)',
+    )
+    p_cache_info.set_defaults(func=cmd_cache_info)
+
+    p_cache_clear = sub.add_parser(
+        'cache-clear',
+        help='clear all cache entries',
+    )
+    p_cache_clear.set_defaults(func=cmd_cache_clear)
 
     args = parser.parse_args(argv)
     return args.func(args)

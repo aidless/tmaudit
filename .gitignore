@@ -68,6 +68,11 @@ ci_artifacts/
 _pr_demo_run.log
 _pr_demo_preview.txt
 
+# Local test artefacts (CI does not have these)
+.tmp_cli_test/
+.tmp_test_cache/
+.tmp_test_cache_*/
+
 # Local audit forks (these are per-paper intermediate files; we keep the
 # main audits committed, see PAPER*_CONSOLIDATED/verify_p*.py, but
 # _check_all_regressions.py creates a /tmp/ fork that should be ignored)

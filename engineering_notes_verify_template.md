@@ -472,15 +472,16 @@ single-point fixes for any future audit category we add.
 
 ---
 
-## 9. Regression-test validity — six bugs, six catches
+## 9. Regression-test validity — eight bugs, eight catches
 
 A regression test that **always passes** is worse than no test at
-all: it gives false confidence. To make sure each of the six
-regression tests in `tests/test_forge.py` and `tests/test_bug5_unit.py`
+all: it gives false confidence. To make sure each of the eight
+regression tests in `tests/test_forge.py`, `tests/test_bug5_unit.py`,
+`tests/test_c6_threshold.py`, and `tests/test_c7_citation_context.py`
 actually catches its target bug, we wrote
 `_check_all_regressions.py` (a meta-test). The script:
 
-1. For each of the 6 bugs, **injects a small change** that
+1. For each of the 8 bugs, **injects a small change** that
    re-introduces the bug (1–3 line patch to the relevant source
    file).
 2. Runs the bug's specific `TestBug*` test class.
@@ -669,9 +670,276 @@ A new file `tests/test_c6_threshold.py` contains 7 unit tests:
 5. Restores `verify_TEMPLATE.py`.
 6. Re-runs the test and **asserts it PASSES**.
 
-Result: **7/7 bugs caught** (up from 6/6).
+Result: **8/8 bugs caught** (up from 6/6, then 7/7 after Bug 7).
 
 ---
+
+## 10.1 Bug 8 — C7 inverted threshold check (added in v0.1.2)
+
+When the meta-test was extended from 7 to 8 bugs in v0.1.2,
+we added a regression-injection for the C7 check. The bug
+is the inverse of Bug 7 in spirit: Bug 7 was an over-strict
+threshold (`min_count=0` flags too much), Bug 8 is an
+under-strict threshold (`n_ceremonial < threshold` flags
+too little). Both bugs are caught by a single targeted
+regression test, demonstrating the value of explicit,
+specific tests over broad sanity checks.
+
+The anchor is `    if n_ceremonial > c7_max_ceremonial:` in
+`check_c7_citation_context`. The injection changes `>` to
+`<` (with a `# BROKEN: inverted threshold` comment). The
+regression test
+(`tests/test_c7_citation_context.py::test_c7_threshold_2_flags_3_ceremonial_cites`)
+constructs 3 ceremonial cites with threshold=2, expects 1
+finding. With the inverted condition, 3 < 2 is False, so no
+findings are produced, and the test fails.
+
+### 10.2 State-leak bug in `_patched()`
+
+A real bug surfaced while writing `inject_bug8`: the
+`_patched()` context manager used to back up file content
+and write it back on exit:
+
+```python
+backup = path.read_text(encoding='utf-8')
+try:
+    yield
+finally:
+    path.write_text(backup, encoding='utf-8')
+```
+
+If a previous meta-test run left the file in a broken
+state (e.g., the file was modified by some other process),
+the **next** run's backup would also be broken, the
+anchor-lookup would fail, and the resulting RuntimeError
+would propagate without the restore happening. The file
+would stay broken forever.
+
+**Fix**: use `git checkout HEAD -- <path>` to restore the
+**committed** version, regardless of working-tree state.
+
+```python
+try:
+    yield
+finally:
+    subprocess.run(
+        ['git', 'checkout', 'HEAD', '--', str(path)],
+        cwd=str(repo_root),
+        check=True,
+        capture_output=True,
+    )
+```
+
+This makes every meta-test run start from the committed
+version, eliminating the state-leak class of bugs.
+
+---
+
+## 11. Bug 8 / §11 — C7 (citation context) design (added in v0.1.2)
+
+This section documents the design of the seventh audit
+category, **C7 (citation context)**, which detects
+"ceremonial" citations — citations that are listed but
+not actually engaged with in the citing sentence.
+
+### 11.1 Motivation
+
+A common reviewer concern in ML papers (especially in the
+TMLR ecosystem) is the **ceremonial cite**: a paper is
+cited in the related-work section but the citing paper
+never actually uses or critiques the cited work.
+
+Example:
+```latex
+Recent work has studied this problem \cite{smith2020}.
+```
+vs
+```latex
+We extend the framework of Smith et al. \cite{smith2020} by
+introducing a new loss function that reduces the bias.
+```
+
+The first is ceremonial (the cite does not engage with the
+cited work). The second is engaged (the verb "extend"
+indicates actual engagement).
+
+Reviewers notice ceremonial cites and dock the paper for
+it, but it is hard to enforce systematically because it
+requires reading the citing sentence in context. C7
+automates this check.
+
+### 11.2 Design
+
+The function `check_c7_citation_context(tex)` in
+`src/tmaudit/templates/verify_TEMPLATE.py` implements
+the check. The algorithm:
+
+1. **Find every `\cite{...}` match** in `main.tex` (and
+   variants `\citep`, `\citet`, etc.). Each `\cite{a,b,c}`
+   counts as 3 keys.
+
+2. **For each cite, extract the citing sentence.** A
+   "sentence" is the text between the nearest
+   sentence-end punctuation (`. `, `! `, `? `, `.\n`, etc.)
+   before the cite and the nearest one after the cite.
+
+3. **Include the previous sentence too.** This handles the
+   common LaTeX pattern where the cite is at the END of a
+   sentence that contains the engagement verb:
+
+   ```latex
+   We extend the framework of Smith et al. \cite{smith2020} by
+   introducing a new loss function.
+   ```
+
+   If we extracted only the sentence starting at `\cite`,
+   we would miss the verb "extend" in the previous
+   sentence. By including the previous sentence, the
+   check correctly identifies this as engaged.
+
+4. **Classify the citing context as engaged or ceremonial:**
+   - **Engaged** if ANY of the following holds:
+     - contains an **engage verb** (show, demonstrate,
+       extend, build on, follow, use, apply, compare,
+       improve, outperform, validate, verify, propose,
+       argue, claim, find, observe, measure, report,
+       confirm, exploit, leverage, utilize, adopt,
+       generalize, specialize, reduce, combine,
+       investigate, analyze, examine, introduce,
+       present, derive, compute, study, ...);
+     - contains a **comparison word** (however, in
+       contrast, unlike, while, although, whereas, but,
+       conversely, on the other hand, nevertheless,
+       nonetheless);
+     - the citing context is **30+ words** long
+       (engagement by elaboration: a long citing sentence
+       indicates the author is engaging with the cited
+       work, even without a specific verb).
+   - **Ceremonial** otherwise (no signal found).
+
+5. **Aggregate by unique key.** A key cited 3 times in 3
+   ceremonial sentences counts as 1 ceremonial cite, not
+   3. (Unique keys, not occurrences, is the unit of
+   measurement.)
+
+6. **Apply the per-paper threshold.** If the number of
+   unique ceremonial keys exceeds `c7_max_ceremonial`
+   (default 2), each excess ceremonial cite produces a
+   per-cite finding of MED severity. The first
+   `c7_max_ceremonial` ceremonial cites are silent.
+
+### 11.3 Per-paper threshold
+
+The threshold `c7_max_ceremonial` is configurable per
+paper in `CHECKS_CONFIG['c7_max_ceremonial']`. The
+default is **2** (lenient: 1-2 ceremonial cites are OK,
+3+ are flagged). Other sensible values:
+
+- `0` = strict mode: every ceremonial cite is flagged.
+- `1` = strict-ish: one ceremonial OK, two+ flagged.
+- `2` = default, lenient.
+- `5+` = very lenient: used for papers with many
+  "background" citations that are inherently ceremonial.
+
+The threshold is read by the driver (`main()`) and passed
+as a function argument to `check_c7_citation_context`.
+The function itself is **pure** (no side effects on
+`CHECKS_CONFIG`); only the driver reads config.
+
+### 11.4 Severity
+
+C7 findings are **MEDIUM** severity. Rationale:
+ceremonial citations are a stylistic concern, not a
+correctness issue. The reviewer can request the author
+to fix, but it is not a blocker. (Compare: C1, C2 are
+HIGH because they indicate a real error; C6 is LOW
+because it is a style nit.)
+
+### 11.5 Real-world impact
+
+When C7 was added, Paper 5 (the test case) had **15
+ceremonial citations**, of which **13** are reported as
+MED findings (with default threshold=2). This is a real
+reviewer concern, not a false positive: the ceremonial
+cites are at the start of the related-work section, where
+many papers from the same lab are listed in a single
+sentence without per-cite engagement.
+
+The user (paper author) can address this by:
+- Adding a verb to each citing sentence ("We use X
+  \cite{x}", "We extend Y \cite{y}", ...);
+- Splitting long related-work lists into individual
+  paragraphs (each with its own engagement);
+- Removing ceremonial cites that do not add value
+  (they are listed for completeness, but completeness is
+  not a goal in itself).
+
+### 11.6 Tests
+
+The C7 test suite at
+`tests/test_c7_citation_context.py` has **17 unit
+tests** covering:
+
+- Engaged cite (verb, comparison, length) — 4 tests
+- Ceremonial cite (basic, short) — 2 tests
+- Per-paper threshold (2 OK, 3+ flagged) — 2 tests
+- Mixed cites (engaged + ceremonial) — 1 test
+- Cite variants (`\cite`, `\citep`, `\citet`) — 1 test
+- Multi-key cites (`\cite{a,b,c}`) — 1 test
+- No-cite paper — 1 test
+- Engaged by length alone — 1 test
+- False positive (cite in `\multicolumn`) — 1 test
+- Paper 5-style engaged cite — 1 test
+- Default threshold is 2 — 1 test
+- Unique keys, not occurrences — 1 test
+- Severity is MEDIUM — 1 test
+
+The test count delta: 53 → 70 tests (after C7 was added).
+
+### 11.7 Meta-test
+
+The C7 implementation is exercised by the meta-test via
+`inject_bug8`, which inverts the threshold check
+(`>` → `<`). The regression test
+`test_c7_threshold_2_flags_3_ceremonial_cites` catches
+the bug. This adds **1 more caught bug** to the meta-test
+score (7/7 → 8/8).
+
+### 11.8 Limitations and future work
+
+- **Heuristic-based**: the engage-verb and
+  comparison-word lists are hand-curated. An LLM-based
+  classifier (e.g., fine-tuned BERT) would be more
+  accurate but requires more infrastructure. Defer to
+  v0.2.0 or later.
+- **English-only**: the verb list is English. Other
+  languages would need their own lists.
+- **No context beyond 2 sentences**: the check uses
+  the citing sentence + previous sentence. In rare
+  cases, the engagement is across more sentences; this
+  is a false negative.
+- **Doesn't distinguish citation type**: it treats
+  `\citep` and `\citet` the same. Parenthetical vs
+  textual citations might warrant different heuristics
+  (a textual cite is more likely to be ceremonial).
+
+### 11.9 Files added/changed
+
+- `src/tmaudit/templates/verify_TEMPLATE.py`:
+  - +184 lines: `check_c7_citation_context`,
+    `_c7_extract_sentence`, `_c7_is_engaged`,
+    `_C7_ENGAGE_VERBS` (60+ verbs),
+    `_C7_COMPARISON_WORDS`,
+    `_C7_MIN_CITED_SENTENCE_WORDS = 30`.
+  - +6 lines: `c7_max_ceremonial` in `CHECKS_CONFIG`,
+    `'C7'` in `SEVERITY`, C7 in driver summary loop,
+    docstring updated to "seven categories".
+- `tests/test_c7_citation_context.py`: 17 new tests.
+- `tests/test_forge_happy.py`: updated Paper 1, Paper 5
+  end-to-end tests to acknowledge C7 findings.
+- `_check_all_regressions.py`: added `inject_bug8`,
+  fixed state-leak in `_patched()` via `git checkout`.
+- `engineering_notes_verify_template.md`: this section.
 
 ---
 

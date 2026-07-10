@@ -1,11 +1,12 @@
-"""_check_all_regressions.py — verify that the 8 bug-specific
+"""_check_all_regressions.py — verify that the 9 bug-specific
 regression tests in tests/test_forge.py, tests/test_c6_threshold.py,
-tests/test_c7_citation_context.py, and related test files actually
-catch a re-introduction of each bug.
+tests/test_c7_citation_context.py, tests/test_cache.py, and
+related test files actually catch a re-introduction of each bug.
 
 For each bug, this script:
   1. Backs up the relevant source file (forge.py,
-     templates/verify_TEMPLATE.py, or configs/paper_configs.py).
+     templates/verify_TEMPLATE.py, configs/paper_configs.py,
+     or cache.py).
   2. Injects a small change that re-introduces the bug.
   3. Runs the targeted TestBug* / test_<N>_<description> test.
   4. Asserts the test FAILS (i.e. the bug fingerprint is
@@ -14,7 +15,7 @@ For each bug, this script:
   6. Re-runs the test and asserts it PASSES.
 
 Exit code:
-  0 if all 8 bugs are correctly caught and restored.
+  0 if all 9 bugs are correctly caught and restored.
   1 if any bug is NOT caught (i.e. the regression test would
     silently miss the bug — a serious problem).
 
@@ -59,38 +60,59 @@ def _run_pytest(test_target: str) -> tuple[int, str]:
 def _patched(path: Path) -> Iterator[None]:
     """Context manager: backup path, yield, restore on exit.
 
-    The restore uses `git checkout HEAD -- <path>` to ensure
-    that even if a previous meta-test run left the file in a
-    broken state, we always restore to the committed version.
-    This avoids the state-leak bug where a previous failed
-    run leaves the file broken and the next run cannot
-    recover (because the original-content anchor is no
-    longer found).
+    The restore mechanism is two-layered:
+      1. For TRACKED files, use `git checkout HEAD -- <path>`
+         to restore the committed version (this works even
+         if the working tree was already broken).
+      2. For UNTRACKED files (e.g., a newly-added file that
+         hasn't been committed yet), use a backup variable.
+         We save the file content on entry and write it back
+         on exit. This is the original behavior.
+
+    This two-layered approach ensures that:
+      - Tracked files always restore to the committed state.
+      - Untracked files restore to whatever they were before
+        the with-block started.
+      - State leaks are eliminated in both cases.
 
     Usage:
         with _patched(FORGE):
             FORGE.write_text(new_content, encoding='utf-8')
     """
-    # Snapshot via git checkout: always restore the committed
-    # version, regardless of what the working tree contains now.
-    repo_root = TEMPLATE
-    try:
-        yield
-    finally:
-        # Use git checkout to restore. Fall back to file copy
-        # if git is unavailable.
+    # Check if the file is tracked by git.
+    rel_path = str(path.relative_to(TEMPLATE))
+    is_tracked = (
+        subprocess.run(
+            ['git', 'ls-files', '--error-unmatch', rel_path],
+            cwd=str(TEMPLATE),
+            capture_output=True,
+        ).returncode == 0
+    )
+
+    if is_tracked:
+        # Use git checkout for tracked files (atomic, robust).
         try:
-            subprocess.run(
-                ['git', 'checkout', 'HEAD', '--', str(path.relative_to(repo_root))],
-                cwd=str(repo_root),
-                check=True,
-                capture_output=True,
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            # Last-resort fallback: restore from a backup variable.
-            # (We didn't keep one because the file may already
-            # be broken; this branch is a defensive fallback.)
-            pass
+            yield
+        finally:
+            try:
+                subprocess.run(
+                    ['git', 'checkout', 'HEAD', '--', rel_path],
+                    cwd=str(TEMPLATE),
+                    check=True,
+                    capture_output=True,
+                )
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
+    else:
+        # For untracked files, use a backup-and-restore fallback.
+        backup = path.read_text(encoding='utf-8') if path.exists() else None
+        try:
+            yield
+        finally:
+            if backup is not None:
+                path.write_text(backup, encoding='utf-8')
+            elif path.exists():
+                path.unlink()
 
 
 def _check_bug(
@@ -406,6 +428,48 @@ def inject_bug8() -> None:
         )
 
 
+def inject_bug9() -> None:
+    """Bug 9: cache put does not replace existing entries. The
+    implementation uses `INSERT OR REPLACE` in the SQL, which
+    atomically replaces an entry if the key already exists.
+    If we change this to `INSERT` (without OR REPLACE), the
+    put will FAIL silently when the key already exists
+    (SQLite raises IntegrityError on duplicate primary key,
+    but we currently don't catch it, so the entry is not
+    stored).
+
+    We inject by changing
+    `'INSERT OR REPLACE INTO entries (key, value, created_at, size_bytes) '`
+    to
+    `'INSERT INTO entries (key, value, created_at, size_bytes) '`
+    (with a `# BROKEN` comment).
+
+    The regression test that should catch this is
+    `test_put_replaces_existing_entry`: it puts a value, then
+    puts a different value under the same key, and asserts the
+    second value is returned. With `INSERT` (no `OR REPLACE`),
+    the second put raises an IntegrityError that is not
+    caught, and the test fails (or the second put silently
+    leaves the original value, and the test fails with
+    `v == 'second'` mismatch).
+    """
+    cache_path = TEMPLATE / 'src' / 'tmaudit' / 'cache.py'
+    with _patched(cache_path):
+        original = cache_path.read_text(encoding='utf-8')
+        old = "'INSERT OR REPLACE INTO entries (key, value, created_at, size_bytes) '"
+        new = "'INSERT INTO entries (key, value, created_at, size_bytes) '  # BROKEN: no OR REPLACE"
+        if old not in original:
+            raise RuntimeError(f'bug-9 anchor not found: {old!r}')
+        cache_path.write_text(
+            original.replace(old, new, 1),
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '9',
+            'tests/test_cache.py::test_put_replaces_existing_entry',
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-bug test runner
 # ---------------------------------------------------------------------------
@@ -443,6 +507,7 @@ def main() -> int:
         ('6', inject_bug6),
         ('7', inject_bug7),
         ('8', inject_bug8),
+        ('9', inject_bug9),
     ]
 
     for bug_id, inject_fn in cases:
