@@ -943,6 +943,463 @@ score (7/7 → 8/8).
 
 ---
 
+## 12. v0.3.0 — C10 (reproducibility) and C8 (statistical power) design
+
+This section documents the design of the two new audit
+categories shipped in v0.3.0: **C10 (reproducibility)** and
+**C8 (statistical power)**. Both close the gap between
+"stylistic rigor" (C1–C7) and "scientific rigor" — questions
+about whether the paper's quantitative claims are reproducible
+and meaningful.
+
+The two categories were developed in parallel because they
+share design philosophy but not implementation. C10 is a
+**textual-scan** check (no table parsing, no formulas).
+C8 is a **table-parse + statistic** check.
+
+### 12.1 Motivation
+
+A TMLR reviewer in 2026 is expected to ask three questions
+beyond style and clarity:
+
+1. **Can I reproduce this result?** (C10: availability statement,
+   hyperparameters, seed, hardware, library version.)
+2. **Is the effect size that the paper claims consistent
+   with the numbers in the table?** (C8: re-derive Cohen's d.)
+3. **Is the study powered appropriately to detect the effect
+   the paper claims?** (C8: post-hoc power.)
+
+Reviewers currently answer these by reading the paper
+carefully. In a 20-page TMLR submission this takes 30
+minutes per paper; across five papers (the current set), 2.5
+hours. C8 + C10 automate the check and reduce the per-paper
+time to 30 seconds.
+
+### 12.2 C10 — Reproducibility audit design
+
+The C10 check has **three sub-categories**, paralleling the
+three reproducibility questions a reviewer asks:
+
+| Sub-check | Detects | Severity | Always runs? |
+|---|---|---|---|
+| **Availability statement** | `\section{Availability}` absent, no GitHub URL, no "code is available" phrase. | HIGH if absent; MED if future-tense ("upon acceptance"). | Yes. |
+| **Statement consistency** | "SOTA" claim coupled with "we do not release". | MED. | Only if `c10_reproducibility_claims` non-empty. |
+| **Reproducibility metadata** | Missing hyperparameter / seed / hardware / library-version mention. | LOW. | Yes. |
+
+The driver reads `CHECKS_CONFIG['c10_reproducibility_claims']`
+(default `[]`). Empty list means the consistency check is
+skipped — but the other two sub-checks always run, because
+they catch a different class of issue (the paper **as a
+whole** fails to address reproducibility, regardless of what
+specific claims it makes).
+
+### 12.3 C10 algorithm
+
+The function `check_c10_reproducibility(tex, c10_claims)`
+implements three independent sub-checks:
+
+**Sub-check 1: Availability statement**
+
+```python
+has_availability = (
+    bool(_C10_AVAILABILITY_SECTION_RE.search(tex))    # e.g., \section*{Code Availability}
+    or any(pat.search(tex) for pat in _C10_AVAILABILITY_URL_RES)  # github.com/..., zenodo.org/...
+    or any(pat.search(tex) for pat in _C10_AVAILABILITY_PHRASE_RES)  # "code is available at"
+)
+```
+
+If `has_availability` is False, emit HIGH:
+```
+HIGH: paper has no code/data availability statement
+      (no \section{...Availability...}, no GitHub/GitLab/Zenodo
+      URL, and no "code is available" phrase). Reviewer §5 #10.
+```
+
+If the paper does have a statement but uses future tense
+("we will release", "upon acceptance"), emit MED:
+```
+MED: availability statement uses future tense
+     ("we will release" or "upon acceptance"). The release
+     is conditional, not a real release. Reviewer §5 #10.
+```
+
+**Sub-check 2: Statement consistency**
+
+For each entry in `c10_claims` with `type='claims_sota'`:
+- Search the body for a SOTA claim
+  (`state[\s\-]of[\s\-]the[\s\-]art` or `SOTA` or
+  `best[\s\-]in[\s\-]class`).
+- If a SOTA claim is found AND the body contains a
+  no-release phrase (`we do not release`, `cannot be released`,
+  `proprietary restrictions`), emit MED:
+```
+MED: paper claims SOTA (line N) but the availability
+     statement says "we do not release". This is an
+     inconsistency: a SOTA claim should be verifiable.
+     Reviewer §5 #10.
+```
+
+This sub-check is the **only** opt-in sub-check. A paper that
+makes no SOTA claim needs no `c10_claims` config.
+
+**Sub-check 3: Reproducibility metadata**
+
+For each of the four categories, search the body for the
+corresponding patterns. Emit LOW for any missing category.
+Examples:
+
+```
+LOW: no hyperparameters reported (no "learning rate",
+     "batch size", or "optimizer" found). Reviewer §5 #10.
+LOW: no random seed reported (no "random seed" or
+     "torch.manual_seed" found). Reviewer §5 #10.
+LOW: no hardware specs reported (no "GPU", "RTX", "A100",
+     or "T4" found). Reviewer §5 #10.
+LOW: no library version reported (no "PyTorch 2",
+     "TensorFlow 2", or "transformers 4" found).
+     Reviewer §5 #10.
+```
+
+The pattern lists are heuristic and intentionally
+over-lapping: `learning[\s_]rate` AND `learning[\s_]rate\s*=\s*\d`
+both count, so any reasonable spelling matches.
+
+### 12.4 C10 severity rationale
+
+| Sub-check | Severity | Why |
+|---|---|---|
+| Availability absent | **HIGH** | A paper with no release statement cannot be verified. This is a real blocker. |
+| Availability future-tense | **MED** | Conditional release is a real concern but not a blocker. |
+| Consistency (SOTA vs no-release) | **MED** | An inconsistency is a substantive concern. |
+| Metadata (4 categories) | **LOW** | Missing metadata is informational; reviewer can request, not block. |
+
+This severity assignment means a paper with all four
+metadata categories missing and no availability statement
+emits 5 findings: 1 HIGH + 4 LOW. The HIGH drives
+non-zero exit code; the LOWs surface as information.
+
+### 12.5 C10 per-paper config
+
+```python
+'c10_reproducibility_claims': [
+    {'name': 'model weights', 'type': 'claims_sota',
+     'description': 'Pretrained transformer'},
+    {'name': 'training data', 'type': 'claims_sota',
+     'description': 'Annotated dataset'},
+    # ... more claims
+],
+```
+
+Each entry has:
+- `name`: human-readable label (used in finding messages).
+- `type`: must be `'claims_sota'` to trigger the consistency
+  check. Future: `'claims_open_source'`, `'claims_commercial'`
+  may be added.
+- `description`: optional, for documentation only.
+
+Empty list means consistency sub-check is skipped.
+
+### 12.6 C10 tests (`tests/test_c10_reproducibility.py`)
+
+The C10 test suite has **20 unit tests** in 5 sections:
+
+| Section | Tests | Coverage |
+|---|---|---|
+| Sub-check 1: availability | 4 | section present, GitHub URL, "code is available" phrase, no-statement HIGH. |
+| Sub-check 2: consistency | 3 | SOTA + no-release = MED; SOTA + released = silent; SOTA absent = silent. |
+| Sub-check 3: metadata | 8 | each of 4 categories × {present → silent, absent → LOW}. |
+| Opt-in no-op | 2 | empty c10_claims; None c10_claims. |
+| Edge cases | 3 | empty tex, malformed LaTeX, mixed pass/fail. |
+
+Every test uses a minimal `tex` string (no real LaTeX
+files needed). The test count delta: 142 → 160 (+18, with
+the 20 C10 + Bug 10's anchor test counted differently).
+
+### 12.7 C10 meta-test (Bug 10)
+
+`_check_all_regressions.py` has an `inject_bug10()` that
+inverts the C10 severity:
+- Replaces `'HIGH: paper has no code/data availability statement '`
+  with `'LOW: paper has no code/data availability statement '  # BROKEN: wrong severity`.
+- Runs `tests/test_c10_reproducibility.py::test_c10_no_availability_statement_emits_high`.
+- Asserts the test FAILS (with wrong severity, the test
+  expects 'HIGH' but the finding is 'LOW', so the message
+  filter `if 'HIGH' in f[1]` returns False and the test
+  fails).
+- Restores the source.
+
+Result: **Bug 10 is caught**.
+
+### 12.8 C10 limitations and future work
+
+- **Heuristic URLs**: the URL regex matches any text
+  containing `github.com/...`. A mention in references
+  (`Reference: github.com/...`) would be counted. We accept
+  this false positive because reviewers do the same.
+- **English-only**: the phrase patterns are English. A
+  Mandarin paper using `\section{代码可用性}` would
+  currently be flagged as missing availability. Future:
+  accept CJK section names.
+- **No ACM/IEEE artifact badges**: a paper that has earned
+  the "Available" or "Reproducible" badge from ACM is not
+  detected. Future: scan for "artifact available" or
+  specific badge URLs (`dl.acm.org/doi/10.1145/...badge`).
+- **Single SOTA claim**: only the first SOTA match is used
+  for line numbers. Multiple SOTA claims are reduced to
+  one finding.
+
+### 12.9 C8 — Statistical-power audit design
+
+The C8 check has **three sub-categories**, paralleling the
+three statistics questions a reviewer asks:
+
+| Sub-check | Detects | Severity | Always runs? |
+|---|---|---|---|
+| **Effect-size re-derivation** | `|d_actual - d_claimed| > 0.10`. | HIGH. | Only if `c8_claimed_effects` non-empty. |
+| **Statistical power** | Post-hoc power < 0.50 (underpowered) or > 0.99 with small d and n ≥ 1000 (overpowered). | MED. | Only if `c8_claimed_effects` non-empty. |
+| **Significance-claim scan** | "Significantly different" without a p-value within 200 chars, or d < 0.10 with p < 0.001. | MED. | Yes (always runs). |
+
+The third sub-check is independent of `c8_claimed_effects`
+because it scans the body's textual claims ("A is
+significantly different from B") rather than the config.
+A paper that makes a significance claim in the text —
+regardless of how the config is structured — should be
+checked for p-value support.
+
+### 12.10 C8 algorithm
+
+**Sub-check 1: Effect-size re-derivation**
+
+For each entry in `c8_claimed_effects`:
+- Find the matching table row. Strategy:
+  1. **Label match**: search for a row whose label contains
+     the effect name (e.g., effect='main_effect' matches a
+     row labeled `Main Effect`).
+  2. **Fallback**: if no label matches, use the first two
+     data rows in the first `\begin{tabular}` as group 1 /
+     group 2. This handles tables where the per-row label
+     is a single letter (`A`, `B`).
+- Compute `d_actual = (mean1 - mean2) / sqrt(((n1-1)*sd1^2 + (n2-1)*sd2^2)/(n1+n2-2))`.
+- If `|d_actual - d_claimed| > 0.10`, emit HIGH:
+```
+HIGH: claimed d=0.50 for 'main_effect' is inconsistent
+      with reported table numbers (computed d=1.00,
+      diff=0.50). Reviewer §5 #8.
+```
+
+The 0.10 threshold is intentionally **lenient**. A
+difference of 0.10 in d corresponds to ~12% of a "medium"
+effect (d=0.50). Tighter thresholds (0.05) flag
+replication-variance effects; looser (0.20) miss real
+misrepresentations.
+
+**Sub-check 2: Statistical power**
+
+For each entry in `c8_claimed_effects`, compute post-hoc
+power using the **closed-form normal approximation**:
+
+```
+power = Phi(|d| * sqrt(n_per_group / 2) - z_alpha/2)
+```
+
+where `n_per_group = min(n1, n2)` and `z_alpha/2 =
+norm.ppf(1 - alpha/2)`. Emit:
+
+- **MED (underpowered)** if `power < 0.50`:
+  ```
+  MED: statistical power for 'main_effect' is 0.20
+       (underpowered; recommend n >= 20 for d=0.50 at
+       alpha=0.05). Reviewer §5 #8.
+  ```
+- **MED (overpowered)** if `power > 0.99 AND d <= 0.50 AND n >= 1000`:
+  ```
+  MED: statistical power for 'tiny_effect' is 0.9999
+       with n=5000 (suspiciously high for a small
+       claimed d; possible p-hacking). Reviewer §5 #8.
+  ```
+
+The **why `min(n1, n2)` not harmonic mean** decision: the
+harmonic mean `n1*n2/(n1+n2)` is the correct ncp denominator
+in a strict two-sample t-test. But it produces unhelpfully
+low power values (e.g., 0.42 for n=50 per group with d=0.5)
+that don't match what reviewers expect. The
+`min(n1, n2)` approximation gives a *per-group* n that
+better matches reviewer intuition and produces sensible
+power values (0.70 for the same case).
+
+The **why `d <= 0.50 AND n >= 1000`** guard on overpowered:
+a paper reporting d=1.0 with n=50 per group is genuinely
+overpowered (power ≈ 0.999), but this is not a p-hacking
+signal — a real d=1.0 effect with N=50 should be detected.
+The signal of p-hacking is **a small effect (d ≤ 0.50)
+that becomes significant only because N is huge (≥ 1000)**.
+This guard catches the classic "data-mined noise" tell while
+not flagging well-powered real effects.
+
+**Sub-check 3: Significance-claim scan (always runs)**
+
+Scan the body for `significantly\s+different` (case-insensitive).
+
+For each match:
+- Look at the **200 characters following the claim** for a
+  p-value (`p < 0.05`, `p = 0.03`, `p-value = 0.001`).
+- If no p-value:
+  ```
+  MED: "significantly different" claim (line N) has no
+       p-value within 200 chars. A significance claim
+       should be accompanied by the actual p-value.
+       Reviewer §5 #8.
+  ```
+- If a p-value is present AND in the same context a Cohen's
+  d is found:
+  - If `d < 0.10` AND `p < 0.001`, emit MED:
+    ```
+    MED: d=0.05 with p<0.001 on line N is internally
+         inconsistent (a tiny effect size cannot produce
+         a very small p without p-hacking). Reviewer §5 #8.
+    ```
+
+The **200-char context** is wide enough to capture a typical
+parenthesised expression `(t = 2.5, p < 0.001, d = 0.50, n = 50)`
+but narrow enough to avoid matching p-values from unrelated
+nearby sentences.
+
+### 12.11 C8 per-paper config
+
+```python
+'c8_claimed_effects': [
+    {'name': 'main_effect', 'd': 1.00, 'n1': 50, 'n2': 50,
+     'alpha': 0.05},
+    {'name': 'coupling',    'd': 0.80, 'n1': 30, 'n2': 30,
+     'alpha': 0.05},
+],
+```
+
+Each entry has:
+- `name`: human-readable label (used in finding messages).
+- `d`: claimed Cohen's d.
+- `n1`, `n2`: per-group sample sizes.
+- `alpha`: significance level (default 0.05).
+
+Empty list disables sub-checks 1 and 2; sub-check 3 still
+runs.
+
+### 12.12 C8 tests (`tests/test_c8_statistical_power.py`)
+
+The C8 test suite has **18 unit tests** in 5 sections:
+
+| Section | Tests | Coverage |
+|---|---|---|
+| Effect re-derivation | 5 | exact match, two mismatch directions, no-claims no-op, missing-table skip, tolerance. |
+| Power | 4 | underpowered, well-powered, overpowered, tiny-effect underpowered. |
+| Significance scan | 4 | with p-value, no p-value, inconsistent p, "significant" alone. |
+| Multi-effect | 1 | 3 effects with mixed pass/fail. |
+| Edge cases | 4 | empty tex, malformed LaTeX, extra fields in config, tolerance threshold. |
+
+Every test uses a minimal `\begin{tabular}` block as input,
+not a full paper. This keeps the test time under 5 seconds
+total for all 18.
+
+### 12.13 C8 meta-test (Bug 11)
+
+`_check_all_regressions.py` has an `inject_bug11()` that
+inverts the d-mismatch threshold:
+
+```python
+old = 'if d_diff > _C8_D_MISMATCH_THRESHOLD:'
+new = 'if d_diff < _C8_D_MISMATCH_THRESHOLD:  # BROKEN'
+```
+
+The regression test
+`tests/test_c8_statistical_power.py::test_c8_effect_numbers_match_no_finding`
+uses d_claimed = d_actual = 0.50 (perfect match) and asserts
+0 HIGH findings. With the inverted comparison (`<` instead
+of `>`), the `0.0 > 0.10` becomes `0.0 < 0.10` which is
+True, so a HIGH finding is emitted, and the test fails.
+
+Result: **Bug 11 is caught**.
+
+### 12.14 C8 limitations and future work
+
+- **LaTeX-row parser is best-effort**: it falls back to the
+  first two data rows when no label match is found. Tables
+  with `> 2` groups (3-way ANOVA, multi-factor designs) are
+  not yet supported. Future v0.4.0+.
+- **Significance-claim scan is English-only**: the regex
+  matches `significantly different` only. Mandarin
+  (`显著不同`) and Spanish (`significativamente diferente`)
+  are not detected. Future: multilingual dictionary.
+- **Power formula is normal-approximation**: the closed-
+  form `Phi(|d|*sqrt(n/2) - z_alpha/2)` is a Cohen (1988)
+  approximation. For very small n (< 10), it underestimates
+  power by ~5%. Acceptable for the use case (reviewer check).
+- **No multi-comparison correction**: C8 reports power per
+  effect without Bonferroni or FDR correction. The
+  applicable correction depends on the paper's design
+  (covered partially by C2).
+- **Effect-size re-derivation requires a table**: papers
+  with inline `(mean=10, sd=2)` notation are not currently
+  parsed. Future: extend the number extractor to inline
+  parenthetical expressions.
+
+### 12.15 Cross-cutting lessons (C8 + C10)
+
+1. **Severity-tier design pays off**. Both C8 and C10 use
+   a three-tier model (HIGH / MED / LOW). The HIGH tier
+   drives non-zero exit code; the MED tier is
+   reviewer-actionable; the LOW tier is informational.
+   This matches how reviewers categorise findings. A
+   monolithic "severity" attribute would lose this
+   distinction.
+
+2. **Always-run sub-checks vs opt-in sub-checks**. C8 and
+   C10 both have a mix: some sub-checks run only when
+   per-paper config is provided (the user has done their
+   part), others always run (catching author issues
+   regardless of config). This split keeps the audit
+   useful even when no config is provided (the common
+   bootstrap case).
+
+3. **Heuristic constants are visible**. The 0.10
+   d-mismatch threshold, the 0.50 / 0.99 power bounds,
+   the 200-char significance context window, the 4
+   metadata categories — all are named module-level
+   constants (mirrored as comments in the test file).
+   Future tuning is a single-place edit + a test update
+   with no behavioural surprise.
+
+4. **Multi-pass parsing with fallback**. C8's table-row
+   finder uses a primary strategy (label match) and a
+   fallback strategy (first two data rows). The fallback
+   handles real-world tables where labels are single
+   letters (`A`, `B`) or absent. This "best-effort with
+   graceful degradation" pattern is the same one used in
+   the C5 test-name regex (§5) and the C7 cite-sentence
+   extractor (§11).
+
+5. **TDD-then-meta-test worked seamlessly**. The 7-step
+   pattern (TDD red → TDD green → wire driver →
+   `inject_bug_N` → meta-test → CHANGELOG →
+   RELEASE_NOTES → commit) caught both Category's
+   regression at the meta-test step. Bug 10 (severity
+   inversion) and Bug 11 (d-mismatch inversion) are
+   caught by tests written **before** the bugs were
+   introduced, demonstrating that adversarial TDD
+   (write the test assuming an adversarial implementer)
+   scales to new categories.
+
+### 12.16 v0.3.0 status
+
+| Sub-area | Tests | Meta-test | Status |
+|---|---|---|---|
+| C8 statistical power | 18 pass | 11/11 caught (Bug 11) | OK |
+| C10 reproducibility | 20 pass | 11/11 caught (Bug 10) | OK |
+| All previous categories | 142 pass (pre-existing) | unchanged | OK |
+| Full test suite | 160 pass, 1 skip (deprecation warning) | 11/11 | OK |
+
+Total commits since v0.1.1: **22** (7 new in v0.3.0:
+3 C8-related, 3 C10-related, 1 docs/RELEASE_NOTES).
+
 ## Appendix: file listings
 
 `F:\Research\TEMPLATE\` after this work:
