@@ -93,29 +93,59 @@ config completion.
 
 ## Long-term
 
-### v0.3.0 — TBD
+### v0.3.0 — DONE (released 2026-07-10)
 
 **Theme**: Plugin system + new audit categories.
 
-| Idea | Description |
+| Idea | Description | Status |
+|---|---|---|
+| C8 (statistical power) | Re-derive the paper's claimed effect size and power from the reported numbers, and flag if the paper's claims are not supported. | ✅ Released in v0.3.0 |
+| C9 (figure–caption consistency) | Check that each figure has a caption, the caption is in the right place, and the caption matches the figure's content. | ✅ Released in v0.3.0 |
+| C10 (reproducibility) | Check that the paper includes a code/data availability statement, and that the statement is consistent with the paper's claims. | ✅ Released in v0.3.0 |
+| Plugin API | Allow users to write their own audit checks (Python module with a `check(main.tex) -> list[Finding]` function) and register them via `pyproject.toml`. | 🚧 In progress (v0.4.0) |
+
+See [`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md) for the
+v0.3.0 changelog. Also published on
+[github.com/aidless/tmaudit/releases/tag/v0.3.0](https://github.com/aidless/tmaudit/releases/tag/v0.3.0).
+
+### v0.4.0 — IN PROGRESS
+
+**Theme**: Plugin API + ecosystem. Ship the 4th (and final)
+audit-architecture feature: a stable plugin API that lets
+users write their own audit checks.
+
+| Milestone | Status |
 |---|---|
-| C8 (statistical power) | Re-derive the paper's claimed effect size and power from the reported numbers, and flag if the paper's claims are not supported. |
-| C9 (figure–caption consistency) | Check that each figure has a caption, the caption is in the right place, and the caption matches the figure's content. |
-| C10 (reproducibility) | Check that the paper includes a code/data availability statement, and that the statement is consistent with the paper's claims. |
-| Plugin API | Allow users to write their own audit checks (Python module with a `check(main.tex) -> list[Finding]` function) and register them via `pyproject.toml`. |
+| `Finding` dataclass + `@check` decorator + entry-points loader | ✅ Shipped (commit `3ad2825`) |
+| `tmaudit plugins list/info/run` CLI | ✅ Shipped (same commit) |
+| 29 unit tests for the plugin API | ✅ Shipped (`tests/test_plugin_api.py`) |
+| §14 engineering notes (design rationale, 14 sub-sections) | ✅ Shipped (`ed9d8f4`) |
+| GitHub issue draft (`.github/issues/18-plugin-api.md`) | ✅ Shipped (in this commit) |
+| Wire `tmaudit audit-all` to invoke active plugins | ⏳ TODO |
+| Add `make_cache_key()` to `cache.py` (plugin-fingerprint cache) | ⏳ TODO |
+| Author `tmaudit_example_plugin/` (3 demo checks) | ⏳ TODO |
+| Meta-test Bug 13 (loader skips malformed entry-point) | ⏳ TODO |
+| Meta-test Bug 14 (per-paper `c11_plugins_disabled` is honoured) | ⏳ TODO |
+| `RELEASE_NOTES_v0.4.0.md` + tag | ⏳ TODO |
+| Publish to PyPI (or document sideload install) | ⏳ TODO |
+
+See the issue thread (`.github/issues/18-plugin-api.md`) for
+open follow-ups. Estimated remaining effort: 3-5 working days.
 
 ### v1.0.0 — TBD
 
 **Theme**: First stable release.
 
-- All 10 audit categories (C1..C10) implemented.
-- At least 10 papers supported out-of-the-box.
-- API stable (no breaking changes for 6 months).
-- Performance: < 1 second per paper, including cache.
+- All 10 audit categories (C1..C10) implemented.  ← DONE in v0.3.0
+- At least 10 papers supported out-of-the-box.  ← Still TODO
+- API stable (no breaking changes for 6 months).  ← Plugin API
+  is the freeze candidate; ship in v0.4.0 to give the
+  community time to settle.
+- Performance: < 1 second per paper, including cache.  ← TODO
 - Documentation: full API reference, contributor guide,
-  tutorial videos.
+  tutorial videos.  ← §14 is the seed; expand in v0.4.0/v0.5.0
 - Used in at least 3 real TMLR / NeurIPS / ICLR
-  submission cycles.
+  submission cycles.  ← TODO
 
 ## Versioning policy
 
