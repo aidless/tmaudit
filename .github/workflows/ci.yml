@@ -159,7 +159,51 @@ jobs:
           retention-days: 7
 
   # --------------------------------------------------------------------------
-  # Job 4: lint (skip if dev not installed; cheap)
+  # Job 4: audit-all — runs verify on all configured papers,
+  # generates a Markdown report, and uploads it as an artefact.
+  # This is the v0.2.0 acceptance criterion: the report is
+  # included in the CI artefacts.
+  # --------------------------------------------------------------------------
+  audit-all:
+    name: audit-all (v0.2.0 report)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tmaudit in editable mode
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Run audit-all and write Markdown report
+        # The --output flag tells audit-all to write a Markdown
+        # report. The --no-cache flag forces a fresh audit
+        # (we don't want stale cache in CI).
+        # The report is uploaded as an artefact below.
+        run: |
+          python -m src.tmaudit audit-all --start 1 --end 5 --output audit-report.md --no-cache
+          echo "=== Report head ==="
+          head -30 audit-report.md
+          echo "=== Report tail ==="
+          tail -10 audit-report.md
+
+      - name: Upload Markdown report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmaudit-audit-report
+          path: audit-report.md
+          if-no-files-found: warn
+          retention-days: 30
+
+  # --------------------------------------------------------------------------
+  # Job 5: lint (skip if dev not installed; cheap)
   # --------------------------------------------------------------------------
   lint:
     name: lint (pyflakes)

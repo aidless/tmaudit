@@ -1,0 +1,34 @@
+# mm3 detector config (identical to F:\Research\_inbox\方法论\detector.yaml
+#  v0.1, kept in sync by hand for now)
+# 优先级: CLI 参数 > 本文件 > 代码内 DEFAULT_CONFIG
+# 不在本文件的项使用代码默认; 删除本文件等价于全部用代码默认.
+
+arxiv:
+  # 安全窗口: arXiv 编号 month 距 today.month 在 ±N 之内算"安全"
+  # 例如 today=2026-07, N=2 -> 安全窗 [05, 09]
+  safe_window_months: 2
+
+  # 是否对"超安全窗"的 arXiv 编号调 arXiv API 查最新版本,
+  # 若最新版本日期已入窗则降级 HIGH -> MEDIUM
+  verify_online: true
+
+  # arXiv API HTTP 超时 (秒)
+  api_timeout_sec: 8
+
+  # arXiv API User-Agent
+  user_agent: "mm3-detector/1.0"
+
+internal:
+  # 段落 (🔴弱) context 里的 HIGH 软降为 MEDIUM (不 block phase)
+  # 设 false: 段落也保持 HIGH
+  soft_down_paragraph: true
+
+log:
+  # 是否写日志到文件
+  file_enabled: true
+  # 日志文件名 (相对 detector 脚本目录)
+  file_path: detector.log
+  # stdout 级别
+  console_level: INFO
+  # 文件级别
+  file_level: INFO

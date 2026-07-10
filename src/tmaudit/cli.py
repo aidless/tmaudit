@@ -131,9 +131,32 @@ def cmd_fix_unicode(args: argparse.Namespace) -> int:
 
 
 def cmd_audit_all(args: argparse.Namespace) -> int:
+    """Run verify for all papers in [start, end] and write a Markdown
+    report if --output is set.
+
+    Per v0.2.0 acceptance criteria:
+      - Generate a single Markdown report covering all
+        configured papers.
+      - The report is included in CI artefacts (see
+        .github/workflows/ci.yml).
+      - LLM-based C7 fallback is opt-in (deferred to
+        a future v0.2.x; this command does not use it).
+    """
+    import time as _time
+    from . import report as _report
+
     start = args.start
     end = args.end
+    output_path = getattr(args, 'output', None)
+    no_cache = getattr(args, 'no_cache', False)
+    started_at = _time.time()
     print(f'Auditing papers {start}..{end} ...')
+    if output_path:
+        print(f'Markdown report will be written to: {output_path}')
+    if no_cache:
+        print('Cache: disabled (--no-cache)')
+
+    results: list = []
     fail = 0
     for n in range(start, end + 1):
         if n not in VERIFY_CONFIGS:
@@ -143,13 +166,52 @@ def cmd_audit_all(args: argparse.Namespace) -> int:
         paper_dir = args.paper_dir or cfg['dir']
         target = forge.fork_verify(n, paper_dir)
         print(f'\n--- paper {n} ({paper_dir}) ---')
-        rc = subprocess.run(
+        paper_started = _time.time()
+        proc = subprocess.run(
             [sys.executable, str(target)],
             cwd=target.parent,
-        ).returncode
-        if rc != 0:
+            capture_output=True,
+            text=True,
+        )
+        paper_ended = _time.time()
+        # Print the first 30 lines of stdout for immediate feedback
+        out_preview = proc.stdout.splitlines()[:30]
+        for line in out_preview:
+            print(f'    | {line}')
+        if proc.returncode != 0:
             fail += 1
-            print(f'  [FAIL] paper {n} returned {rc}')
+            print(f'  [FAIL] paper {n} returned {proc.returncode}')
+        # Build the result
+        result = _report.parse_verify_output(
+            paper=n,
+            paper_dir=paper_dir,
+            stdout=proc.stdout,
+            stderr=proc.stderr,
+            exit_code=proc.returncode,
+            started_at=paper_started,
+            ended_at=paper_ended,
+        )
+        results.append(result)
+
+    ended_at = _time.time()
+
+    # Write the Markdown report if --output is set
+    if output_path is not None:
+        try:
+            from . import __version__ as _ver
+            tmaudit_version = _ver
+        except ImportError:
+            tmaudit_version = 'dev'
+        _report.write_markdown_report(
+            Path(output_path),
+            results,
+            started_at=started_at,
+            ended_at=ended_at,
+            tmaudit_version=tmaudit_version,
+            cache_used=not no_cache,
+        )
+        print(f'\n[REPORT] Markdown report written to: {output_path}')
+
     return 0 if fail == 0 else 1
 
 
@@ -226,6 +288,14 @@ def main(argv: list[str] | None = None) -> int:
     p_audit.add_argument('--start', type=int, default=1)
     p_audit.add_argument('--end', type=int, default=5)
     p_audit.add_argument('--paper-dir', type=Path, default=None)
+    p_audit.add_argument(
+        '--output', type=Path, default=None,
+        help='write a Markdown report to this path (e.g. report.md)',
+    )
+    p_audit.add_argument(
+        '--no-cache', action='store_true',
+        help='bypass the cache (do not read or write audit results)',
+    )
     p_audit.set_defaults(func=cmd_audit_all)
 
     p_cache_info = sub.add_parser(

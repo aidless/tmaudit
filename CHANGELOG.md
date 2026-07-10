@@ -115,6 +115,55 @@ config completion.
 - **Coverage**: All 5 papers (1, 2, 3, 4, 5) now have full
   C1/C2/C3/C4/C5/C6/C7 config (was 2/5 before this release).
 
+### Added (audit-all Markdown report)
+
+- **`src/tmaudit/report.py`** (new, 240 lines):
+  - `PaperAuditResult` dataclass: one paper's audit results.
+  - `Finding` dataclass: one finding (category, message,
+    line, severity).
+  - `parse_verify_output()`: parses a verify_p<N>.py stdout
+    into a PaperAuditResult.
+  - `render_markdown()`: renders a list of results as a
+    GitHub-flavored Markdown report.
+  - `write_markdown_report()`: convenience function that
+    writes the report to a file.
+
+- **`src/tmaudit/cli.py`**:
+  - `tmaudit audit-all` now supports `--output report.md`
+    (write Markdown report) and `--no-cache` (bypass cache).
+  - `cmd_audit_all()` captures each paper's stdout, parses
+    findings, builds a list of `PaperAuditResult`, and writes
+    the Markdown report if `--output` is set.
+
+- **`tests/test_report.py`** (new, 12 tests):
+  - Empty results -> minimal valid Markdown.
+  - One paper, no findings -> "No issues detected" section.
+  - Multiple findings, categorized by category.
+  - Multiple papers, mixed pass/fail.
+  - write_markdown_report writes to file.
+  - parse_verify_output extracts findings from real verify
+    output.
+  - parse_verify_output handles empty stdout.
+  - parse_verify_output handles missing DETAILED FINDINGS.
+  - SEVERITY_MAP matches verify_TEMPLATE.SEVERITY.
+  - Report has 4 required sections.
+  - Markdown is valid (balanced table pipes).
+  - Empty paper_dir is OK.
+
+- **`.github/workflows/ci.yml`**:
+  - New `audit-all` job runs `tmaudit audit-all --output
+    audit-report.md --no-cache` and uploads the report as
+    a CI artefact (30-day retention).
+  - CI now has 5 jobs: pytest, meta-test,
+    validate-community-files, audit-all, lint.
+
+- **Test count**: 90 → **110** (+12 report tests).
+- **Real-world impact**: CI now produces a human-readable
+  Markdown report that reviewers can download and read
+  directly, instead of having to read the raw verify
+  output. This makes the audit results more accessible
+  to non-developers (e.g., paper authors, advisors).
+
 ## [0.1.1] — 2026-07-10
 
 **Bug 7 fix**: C6 blacklist false-positive on idiomatic
