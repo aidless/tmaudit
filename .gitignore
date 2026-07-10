@@ -1,0 +1,87 @@
+# tmaudit .gitignore
+# ---------------------------------------------------------------------------
+# What this file does:
+#   Tells git which files to NOT track. Anything listed here will be
+#   invisible to git, even if it is in your working directory.
+# ---------------------------------------------------------------------------
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# pytest
+.pytest_cache/
+.pytest_temp/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+
+# mypy / pyright
+.mypy_cache/
+.pyright_cache/
+
+# Build artefacts
+# - tmaudit.pyz is TRACKED (we ship it as the release artifact;
+#   users download it directly without `pip install`)
+# - build_pyz/ is the staging directory (rebuild via `_build_pyz.py`)
+build_pyz/
+tmaudit.pyz.bak
+# Stale JUnit XML files dropped by a misconfigured pytest run
+test-results-*.xml
+
+# Local CI simulation artefacts (only useful for the demo, not the repo)
+ci_artifacts/
+_pr_demo_run.log
+_pr_demo_preview.txt
+
+# Local audit forks (these are per-paper intermediate files; we keep the
+# main audits committed, see PAPER*_CONSOLIDATED/verify_p*.py, but
+# _check_all_regressions.py creates a /tmp/ fork that should be ignored)
+tmp_audit_fork_*/
+
+# Anything ending in `.bak` (created by the install-precommit.sh script
+# when it backs up an existing pre-commit hook)
+*.bak
+*_demo_run.log
+*_pr_demo_run.log
+
+# Editor / OS
+*.tmp
+*.temp
+*~
+._*
+.nfs*
