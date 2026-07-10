@@ -1,7 +1,8 @@
-"""_check_all_regressions.py — verify that the 9 bug-specific
+"""_check_all_regressions.py — verify that the 10 bug-specific
 regression tests in tests/test_forge.py, tests/test_c6_threshold.py,
-tests/test_c7_citation_context.py, tests/test_cache.py, and
-related test files actually catch a re-introduction of each bug.
+tests/test_c7_citation_context.py, tests/test_cache.py,
+tests/test_c10_reproducibility.py, and related test files
+actually catch a re-introduction of each bug.
 
 For each bug, this script:
   1. Backs up the relevant source file (forge.py,
@@ -15,7 +16,7 @@ For each bug, this script:
   6. Re-runs the test and asserts it PASSES.
 
 Exit code:
-  0 if all 9 bugs are correctly caught and restored.
+  0 if all 10 bugs are correctly caught and restored.
   1 if any bug is NOT caught (i.e. the regression test would
     silently miss the bug — a serious problem).
 
@@ -470,6 +471,40 @@ def inject_bug9() -> None:
         )
 
 
+def inject_bug10() -> None:
+    """Bug 10: C10 inverted severity. The implementation
+    emits findings in the form 'HIGH: ...', 'MED: ...', or
+    'LOW: ...' (severity at the start of the message). If we
+    invert this (e.g., always emit 'LOW: ...' regardless of
+    severity), the tests that look for 'HIGH' or 'MED' in
+    the message will fail.
+
+    We inject by changing the first finding's severity
+    prefix from 'HIGH:' to 'LOW:' (the bug case). With this
+    change, test_c10_no_availability_statement_emits_high
+    (which asserts at least one finding has 'HIGH' in it)
+    will fail because all findings say 'LOW' instead.
+
+    The anchor is the first finding in check_c10_reproducibility:
+    'HIGH: paper has no code/data availability statement'.
+    The injection replaces 'HIGH:' with 'LOW:' on this line.
+    """
+    with _patched(VERIFY_TPL):
+        original = VERIFY_TPL.read_text(encoding='utf-8')
+        old = "'HIGH: paper has no code/data availability statement '"
+        new = "'LOW: paper has no code/data availability statement '  # BROKEN: wrong severity"
+        if old not in original:
+            raise RuntimeError(f'bug-10 anchor not found: {old!r}')
+        VERIFY_TPL.write_text(
+            original.replace(old, new, 1),
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '10',
+            'tests/test_c10_reproducibility.py::test_c10_no_availability_statement_emits_high',
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-bug test runner
 # ---------------------------------------------------------------------------
@@ -508,6 +543,7 @@ def main() -> int:
         ('7', inject_bug7),
         ('8', inject_bug8),
         ('9', inject_bug9),
+        ('10', inject_bug10),
     ]
 
     for bug_id, inject_fn in cases:
