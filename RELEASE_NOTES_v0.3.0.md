@@ -6,13 +6,13 @@
 
 | | v0.2.0 (previous) | **v0.3.0 (this)** | Delta |
 |---|---|---|---|
-| Audit categories | 7 (C1..C7) | **9 (C1..C8, C10)** | +2 |
-| Unit tests | 122 | **160** | +38 (+18 C8, +20 C10) |
-| Meta-test bugs caught | 9/9 | **11/11** | +2 (Bug 10, Bug 11) |
+| Audit categories | 7 (C1..C7) | **10 (C1..C10)** | +3 |
+| Unit tests | 122 | **176** | +54 (+18 C8, +16 C9, +20 C10) |
+| Meta-test bugs caught | 9/9 | **12/12** | +3 (Bug 10, 11, 12) |
 | Community-files checks | 44/44 | **44/44** | unchanged |
-| Per-paper opt-in configs | c7_max_ceremonial | + **c8_claimed_effects**, **c10_reproducibility_claims** | +2 |
-| Total commits | 15 (since v0.1.1) | **22 (since v0.1.1)** | +7 |
-| Lines added | — | **+~5,500 (since v0.2.0)** | — |
+| Per-paper opt-in configs | c7_max_ceremonial | + **c8_claimed_effects**, **c9_figure_keywords**, **c10_reproducibility_claims** | +3 |
+| Total commits | 15 (since v0.1.1) | **24 (since v0.1.1)** | +9 |
+| Lines added | — | **+~6,500 (since v0.2.0)** | — |
 
 ## Highlights
 
@@ -63,12 +63,12 @@
          Reviewer §5 #10.
    ```
 
-3. **11/11 meta-test bugs caught**. v0.3.0 keeps the
+3. **12/12 meta-test bugs caught**. v0.3.0 keeps the
    regression-injection meta-test discipline: every
    historical bug has a `inject_bugN()` function in
    `_check_all_regressions.py` that mutates the source and
    asserts the targeted regression test FAILS (catches the
-   regression). All 11 are confirmed caught.
+   regression). All 12 are confirmed caught.
 
 4. **Heuristic constants mirrored in tests**. The C8
    thresholds (0.10 d-mismatch, 0.50/0.99 power) appear as
@@ -76,11 +76,34 @@
    `tests/test_c8_statistical_power.py`. Any future tuning
    is a single-file change.
 
-5. **C8 + C10 are opt-in**. Like C7 (`c7_max_ceremonial`),
-   both new categories are off when their per-paper config
-   list is empty. The C8 *significance-claim scan* (sub-check
-   3) is independent of opt-in because it catches a different
-   class of error (textual claim without p-value).
+5. **C8 + C10 + C9 are opt-in**. Like C7 (`c7_max_ceremonial`),
+   all three new categories are off when their per-paper
+   config list is empty. The C8 *significance-claim scan*
+   (sub-check 3) and C9 *caption existence / placement /
+   figure-referenced sub-checks* are independent of opt-in
+   because they catch a different class of error
+   (textual claim without p-value, undocumented figure).
+
+6. **C9 — Figure-caption audit** (NEW). The 9th audit
+   category, the 3rd of the v0.3.0 trio. Four sub-checks:
+   - **Caption exists** (HIGH): every `\begin{figure}` must
+     have a `\caption{...}`. A figure without a caption is
+     undocumented.
+   - **Caption placement** (MED): per the IEEE / ACM / TMLR
+     convention, `\caption` goes BELOW `\includegraphics`.
+     Captions above the graphic are flagged.
+   - **Caption content** (MED, opt-in via
+     `c9_figure_keywords`): each caption should contain at
+     least one of the expected keywords for that figure.
+     Generic captions ("A pretty picture") are flagged.
+   - **Figure referenced** (MED): every `\label{fig:...}`
+     must be referenced in the body via `\ref` / `\autoref`
+     / `\cref`. Orphan figures are flagged.
+   Sample finding:
+   ```
+   HIGH: figure (line 18) has no \caption{...}.
+         Reviewer §5 #9.
+   ```
 
 ## Breaking Changes
 
@@ -100,12 +123,17 @@ so older per-paper verify scripts without them still work.
    python gen_verify_scripts.py --paper 4   # Paper 4
    python gen_verify_scripts.py --paper 5   # Paper 5
    ```
-   The writer now adds `c8_claimed_effects` and
-   `c10_reproducibility_claims` fields (empty by default for
-   the new ones; **Papers 1, 3, 5 carry C8 example entries**).
-3. Optionally populate `c10_reproducibility_claims` for each
-   paper (e.g., `[{'name': 'model weights', 'description':
-   'Pretrained transformer'}])`.
+   The writer now adds `c8_claimed_effects`,
+   `c9_figure_keywords`, and `c10_reproducibility_claims`
+   fields (empty by default for the new ones;
+   **Papers 1, 3, 5 carry C8 example entries**;
+   **Papers 1, 5 carry C9 example entries**).
+3. Optionally populate `c9_figure_keywords` and
+   `c10_reproducibility_claims` for each paper
+   (e.g., `c9_figure_keywords: [{'fig_id': 'fig:overview',
+   'expected_keywords': ['overview', 'architecture']}]`,
+   `c10_reproducibility_claims: [{'name': 'model weights',
+   'description': 'Pretrained transformer'}]`).
 4. Re-run audits:
    ```bash
    tmaudit audit-all

@@ -135,6 +135,69 @@ checks (C10). Closes the 8-audit-category vision from
 - **Test count**: 142 → **160** (+18 C8 tests).
 - **Meta-test**: 10/10 → **11/11** (+1 with Bug 11).
 
+### Added (C9 figure-caption)
+
+- **`src/tmaudit/templates/verify_TEMPLATE.py`**:
+  - **C9 audit category** (NEW) — `check_c9_figure_caption`.
+    A figure-caption consistency audit with 4 sub-categories:
+    1. **Caption existence** (HIGH): a figure without
+       `\caption{...}` is undocumented. Emitted for any
+       `\begin{figure}` block missing a caption.
+    2. **Caption placement** (MED): per the IEEE / ACM / TMLR
+       convention, captions go BELOW the figure. If the
+       `\caption` precedes the `\includegraphics`,
+       emit MED. The regex recognises the optional
+       `[key=value]` option block (e.g.,
+       `[width=0.9\textwidth]`) between the
+       `\includegraphics` command name and the
+       `{filename}` argument.
+    3. **Caption content** (MED, opt-in): each caption
+       should contain at least one of the
+       `expected_keywords` listed for that figure in the
+       per-paper `c9_figure_keywords` config. Match is
+       case-insensitive substring. Generic captions like
+       "A pretty picture" are flagged.
+    4. **Figure referenced** (MED): every `\label{fig:...}`
+       should be referenced by `\ref` / `\autoref` / `\cref`
+       in the body text. Orphan figures (defined but never
+       cited) are flagged.
+  - Sub-checks 1, 2, 4 always run (independent of opt-in
+    config). Sub-check 3 only runs when `c9_figure_keywords`
+    is non-empty (graceful degradation pattern, same as C8).
+  - SEVERITY['C9'] = 'MEDIUM'.
+  - Driver `main()` now wires
+    `CHECKS_CONFIG['c9_figure_keywords']` into the C9 call
+    and prints a C9 row in the findings table.
+
+- **`src/tmaudit/configs/paper_configs.py`**:
+  - Papers 1 and 5 carry example `c9_figure_keywords`
+    entries (e.g., `{'fig_id': 'fig:overview',
+    'expected_keywords': ['overview', 'architecture']}`).
+    Papers 2, 3, 4 carry empty lists (opt-in).
+  - `_format_c9_figure_keywords()` writer added.
+
+- **`tests/test_c9_figure_caption.py`** (NEW): 16 TDD tests
+  covering caption existence (HIGH), caption placement
+  (MED), content keyword match (case-insensitive), figure
+  reference detection, multiple figures, malformed LaTeX,
+  and false-positive guards for forward references. **All
+  16 pass.**
+
+- **`_check_all_regressions.py`**:
+  - **`inject_bug12()`** (NEW): Bug 12 — C9 inverted
+    caption-placement condition. Replaces
+    `and parsed['caption_pos'] < parsed['graphic_pos']):`
+    with `>` instead of `<`. The regression test
+    `tests/test_c9_figure_caption.py::test_c9_caption_above_figure_emits_med`
+    catches this (with the bug, a caption that's *above*
+    the graphic — i.e., `caption_pos < graphic_pos` —
+    fails the inverted comparison, so no MED finding is
+    emitted and the test fails).
+
+- **Test count**: 160 → **176** (+16 C9 tests).
+- **Meta-test**: 11/11 → **12/12** (+1 with Bug 12, when
+  Bug 6 anchor is fixed).
+
 ### Added (C10 reproducibility, carried over from v0.3.0 dev)
 
 The C10 reproducibility audit (with 20 regression tests and
