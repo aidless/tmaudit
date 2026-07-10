@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""Pre-commit hook for tmaudit.
+
+This hook is invoked by `git commit` (after being installed via
+`./hooks/install-precommit.sh` or `./hooks/install-precommit.ps1`).
+It runs the four CI steps that should pass before every commit:
+
+  1. _check_yaml.py   — validate .github/workflows/ci.yml
+  2. pytest           — run the 46-test unit/integration suite
+  3. _check_all_regressions.py — verify the 6 bug regression tests catch their bugs
+  4. _build_pyz.py    — rebuild tmaudit.pyz
+
+If any step fails, the commit is aborted with a non-zero exit
+code (so `git commit` will refuse the commit). The hook prints
+a clear, colour-coded summary at the end.
+
+Cross-platform notes
+--------------------
+
+* The hook is a Python script (NOT a bash script) so it works
+  on Windows, macOS, and Linux without modification.
+* We do NOT use a shebang line (`#!/usr/bin/env python3`)
+  because Windows cannot execute scripts via shebang — only
+  the file extension matters. The hook is invoked as
+  `python hooks/pre-commit` by git on Windows, and as
+  `./hooks/pre-commit` on Unix (where the shebang is needed).
+  Since the shebang is ignored on Windows, including it costs
+  nothing and is required for Unix.
+* The hook re-uses the existing CI scripts. It does not
+  duplicate any logic.
+"""
+from __future__ import annotations
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if (ROOT / 'src' / 'tmaudit').is_dir():
+    # Normal case: hook is at <root>/hooks/pre-commit.py
+    pass
+else:
+    raise RuntimeError(f'Cannot find tmaudit at {ROOT}/src/tmaudit')
+
+# Try `python` (Windows default) first, then `python3` (Unix default).
+# `sys.executable` is the actual interpreter running this script.
+PY = sys.executable
+
+# ANSI colour codes (suppressed when stdout is not a TTY)
+USE_COLOUR = sys.stdout.isatty() and os.environ.get('TERM', '') != 'dumb'
+GREEN = '\033[32m' if USE_COLOUR else ''
+RED = '\033[31m' if USE_COLOUR else ''
+YELLOW = '\033[33m' if USE_COLOUR else ''
+BOLD = '\033[1m' if USE_COLOUR else ''
+RESET = '\033[0m' if USE_COLOUR else ''
+
+
+def _print_header(title: str) -> None:
+    print(f'\n{BOLD}==> {title}{RESET}')
+
+
+def _run_step(label: str, cmd: list[str], timeout: int = 300) -> bool:
+    """Run a command; return True iff it exits with code 0.
+
+    We deliberately do NOT use `capture_output=True` because:
+      - pytest emits Unicode (e.g., ✓ ✗) that Windows cmd
+        cannot decode in cp1252; capturing would crash the
+        subprocess reader thread with UnicodeDecodeError.
+      - We want the user to see pytest's output live, in
+        case a test fails.
+    The trade-off is that we cannot save pytest's stdout to
+    a file from this hook; the user just runs the failed
+    command manually to see the full output.
+    """
+    _print_header(label)
+    print(f'  $ {" ".join(cmd)}')
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=ROOT,
+            env={**os.environ,
+                 'PYTHONIOENCODING': 'utf-8',
+                 'PYTHONHASHSEED': '0',
+                 # Force unbuffered Python output (important
+                 # for pytest's progress dots).
+                 'PYTHONUNBUFFERED': '1'},
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        print(f'{RED}  TIMEOUT after {timeout}s{RESET}')
+        return False
+    except FileNotFoundError as e:
+        print(f'{RED}  executable not found: {e}{RESET}')
+        return False
+    if result.returncode != 0:
+        print(f'{RED}  FAILED (rc={result.returncode}){RESET}')
+        return False
+    print(f'{GREEN}  OK{RESET}')
+    return True
+
+
+def main() -> int:
+    print(f'{BOLD}tmaudit pre-commit hook{RESET}')
+    print(f'  root: {ROOT}')
+    print(f'  python: {PY}')
+
+    steps: list[tuple[str, list[str]]] = [
+        ('Step 1/4: validate .github/workflows/ci.yml',
+         [PY, '_check_yaml.py']),
+        ('Step 2/4: run pytest (46 tests)',
+         # --no-header -q to avoid pytest's Unicode progress
+         # markers (✓ ✗) that can crash Windows cp1252
+         # shells.
+         [PY, '-m', 'pytest', '-q', '--no-header', '--color=no']),
+        ('Step 3/4: run regression-injection meta-test (6 bugs)',
+         [PY, '_check_all_regressions.py']),
+        ('Step 4/4: rebuild tmaudit.pyz',
+         [PY, '_build_pyz.py']),
+    ]
+    for label, cmd in steps:
+        if not _run_step(label, cmd):
+            print()
+            print(f'{RED}{BOLD}ABORTING commit.{RESET}')
+            print(f'{YELLOW}To skip this hook (NOT recommended):{RESET}')
+            print(f'  git commit --no-verify')
+            return 1
+
+    print()
+    print(f'{GREEN}{BOLD}All pre-commit checks passed.{RESET}')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

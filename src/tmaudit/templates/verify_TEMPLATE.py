@@ -1,0 +1,603 @@
+#!/usr/bin/env python3
+"""_verify_TEMPLATE.py — generic config-driven 6-category TMLR audit.
+
+This is the GENERIC TEMPLATE. To use:
+
+    1. Copy this file to F:/Research/PAPER<N>_CONSOLIDATED/_verify_p<N>.py
+    2. Edit the `ROOT` constant.
+    3. Edit the `CHECKS_CONFIG` block to match the paper.
+
+Or, run `python gen_verify_scripts.py --paper N` from
+F:/Research/TEMPLATE/ to fork this template automatically.
+
+The six categories of checks are:
+
+  C1  Abstract symbol definitions
+      - For each entry in CHECKS_CONFIG['c1_symbols'], verify that the
+        abstract contains an inline definitional phrase within a
+        250-character window of the first mention.
+  C2  Bonferroni scheme consistency
+      - Verify that the abstract, body, and table notes are consistent
+        with the families declared in CHECKS_CONFIG['c2_families'].
+      - Optionally verify that a section matching
+        CHECKS_CONFIG['c2_section_pattern'] exists.
+  C3  Formalization of a key concept
+      - Verify that a concept (declared in CHECKS_CONFIG['c3_concept'])
+        has a formal definition (matching CHECKS_CONFIG['c3_formal'])
+        before being used qualitatively.
+  C4  Citation hygiene (generic)
+      - Every \\cite{...} key in main.tex must have a corresponding
+        @...{key,...} entry in refs.bib.
+      - Self-cite rate must be below the threshold declared in
+        CHECKS_CONFIG['c4_self_cite_threshold'].
+  C5  Sample size and effect-size transparency (generic)
+      - Every p-value reported in the abstract must be paired with n
+        and a test name.
+      - Every d=... in the abstract must be declared as "Cohen's d"
+        (or whichever effect size type is set in CHECKS_CONFIG['c5_d_type']).
+  C6  Blacklisted vocabulary (generic)
+      - Every word in CHECKS_CONFIG['c6_blacklist'] is flagged for
+        replacement.
+
+Exit codes:
+    0 = no HIGH-severity findings
+    1 = at least one HIGH-severity finding
+    2 = I/O error (missing file, etc.)
+"""
+from __future__ import annotations
+import re
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+# ============================================================================
+# Configuration (only this block needs editing per paper)
+# ============================================================================
+ROOT = Path('F:/Research/PAPER1_CONSOLIDATED')
+MAIN = ROOT / 'main.tex'
+REFS = ROOT / 'refs.bib'
+
+# Each entry in CHECKS_CONFIG controls one of the 6 categories. The check
+# functions below read from this dict, so per-paper changes happen entirely
+# here — no code edits required.
+#
+# Schema (see gen_verify_scripts.py for canonical examples):
+#   c1_symbols: list of dicts, one per symbol that must be defined in the
+#               abstract. Each dict has:
+#                 - 'name'         (str): human-readable label
+#                 - 'token'        (str): the raw token to search for in the
+#                                       abstract (e.g., r'\Gamma', 'CAF',
+#                                       'E_T', 'TTRL')
+#                 - 'definition'   (str): a regex that must match within
+#                                       250 chars of the first mention.
+#                 - 'window'       (int, optional): window size in chars
+#                                       (default 250)
+#
+#   c2_families: dict {family_name: k}. The auditor checks that the
+#                abstract's k value, if any, is in this set.
+#   c2_section_pattern: regex that must match a \\section / \\subsection
+#                       title declaring the statistical protocol. Use
+#                       r'\\section\*?\{[^}]*Power analysis[^}]*\}|...
+#                       to also accept star-form sections.
+#   c2_abstract_k_allowed: list[int] of k values that are acceptable in
+#                         the abstract. Usually this is the family-level k.
+#
+#   c3_concept: str label of the concept that must be formally defined
+#               (e.g., "crossover", "Two Faces", "impossibility triangle").
+#   c3_concept_token: regex matching the concept as it appears in
+#                     \\textbf{...} or as a bare word.
+#   c3_formal: regex that must appear before the first qualitative use
+#              of the concept. For example, the formal definition of a
+#              "crossover" is `crossover.{0,80}\\arg\\?min`.
+#
+#   c4_self_cite_threshold: float, default 0.30. Self-cite rate above
+#                          this triggers a finding.
+#   c4_self_cite_prefix:   str, default 'liu2026'. Cite key prefix used
+#                          to detect self-cites.
+#   c4_max_self_cite_keys: int, default 3. Maximum number of self-cite
+#                          keys allowed (for method-foundation retention).
+#
+#   c5_d_type: str, default "Cohen's d". Effect-size type that must be
+#              declared in the abstract alongside every d=... value.
+#
+#   c6_blacklist: list[str] of words to flag. Each word is matched with
+#                 case-insensitive word boundaries.
+CHECKS_CONFIG: dict = {
+    'c1_symbols': [
+        {
+            'name': r'$\Delta$CAF (consensus-against-field coefficient)',
+            'token': r'\bCAF\b',
+            'definition': r'\bCAF\b.{0,80}=|consensus.{0,30}agreement|strateg.{0,30}convergence',
+        },
+        {
+            'name': r'$E_T$ (temporal-accumulation effect on calibration)',
+            'token': r'\bE_T\b',
+            'definition': r'E_T.{0,80}=|temporal.{0,30}accumulation|peer.anchored.{0,30}confidence',
+        },
+        {
+            'name': r'$\Delta$ECE (calibration delta)',
+            'token': r'\\Delta\s*ECE|\\Delta\\mathrm\{ECE\}',
+            'definition': r'\\Delta\s*ECE.{0,80}=|calibration.{0,30}loss|calibration.{0,30}degrad',
+        },
+        {
+            'name': 'TTRL (Test-Time Reinforcement Learning)',
+            'token': r'\bTTRL\b',
+            'definition': r'TTRL.{0,80}=|Test.Time.{0,40}Reinforcement.{0,40}Learning',
+        },
+    ],
+
+    'c2_families': {
+        # family_name -> k value
+        'main': 3,
+    },
+    'c2_section_pattern': (
+        r'\\section\*?\{[^}]*Power analysis[^}]*\}|'
+        r'\\subsection\*?\{[^}]*Power analysis[^}]*\}'
+    ),
+    'c2_abstract_k_allowed': [3, 9],  # accept either if both families are declared
+
+    'c3_concept': 'Two Faces (Face 1: Strategy Consensus; Face 2: Calibration Contagion)',
+    'c3_concept_token': r'\\textbf\{Face 1\}|\\textbf\{Face 2\}|\bFace\s+1\b|\bFace\s+2\b',
+    'c3_formal': r'\\section\{Face 1:',
+    'c3_formal_secondary': r'\\section\{Face 2:',  # also required if both halves
+
+    'c4_self_cite_threshold': 0.30,
+    'c4_self_cite_prefix': 'liu2026',
+    'c4_max_self_cite_keys': 3,
+
+    'c5_d_type': "Cohen's d",
+
+    'c6_blacklist': ['paradigm', 'yield', 'reveal'],
+}
+# ============================================================================
+
+
+# Default inflection regexes (override per-word by adding to INFLECTIONS).
+DEFAULT_INFLECTIONS = {
+    'paradigm': r'\bparadigms?\b',
+    'yield':    r'\byields?\b',
+    'reveal':   r'\breveals?\b|\brev\b|\brevealed\b',
+}
+
+
+SEVERITY = {
+    'C1': 'HIGH',
+    'C2': 'HIGH',
+    'C3': 'MEDIUM',
+    'C4': 'MEDIUM',
+    'C5': 'MEDIUM',
+    'C6': 'LOW',
+}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def read(path: Path) -> str:
+    return path.read_text(encoding='utf-8')
+
+
+def line_of(tex: str, pos: int) -> int:
+    return tex.count('\n', 0, pos) + 1
+
+
+def extract_abstract(tex: str) -> tuple[str, int] | None:
+    """Return (abstract_text, abs_start_position) or None if no abstract."""
+    m = re.search(r'\\begin\{abstract\}(.+?)\\end\{abstract\}', tex, re.DOTALL)
+    if m is None:
+        return None
+    return m.group(1), m.start(1)
+
+
+# ---------------------------------------------------------------------------
+# C1: Abstract symbol definitions
+# ---------------------------------------------------------------------------
+
+def check_c1_abstract_definitions(tex: str) -> list[tuple[str, str, int]]:
+    cfg_syms = CHECKS_CONFIG['c1_symbols']
+    if not cfg_syms:
+        return []
+
+    abs_result = extract_abstract(tex)
+    if abs_result is None:
+        return [('C1', 'No abstract environment found.', -1)]
+    abstract, abs_start = abs_result
+    abs_line_start = line_of(tex, abs_start)
+
+    findings: list[tuple[str, str, int]] = []
+    for sym in cfg_syms:
+        name = sym['name']
+        token = sym['token']
+        defn = sym['definition']
+        window = sym.get('window', 250)
+        m = re.search(token, abstract, re.IGNORECASE)
+        if not m:
+            continue  # symbol not in abstract — fine
+        # First pass: definition within `window` chars of first mention.
+        win_start = max(0, m.start() - window)
+        win_end = min(len(abstract), m.end() + window)
+        if re.search(defn, abstract[win_start:win_end], re.IGNORECASE | re.DOTALL):
+            continue
+        # Second pass: definition anywhere within the abstract (e.g., a
+        # "Notation" block at the end of the abstract).
+        if re.search(defn, abstract, re.IGNORECASE | re.DOTALL):
+            continue
+        # Third pass: definition in the first \\section{Introduction}
+        # that immediately follows the abstract (a common style choice).
+        intro_match = re.search(
+            r'\\section\{Introduction\}(.+?)\\section\{',
+            tex, re.DOTALL,
+        )
+        if intro_match and re.search(
+            defn, intro_match.group(1), re.IGNORECASE | re.DOTALL,
+        ):
+            continue
+        line_no = abs_line_start + abstract[:m.start()].count('\n')
+        findings.append((
+            'C1',
+            f'{name} appears in abstract without inline definition. '
+            f'Reviewer §3 #1.',
+            line_no,
+        ))
+        break  # one finding per abstract is enough
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# C2: Bonferroni scheme consistency
+# ---------------------------------------------------------------------------
+
+def check_c2_bonferroni_consistency(tex: str) -> list[tuple[str, str, int]]:
+    findings: list[tuple[str, str, int]] = []
+
+    families = CHECKS_CONFIG['c2_families']
+    section_pat = CHECKS_CONFIG['c2_section_pattern']
+    abstract_k_allowed = CHECKS_CONFIG.get('c2_abstract_k_allowed',
+                                           sorted(set(families.values())))
+
+    # Check whether the declared section exists
+    if section_pat and not re.search(section_pat, tex):
+        findings.append((
+            'C2',
+            'No Power analysis section declaring Bonferroni k found. '
+            'Reviewer §3 #4.',
+            -1,
+        ))
+
+    # Check the abstract for k=N mention
+    abs_result = extract_abstract(tex)
+    if abs_result:
+        abstract, abs_start = abs_result
+        abstract_k = re.search(r'Bonferroni[^.]*?k\s*=\s*(\d+)', abstract)
+        if abstract_k:
+            k_val = int(abstract_k.group(1))
+            if k_val not in abstract_k_allowed:
+                abs_line_start = line_of(tex, abs_start)
+                line_in_abs = abstract[:abstract_k.start()].count('\n')
+                findings.append((
+                    'C2',
+                    f'Abstract quotes Bonferroni k={k_val} but the '
+                    f'authoritative scheme has k values '
+                    f'{sorted(set(families.values()))}. The abstract must '
+                    f'quote the family-level correction; otherwise readers '
+                    f'are misled. Reviewer §4 #1.',
+                    abs_line_start + line_in_abs,
+                ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# C3: Formalization of a key concept
+# ---------------------------------------------------------------------------
+
+def check_c3_formalization(tex: str) -> list[tuple[str, str, int]]:
+    findings: list[tuple[str, str, int]] = []
+
+    concept = CHECKS_CONFIG.get('c3_concept')
+    concept_token = CHECKS_CONFIG.get('c3_concept_token')
+    formal_pat = CHECKS_CONFIG.get('c3_formal')
+    formal_secondary = CHECKS_CONFIG.get('c3_formal_secondary')
+
+    if not concept_token or not formal_pat:
+        return findings
+
+    m = re.search(concept_token, tex)
+    if not m:
+        return findings
+    first_line = line_of(tex, m.start())
+
+    if not re.search(formal_pat, tex, re.IGNORECASE | re.DOTALL):
+        findings.append((
+            'C3',
+            f'"{concept}" is used but no formal definition matching '
+            f'{formal_pat!r} is given. Reviewer §3 #2.',
+            first_line,
+        ))
+
+    if formal_secondary and not re.search(formal_secondary, tex,
+                                          re.IGNORECASE | re.DOTALL):
+        findings.append((
+            'C3',
+            f'"{concept}" second-half formal definition matching '
+            f'{formal_secondary!r} not found. Reviewer §3 #2.',
+            first_line,
+        ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# C4: Citation hygiene (generic)
+# ---------------------------------------------------------------------------
+
+def check_c4_citation_hygiene(tex: str, bib: str) -> list[tuple[str, str, int]]:
+    findings: list[tuple[str, str, int]] = []
+
+    cite_keys: list[str] = []
+    for m in re.finditer(r'\\cite[a-zA-Z]*\{([^}]+)\}', tex):
+        for k in m.group(1).split(','):
+            k = k.strip()
+            if k and not any(c in k for c in '$&'):
+                cite_keys.append(k)
+
+    bib_keys = set(re.findall(r'@\w+\{([^,]+),', bib))
+    cited_keys = set(cite_keys)
+
+    missing = cited_keys - bib_keys
+    if missing:
+        first_missing_line = -1
+        for k in sorted(missing):
+            m = re.search(r'\\cite[a-zA-Z]*\{[^}]*\b' + re.escape(k) + r'\b', tex)
+            if m:
+                ln = line_of(tex, m.start())
+                if first_missing_line < 0 or ln < first_missing_line:
+                    first_missing_line = ln
+        findings.append((
+            'C4',
+            f'{len(missing)} cite key(s) in main.tex missing from refs.bib: '
+            f'{sorted(missing)[:5]}{"..." if len(missing) > 5 else ""}',
+            first_missing_line,
+        ))
+
+    # Self-citation hygiene
+    threshold = CHECKS_CONFIG['c4_self_cite_threshold']
+    prefix = CHECKS_CONFIG['c4_self_cite_prefix']
+    max_keys = CHECKS_CONFIG['c4_max_self_cite_keys']
+    self_cites = sorted(k for k in cited_keys if k.lower().startswith(prefix))
+    if self_cites:
+        rate = len(self_cites) / len(cited_keys) if cited_keys else 0
+        if len(self_cites) > max_keys or rate >= threshold:
+            findings.append((
+                'C4',
+                f'Self-cite keys present: {self_cites} '
+                f'({len(self_cites)}/{len(cited_keys)} = {rate:.1%}). '
+                f'Target: <{threshold:.0%} key-level; max {max_keys} keys '
+                f'for method-foundation retention.',
+                -1,
+            ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# C5: Sample size and effect-size transparency (generic)
+# ---------------------------------------------------------------------------
+
+def check_c5_sample_size_and_test(tex: str) -> list[tuple[str, str, int]]:
+    findings: list[tuple[str, str, int]] = []
+
+    abs_result = extract_abstract(tex)
+    if abs_result is None:
+        return findings
+    abstract, abs_start = abs_result
+    abs_line_start = line_of(tex, abs_start)
+
+    # Helper: where do n, N, and test names appear?  We accept three
+    # sources: (a) within 250 chars of the p-value in the abstract,
+    # (b) anywhere else in the abstract (Notation block at end), and
+    # (c) in the first \\section{Introduction} that immediately follows.
+    intro_match = re.search(
+        r'\\section\{Introduction\}(.+?)\\section\{', tex, re.DOTALL,
+    )
+    intro_section = intro_match.group(1) if intro_match else ''
+
+    def _has_n_and_test(window: str) -> tuple[bool, bool]:
+        has_n = bool(re.search(
+            r'n\s*=\s*\d+|N\s*=\s*\d+|seeds?|conditions?',
+            window, re.IGNORECASE,
+        ))
+        # Note: the test-name pattern intentionally allows arbitrary
+        # non-letter characters between "paired" and "t", between "t"
+        # and "test", and uses "test[s]?" to allow "tests" plural. This
+        # matches "paired $t$-test", "paired $t$-tests", "paired\\s+t-test",
+        # "paired t-tests", etc.
+        has_test = bool(re.search(
+            r'(Wilcoxon|'
+            r'paired[^a-zA-Z]{0,8}t[^a-zA-Z]{0,3}test|'
+            r'\bt[^a-zA-Z]{0,3}test|'
+            r'Mann.Whitney|permutation)',
+            window, re.IGNORECASE,
+        ))
+        return has_n, has_test
+
+    # p-values in abstract
+    p_patterns = (
+        re.compile(r'p\s*<\s*0\.0+\d+'),
+        re.compile(r'p_\\text\{adj\}|p\\text\{adj\}'),
+    )
+    for pat in p_patterns:
+        for m in pat.finditer(abstract):
+            line_in_abs = abstract[:m.start()].count('\n')
+            line_no = abs_line_start + line_in_abs
+            win_start = max(0, m.start() - 250)
+            win_end = min(len(abstract), m.end() + 50)
+            has_n, has_test = _has_n_and_test(abstract[win_start:win_end])
+            if not (has_n and has_test):
+                # Second pass: check the entire abstract.
+                has_n_b, has_test_b = _has_n_and_test(abstract)
+                if has_n_b:
+                    has_n = True
+                if has_test_b:
+                    has_test = True
+            if not (has_n and has_test) and intro_section:
+                # Third pass: check the intro section.
+                has_n_i, has_test_i = _has_n_and_test(intro_section)
+                if has_n_i:
+                    has_n = True
+                if has_test_i:
+                    has_test = True
+            if not (has_n and has_test):
+                missing = []
+                if not has_n:
+                    missing.append('n (sample size) or seeds/conditions qualifier')
+                if not has_test:
+                    missing.append('test name')
+                findings.append((
+                    'C5',
+                    f'Reported p-value at abstract line {line_no} is missing '
+                    f'{", ".join(missing)}. Reviewer §4 #1.',
+                    line_no,
+                ))
+
+    # d= in abstract
+    d_type = CHECKS_CONFIG.get('c5_d_type', "Cohen's d")
+    d_pattern = re.compile(r'd\s*=\s*[\d.]+')
+    for m in d_pattern.finditer(abstract):
+        line_in_abs = abstract[:m.start()].count('\n')
+        line_no = abs_line_start + line_in_abs
+        win_start = max(0, m.start() - 150)
+        win_end = min(len(abstract), m.end() + 50)
+        if re.search(re.escape(d_type.split()[0]),
+                     abstract[win_start:win_end], re.IGNORECASE):
+            continue
+        if re.search(re.escape(d_type.split()[0]), abstract, re.IGNORECASE):
+            continue
+        if intro_section and re.search(
+            re.escape(d_type.split()[0]), intro_section, re.IGNORECASE,
+        ):
+            continue
+        findings.append((
+            'C5',
+            f'Effect size d=... at abstract line {line_no} does not '
+            f'explicitly declare "{d_type}". Reviewer §4 #1.',
+            line_no,
+        ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# C6: Blacklisted vocabulary (generic)
+# ---------------------------------------------------------------------------
+
+def check_c6_blacklist(tex: str) -> list[tuple[str, str, int]]:
+    findings: list[tuple[str, str, int]] = []
+    counts: dict[str, int] = defaultdict(int)
+    samples: dict[str, list[tuple[int, str]]] = defaultdict(list)
+
+    # Minimum occurrences before a blacklist word is reported.
+    # 1-2 occurrences of "yield" / "reveal" is common in
+    # idiomatic technical English ("yields a value of X")
+    # and does not indicate vague writing. 3+ is the
+    # threshold for "this word is being over-used to avoid
+    # saying something specific".
+    min_count: int = 3
+
+    blacklist = CHECKS_CONFIG.get('c6_blacklist', [])
+    for word in blacklist:
+        pattern = DEFAULT_INFLECTIONS.get(word, rf'\b{word}\b')
+        for m in re.finditer(pattern, tex, re.IGNORECASE):
+            counts[word] += 1
+            if len(samples[word]) < 3:
+                ln = line_of(tex, m.start())
+                samples[word].append((ln, word))
+
+    for word, n in sorted(counts.items()):
+        if n < min_count:
+            continue  # 1-2 occurrences are OK
+        first_line = samples[word][0][0] if samples[word] else -1
+        findings.append((
+            'C6',
+            f'Blacklist word "{word}" appears {n}x in main.tex '
+            f'(e.g., line {first_line}). Reviewer §5 #5.',
+            first_line,
+        ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# Driver
+# ---------------------------------------------------------------------------
+
+def main() -> int:
+    if not MAIN.exists() or not REFS.exists():
+        print(f'ERROR: missing {MAIN} or {REFS}', file=sys.stderr)
+        return 2
+
+    tex = read(MAIN)
+    bib = read(REFS)
+
+    all_findings: list[tuple[str, str, int]] = []
+    all_findings += check_c1_abstract_definitions(tex)
+    all_findings += check_c2_bonferroni_consistency(tex)
+    all_findings += check_c3_formalization(tex)
+    all_findings += check_c4_citation_hygiene(tex, bib)
+    all_findings += check_c5_sample_size_and_test(tex)
+    all_findings += check_c6_blacklist(tex)
+
+    summary = {k: 0 for k in SEVERITY}
+    for cat, _, _ in all_findings:
+        summary[cat] += 1
+
+    print('=' * 72)
+    print(f'PAPER AUDIT  ({Path(__file__).name})')
+    print('=' * 72)
+    print(f'Source: {MAIN}')
+    print(f'Size:   {len(tex):,} chars')
+    bib_key_count = len(set(re.findall(r'@\w+\{([^,]+),', bib)))
+    print(f'Refs:   {bib_key_count} entries in refs.bib')
+    print()
+    print('Findings by category:')
+    for cat in ('C1', 'C2', 'C3', 'C4', 'C5', 'C6'):
+        sev = SEVERITY[cat]
+        n = summary[cat]
+        marker = '[OK]' if n == 0 else f'[{sev}]'
+        print(f'  {cat}  {marker:7s}  {n} finding(s)')
+    print()
+
+    sev_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
+    all_findings.sort(
+        key=lambda x: (sev_order[SEVERITY[x[0]]], x[0], x[2] if x[2] > 0 else 99999)
+    )
+
+    if not all_findings:
+        print('All checks passed.  No issues detected.')
+        return 0
+
+    print('-' * 72)
+    print('DETAILED FINDINGS')
+    print('-' * 72)
+    for cat, msg, line in all_findings:
+        sev = SEVERITY[cat]
+        loc = f'line {line}' if line > 0 else 'global'
+        print(f'\n[{sev}] {cat}  ({loc})')
+        for m in msg.splitlines():
+            print(f'    {m}')
+
+    print()
+    print('=' * 72)
+    print(f'TOTAL: {len(all_findings)} findings '
+          f'(HIGH={sum(summary[c] for c in summary if SEVERITY[c] == "HIGH")}, '
+          f'MEDIUM={sum(summary[c] for c in summary if SEVERITY[c] == "MEDIUM")}, '
+          f'LOW={sum(summary[c] for c in summary if SEVERITY[c] == "LOW")})')
+    print('=' * 72)
+
+    return 1 if any(SEVERITY[c] == 'HIGH' for c, _, _ in all_findings) else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

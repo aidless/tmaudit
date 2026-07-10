@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tmaudit"
+version = "0.1.0"
+description = "Config-driven TMLR paper audit + LaTeX compile pipeline"
+authors = [{name = "Liu Mingrui"}]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "mypy>=1.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "slow: marks tests as slow (run separately with `pytest -m slow`)",
+]
+
+[project.scripts]
+tmaudit = "tmaudit.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["tmaudit*"]
+
+[tool.setuptools.package-data]
+tmaudit = [
+    "templates/*.py",
+    "templates/*.tex",
+    "configs/*.py",
+]

@@ -1,0 +1,23 @@
+# config.yml — controls the issue chooser that GitHub shows
+# when a user clicks "New issue" in the repository.
+#
+# Reference: https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository
+#
+# Field semantics:
+#   - blank_issues_enabled: true = users can also open a blank
+#     issue (no template). We DISABLE this because every issue
+#     should at least be a bug or a feature.
+#   - contact_links: external links shown at the bottom of the
+#     chooser (e.g., Discussions, security advisory).
+#   - The two template files (bug_report.md, feature_request.md)
+#     are referenced by their relative paths.
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: Q&A / How-to
+    url: https://github.com/liumingrui/tmaudit/discussions
+    about: For questions about how to use tmaudit, please use GitHub Discussions instead of filing an issue.
+  - name: Security vulnerability
+    url: https://github.com/liumingrui/tmaudit/security/advisories/new
+    about: For security vulnerabilities, please file a private advisory (do NOT file a public issue). See SECURITY.md for the full disclosure policy.

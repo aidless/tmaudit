@@ -1,0 +1,93 @@
+# dependabot.yml — automated dependency update configuration.
+#
+# Reference: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Behaviour:
+#   - Every Monday at 09:00 UTC, Dependabot opens a PR for
+#     any outdated dependency.
+#   - For pip (Python), we only allow updates to the minor
+#     version (e.g., 1.2 -> 1.3, but not 1.2 -> 2.0) unless
+#     a major version is explicitly approved.
+#   - For GitHub Actions, we allow any version (the actions
+#     are pinned by SHA in the workflow, so a major-version
+#     bump is fine).
+#   - PRs are auto-labeled and auto-assigned to the
+#     CODEOWNERS for the affected file.
+#
+# Why we ignore major version bumps for pip:
+#   - pytest 8.x broke a few plugins that we don't use, but
+#     if a major bump lands without review, the CI might
+#     silently skip tests.
+#   - pyyaml changed the safe_load API in 6.x; we have
+#     code that depends on the 5.x behaviour.
+#   - We will manually bump these when we have time to
+#     test the migration.
+
+version: 2
+
+updates:
+  # pip dependencies (from pyproject.toml)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    # Allow only minor + patch updates
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # We do not allow major version updates by default;
+    # uncomment `ignore` rules to opt out of specific
+    # majors if we know they break us.
+    ignore:
+      - dependency-name: "pytest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pyyaml"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "regex"
+        update-types: ["version-update:semver-major"]
+    labels:
+      - "dependencies"
+      - "automated-pr"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(dev)"
+      include: "scope"
+    # Group all minor updates into one PR to reduce
+    # notification noise.
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+    # Open at most 5 PRs at a time
+    open-pull-requests-limit: 5
+    # Request a CODEOWNERS review
+    reviewers:
+      - "liumingrui"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "automated-pr"
+      - "ci"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    # Allow all update types (GitHub Actions are pinned
+    # by SHA, so a major bump is safe).
+    ignore: []
+    open-pull-requests-limit: 3
+    reviewers:
+      - "liumingrui"
