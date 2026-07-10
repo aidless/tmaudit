@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tmaudit-example-plugin"
+version = "0.1.0"
+description = "Example audit plugins for tmaudit (3 demo checks: TODO/XXX/word-count)"
+authors = [{name = "tmaudit contributors"}]
+requires-python = ">=3.9"
+dependencies = []  # tmaudit is a sibling project; require at runtime, not at install.
+
+[project.entry-points."tmaudit.plugins"]
+flag-todo-markers = "tmaudit_example_plugin.checks:flag_todo_markers"
+flag-xxx-markers = "tmaudit_example_plugin.checks:flag_xxx_markers"
+flag-long-abstract = "tmaudit_example_plugin.checks:flag_long_abstract"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tmaudit_example_plugin*"]

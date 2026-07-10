@@ -31,6 +31,7 @@ from .plugins import (
     CheckFn,
     PLUGIN_GROUP,
     VALID_SEVERITIES,
+    audit_plugins,
     check,
     filter_active,
     load_plugins,
@@ -45,6 +46,7 @@ __all__ = [
     "CheckFn",
     "PLUGIN_GROUP",
     "VALID_SEVERITIES",
+    "audit_plugins",
     "check",
     "filter_active",
     "load_plugins",
@@ -52,3 +54,10 @@ __all__ = [
     "run_all_plugins",
     "run_plugin",
 ]  # type: ignore
+
+# Re-export cache helpers that plugin authors will need.
+from .cache import (
+    CacheDB,
+    cache_key,
+    plugin_cache_key,
+)

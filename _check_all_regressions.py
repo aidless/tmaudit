@@ -580,6 +580,89 @@ def inject_bug12() -> None:
         )
 
 
+def inject_bug13() -> None:
+    """Bug 13: loader raises on a malformed entry-point.
+
+    The implementation in ``src/tmaudit/plugins.py`` wraps
+    the entry-point's ``load()`` call in try/except and
+    returns ``None`` for failed loads. If we replace the
+    except with a bare ``raise``, the loader re-raises the
+    ImportError, which crashes the test (and would crash the
+    audit in production).
+
+    The anchor is the ``except Exception as e:`` line in
+    ``_load_entry_point``. The injection changes it to
+    ``except Exception:  # BROKEN: re-raise instead of skip``.
+    With the bug, a broken plugin (e.g.
+    ``nonexistent_module_xyz``) crashes
+    ``test_loader_skips_malformed_entry_point`` instead of
+    being skipped.
+    """
+    plugins_path = TEMPLATE / 'src' / 'tmaudit' / 'plugins.py'
+    with _patched(plugins_path):
+        original = plugins_path.read_text(encoding='utf-8')
+        old = (
+            '    except Exception as e:\n'
+            '        log.warning(\n'
+            '            "tmaudit plugin %r failed to import: %s",\n'
+            '            ep.name, e,\n'
+            '        )\n'
+            '        return None\n'
+        )
+        new = (
+            '    except Exception:  # BROKEN: re-raise instead of skip\n'
+            '        raise\n'
+        )
+        if old not in original:
+            raise RuntimeError(f'bug-13 anchor not found in {plugins_path}')
+        plugins_path.write_text(
+            original.replace(old, new, 1),
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '13',
+            'tests/test_plugin_api.py::test_loader_skips_malformed_entry_point',
+        )
+
+
+def inject_bug14() -> None:
+    """Bug 14: per-paper c11_plugins_disabled is ignored.
+
+    The implementation in ``src/tmaudit/plugins.py``
+    ``audit_plugins`` filters via
+    ``filter_active(load_plugins(), disabled)`` so that the
+    disabled list excludes names. If we change that call to
+    ``load_plugins()`` only (dropping the ``filter_active``
+    step), every registered plugin runs even when the paper
+    disables it.
+
+    The anchor is the line
+        ``plugins = filter_active(load_plugins(), disabled)``
+    in ``audit_plugins``. The injection changes it to
+    ``plugins = load_plugins()`` (no filter).
+    With the bug, the regression test
+    ``test_audit_plugins_respects_per_paper_disable`` sees
+    the synthetic plugin's finding even though it was
+    disabled, and fails.
+    """
+    plugins_path = TEMPLATE / 'src' / 'tmaudit' / 'plugins.py'
+    with _patched(plugins_path):
+        original = plugins_path.read_text(encoding='utf-8')
+        old = '    plugins = filter_active(load_plugins(), disabled)'
+        new = ('    plugins = load_plugins()  # BROKEN: ignore disabled'
+               ' list')
+        if old not in original:
+            raise RuntimeError(f'bug-14 anchor not found in {plugins_path}')
+        plugins_path.write_text(
+            original.replace(old, new, 1),
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '14',
+            'tests/test_plugin_api.py::test_audit_plugins_respects_per_paper_disable',
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-bug test runner
 # ---------------------------------------------------------------------------
@@ -621,6 +704,8 @@ def main() -> int:
         ('10', inject_bug10),
         ('11', inject_bug11),
         ('12', inject_bug12),
+        ('13', inject_bug13),
+        ('14', inject_bug14),
     ]
 
     for bug_id, inject_fn in cases:

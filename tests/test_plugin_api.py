@@ -347,6 +347,105 @@ def test_load_plugins_handles_entry_point_group():
     assert PLUGIN_GROUP == "tmaudit.plugins"
 
 
+def test_loader_skips_malformed_entry_point():
+    """A plugin that fails to import is logged but does not raise.
+
+    Synthetic test: register a fake entry-point whose target
+    module does not exist. The loader must skip it gracefully,
+    not crash the audit.
+    """
+    from importlib.metadata import EntryPoint
+
+    reset_loader_cache()
+
+    # Save the real entry_points and patch it for this test.
+    import tmaudit.plugins as _plugins
+    real_ep = _plugins.entry_points
+
+    class _FakeEPS:
+        """Mimics the entry_points() return type enough for the loader."""
+        def __init__(self, eps):
+            self._eps = eps
+
+        def __iter__(self):
+            return iter(self._eps)
+
+        def __len__(self):
+            return len(self._eps)
+
+    fake_ep = EntryPoint(
+        name="definitely-broken",
+        group="tmaudit.plugins",
+        value="nonexistent_module_xyz:not_a_function",
+    )
+    try:
+        _plugins.entry_points = lambda *, group: _FakeEPS([fake_ep]) \
+            if group == "tmaudit.plugins" else _FakeEPS([])
+        reset_loader_cache()
+        # Must NOT raise:
+        plugins = _plugins.load_plugins()
+        assert isinstance(plugins, dict)
+        # The fake entry point may or may not appear in the dict
+        # depending on whether load() returned None; what matters
+        # is that load() did not crash the loader.
+    finally:
+        _plugins.entry_points = real_ep
+        reset_loader_cache()
+
+
+def test_audit_plugins_respects_per_paper_disable():
+    """A paper with c11_plugins_disabled=['name'] skips that plugin.
+
+    This is the regression test for Bug 14: per-paper disable
+    must be honoured. We register a synthetic plugin that
+    always emits a finding, then disable it for a paper and
+    assert no findings come back.
+    """
+    reset_loader_cache()
+
+    import tmaudit.plugins as _plugins
+
+    @check(name="synthetic-emit-one", severity="MEDIUM",
+           help_text="always emits one LOW finding")
+    def _synthetic(tex, config=None):
+        return [Finding(category="SYN", severity="MEDIUM",
+                        message="synthetic finding", line=1)]
+
+    real_load = _plugins.load_plugins
+    plugins_dict = {"synthetic-emit-one": _synthetic}
+    # Stub load_plugins() so audit_plugins() sees our plugin.
+    try:
+        _plugins.load_plugins = lambda force_reload=False: dict(plugins_dict)
+        _plugins.filter_active = _plugins.filter_active  # unchanged
+        # Active: no disable → 1 finding.
+        from pathlib import Path as _Path
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / "main.tex").write_text("hello world\n", encoding="utf-8")
+            findings_active = _plugins.audit_plugins(
+                paper_n=1,
+                paper_dir=_Path(td),
+                config={},
+                disabled=[],
+            )
+        assert len(findings_active) == 1
+        # Disabled: same plugin but in disabled list → 0 findings.
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / "main.tex").write_text("hello world\n", encoding="utf-8")
+            findings_disabled = _plugins.audit_plugins(
+                paper_n=1,
+                paper_dir=_Path(td),
+                config={},
+                disabled=["synthetic-emit-one"],
+            )
+        assert findings_disabled == [], (
+            f"Disabled plugin still emitted findings: {findings_disabled}"
+        )
+    finally:
+        _plugins.load_plugins = real_load
+        reset_loader_cache()
+
+
 # =====================================================================
 # TestPerPaperDisable: c11_plugins_disabled is read from PAPER_CONFIGS
 # =====================================================================

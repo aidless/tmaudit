@@ -193,6 +193,27 @@ def cmd_audit_all(args: argparse.Namespace) -> int:
         )
         results.append(result)
 
+        # Run plugin audits (added in v0.4.0). Plugins are
+        # discovered via entry_points and cached per
+        # (paper_n, plugin_name, plugin_version, tex_hash).
+        try:
+            from . import plugins as _plugins
+            _plugins.reset_loader_cache()
+            plugin_findings = _plugins.audit_plugins(
+                paper_n=n,
+                paper_dir=Path(paper_dir),
+                config=cfg,
+                disabled=cfg.get('c11_plugins_disabled', []),
+                use_cache=not no_cache,
+            )
+            if plugin_findings:
+                print(f'  [PLUGINS] {len(plugin_findings)} finding(s):')
+                for f in plugin_findings:
+                    print(f'    | [{f.severity}] {f.category} '
+                          f'L{f.line}: {f.message}')
+        except Exception as e:
+            print(f'  [PLUGINS] error: {e}', file=sys.stderr)
+
     ended_at = _time.time()
 
     # Write the Markdown report if --output is set
