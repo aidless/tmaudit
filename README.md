@@ -2,13 +2,14 @@
 
 [![CI](https://github.com/liumingrui/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/liumingrui/tmaudit/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
-![Tests](https://img.shields.io/badge/tests-46%20passing-brightgreen)
-![Meta--tests](https://img.shields.io/badge/meta--tests-6%2F6%20caught-success)
+![Tests](https://img.shields.io/badge/tests-176%20passing-brightgreen)
+![Meta--tests](https://img.shields.io/badge/meta--tests-12%2F12%20caught-success)
+![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
-![Issues](https://img.shields.io/badge/issues-2%20templates-blueviolet)
+![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
 ![Security](https://img.shields.io/badge/security-policy%20in%20place-green)
-![Version](https://img.shields.io/badge/version-0.1.1-blue)
-![Roadmap](https://img.shields.io/badge/roadmap-v0.1.2%20planned-yellow)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Roadmap](https://img.shields.io/badge/roadmap-v0.4.0%20planned-yellow)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 This directory is a **deployable Python package** named `tmaudit`. It
@@ -18,8 +19,10 @@ ships three things in one place:
    `PAPER<N>_CONSOLIDATED/` directory needs
    (`verify_p<N>.py`, `_compile_check.py`,
    `_fix_abstract_unicode.py`).
-2. The **per-paper configurations** (C1..C6 audit rules, abstract
-   Unicode replacements) for Paper 1, 2, 3, 4, 5.
+2. The **per-paper configurations** (C1..C10 audit rules: C1–C7
+   in v0.1.0–v0.2.0, plus C8 statistical power, C9 figure-caption,
+   and C10 reproducibility in v0.3.0; abstract Unicode
+   replacements) for Paper 1, 2, 3, 4, 5.
 3. A **CLI** (`tmaudit`) that forks the templates into any paper
    directory and (optionally) runs them.
 
@@ -68,6 +71,43 @@ tmaudit list
 
 This produces a `tmaudit` console-script entry in the venv. The
 template and config files are inside the wheel.
+
+## v0.3.0 highlights
+
+**Released: 2026-07-10.** This release adds 3 new audit categories
+(C8, C9, C10) and brings the project to **10 categories, 176 unit
+tests, 12/12 meta-test bugs caught, 5/5 papers auditable**.
+
+| Category | What it checks | Severity | Always runs? |
+|---|---|---|---|
+| **C1** (v0.1.0) | Symbol inline definition | HIGH | Yes |
+| **C2** (v0.1.0) | Bonferroni consistency | HIGH | Yes |
+| **C3** (v0.1.0) | Formalization of key concept | MEDIUM | Yes |
+| **C4** (v0.1.0) | Self-citation threshold | MEDIUM | Yes |
+| **C5** (v0.1.0) | Test-name d | MEDIUM | Yes |
+| **C6** (v0.1.1) | Blacklist word frequency | LOW | Yes |
+| **C7** (v0.1.2) | Ceremonial citation detection | MEDIUM | Yes |
+| **C8** (v0.3.0) | **Statistical power** (d-mismatch, post-hoc power) | HIGH/MED | No (opt-in) |
+| **C9** (v0.3.0) | **Figure-caption consistency** (4 sub-checks) | HIGH/MED | Yes (sub-check 3 opt-in) |
+| **C10** (v0.3.0) | **Reproducibility** (availability, metadata, consistency) | HIGH/MED/LOW | Yes (sub-check 2 opt-in) |
+| **C7-LLM** (v0.2.0) | LLM fallback for C7 borderline cases (opt-in via `TMAUDIT_LLM_*` env) | MEDIUM | No |
+
+**v0.2.0 added** (still shipping): `audit-all --output report.md`
+generates a single Markdown report covering all papers; the report
+is uploaded as a CI artefact.
+
+**v0.2.0 added** (still shipping): per-paper config for Paper 2,
+Paper 3, Paper 4 (was placeholder in v0.1.1). All 5 papers
+(P1..P5) are now auditable.
+
+**Per-paper config** for v0.3.0: `c8_claimed_effects` (statistical),
+`c9_figure_keywords` (figure-caption), `c10_reproducibility_claims`
+(reproducibility). Empty list = opt-out (with graceful degradation
+in C9 and C10).
+
+See [`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md) for the
+full release notes and [`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md)
+§12 (C8+C10) and §13 (C9) for the design rationale.
 
 ## CLI reference
 
@@ -168,11 +208,23 @@ library). It works on Linux, macOS, and Windows alike.
 
 ## Bug history
 
-The six bugs encountered while building this package are documented
-in [`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md).
+The **twelve historical bugs** encountered while building this
+package are documented in
+[`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md).
+Each bug has a dedicated regression test in
+`tests/test_forge_happy.py`, `tests/test_bug5_unit.py`,
+`tests/test_c6_threshold.py`, `tests/test_c7_citation_context.py`,
+`tests/test_cache.py`, `tests/test_c10_reproducibility.py`,
+`tests/test_c8_statistical_power.py`, and
+`tests/test_c9_figure_caption.py`. The meta-test
+(`_check_all_regressions.py`) injects each bug in turn, asserts the
+regression test catches it, and restores the source. **12/12 bugs
+are caught.**
+
 The fix patterns (raw-string regex literals, brace-counting state
-machines, non-letter-class regex, second/third-pass audit logic)
-are all implemented in `src/tmaudit/forge.py` and
+machines, non-letter-class regex, second/third-pass audit logic,
+sentinel-character sub-string extraction, etc.) are all implemented
+in `src/tmaudit/forge.py` and
 `src/tmaudit/templates/verify_TEMPLATE.py`.
 
 ## Continuous integration
@@ -180,15 +232,22 @@ are all implemented in `src/tmaudit/forge.py` and
 ### Workflow
 
 `.github/workflows/ci.yml` runs on every push and pull request.
-It consists of three jobs:
+It consists of **five** jobs:
 
 1. **pytest** (matrix: Python 3.9, 3.10, 3.11, 3.12 on `ubuntu-latest`)
-   — runs the 46-test suite and uploads JUnit XML artifacts.
+   — runs the **176-test** suite and uploads JUnit XML artifacts.
 2. **meta-test** (Python 3.11) — runs `_check_all_regressions.py`
-   to verify that each of the 6 regression tests actually catches
+   to verify that each of the **12 regression tests** actually catches
    its target bug. Builds `tmaudit.pyz` and runs it as a smoke
    test.
-3. **lint** (Python 3.11) — runs `pyflakes` on `src/tmaudit/`
+3. **validate-community-files** (Python 3.11) — runs
+   `_check_github_templates.py` to verify the `.github/`
+   directory structure (4 issue templates, PR template, CODEOWNERS,
+   dependabot.yml, CODE_OF_CONDUCT, SUPPORT, workflows).
+4. **audit-all** (Python 3.11) — runs
+   `tmaudit audit-all --start 1 --end 5 --output audit-report.md
+   --no-cache` and uploads the Markdown report as a CI artefact.
+5. **lint** (Python 3.11) — runs `pyflakes` on `src/tmaudit/`
    and `tests/`.
 
 ### Local validation (before pushing)
@@ -238,7 +297,7 @@ python _act_simulate.py --job pytest    # run pytest job
 pushing. Results:
 
 - ✅ `ci.yml` is valid YAML (parsed by PyYAML)
-- ✅ 3 jobs, 4 + 1 + 1 matrix rows, 5 + 4 + 5 = 14 steps
+- ✅ **5 jobs**, 4 + 1 + 1 + 1 + 1 matrix rows, ~25 steps
 - ✅ `meta-test` correctly depends on `pytest` (Kahn's algorithm topo sort)
 - ✅ `matrix.python-version` substituted correctly into `${{ ... }}` expressions
 - ✅ `if: always()` preserved on the upload-artifact step
@@ -250,9 +309,12 @@ we have already executed successfully on the host:
 | CI step | Local result |
 |---|---|
 | `python -m pip install -e .` | tmaudit installed ✅ |
-| `python -m pip install pytest` | pytest installed ✅ |
-| `python -m pytest` | **46 passed in 0.34s** ✅ |
-| `python _check_all_regressions.py` | **6/6 bugs caught** ✅ |
+| `python -m pip install pytest scipy` | deps installed ✅ |
+| `python -m pytest` | **176 passed in ~7s** ✅ |
+| `python _check_all_regressions.py` | **12/12 bugs caught** ✅ |
+| `python _check_github_templates.py` | **44/44 OK** ✅ |
+| `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |
+| `python -m src.tmaudit audit-all ...` | report uploaded as artefact ✅ |
 | `python _build_pyz.py` | tmaudit.pyz built ✅ |
 | `python tmaudit.pyz list` | 5 papers listed ✅ |
 | `python -m pyflakes src/tmaudit/ tests/` | 0 errors ✅ |
