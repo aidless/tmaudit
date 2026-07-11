@@ -483,5 +483,200 @@ def test_valid_severities_includes_canonical_forms():
         assert s in VALID_SEVERITIES
 
 
+# =====================================================================
+# v0.5.0 whitelist mode (c11_plugins_enabled)
+# Added in v0.5.0; see engineering_notes_verify_template.md §16.
+# =====================================================================
+
+
+def _make_check(name, severity="LOW", return_findings=None):
+    """Create a stub plugin for testing filter_active.
+
+    The plugin's behaviour is rarely exercised in these
+    tests; we mostly care that `filter_active` returns
+    the right keys. Test 6 (audit_plugins integration)
+    is the one that actually runs the plugin.
+    """
+    @check(name=name, severity=severity,
+           help_text=f"{name}-help")
+    def _fn(tex, config=None):
+        return return_findings or []
+    return _fn
+
+
+def test_filter_active_empty_lists_run_all():
+    """Both enabled=[] and disabled=[] return all plugins.
+
+    The v0.4.0 default behaviour ("run all") is
+    preserved in v0.5.0. The fall-through path
+    triggers when neither `enabled` nor `disabled` is
+    non-empty. Regression-tested in v0.4.0 (see
+    test_filter_active_empty_disabled_returns_full_dict);
+    this v0.5.0 test extends the same behaviour to the
+    new `enabled` parameter.
+    """
+    plugins = {
+        'a': _make_check('a'),
+        'b': _make_check('b'),
+        'c': _make_check('c'),
+    }
+    active = filter_active(plugins, enabled=[], disabled=[])
+    assert set(active) == {'a', 'b', 'c'}
+
+
+def test_filter_active_blacklist_only():
+    """enabled=[] falls through to blacklist mode.
+
+    The v0.4.0 blacklist behaviour is unchanged when
+    `enabled` is empty. This is a regression test for
+    the v0.4.0 path: v0.5.0 must not break the old
+    blacklist-only mode.
+    """
+    plugins = {
+        'a': _make_check('a'),
+        'b': _make_check('b'),
+        'c': _make_check('c'),
+    }
+    active = filter_active(
+        plugins, enabled=[], disabled=['a'],
+    )
+    assert set(active) == {'b', 'c'}
+
+
+def test_filter_active_whitelist_only():
+    """enabled=['a', 'b'] + disabled=[] returns {a, b}.
+
+    New whitelist mode: only the named plugins run.
+    No blacklist filtering happens because `disabled` is
+    empty.
+    """
+    plugins = {
+        'a': _make_check('a'),
+        'b': _make_check('b'),
+        'c': _make_check('c'),
+    }
+    active = filter_active(
+        plugins, enabled=['a', 'b'], disabled=[],
+    )
+    assert set(active) == {'a', 'b'}
+
+
+def test_filter_active_whitelist_overrides_blacklist():
+    """When both are non-empty, whitelist wins (§16.4).
+
+    enabled=['a', 'b'] + disabled=['a'] returns {a, b}.
+    The whitelist is authoritative; the blacklist is
+    silently ignored. A warning log is emitted (per
+    §16.4); we don't assert on the log here to keep
+    the test focused on the data behaviour.
+    """
+    plugins = {
+        'a': _make_check('a'),
+        'b': _make_check('b'),
+        'c': _make_check('c'),
+    }
+    active = filter_active(
+        plugins, enabled=['a', 'b'], disabled=['a'],
+    )
+    assert set(active) == {'a', 'b'}
+
+
+def test_filter_active_whitelist_with_unknown_plugin():
+    """Unknown plugin names in the whitelist are silently
+    skipped (§16.5).
+
+    Per §16.5: a forward-compatible whitelist should not
+    fail when run on a stripped-down environment. An
+    unknown name is a no-op. (This matches the v0.4.0
+    behaviour for the blacklist: an unknown name in
+    `disabled` is silently skipped too.)
+    """
+    plugins = {
+        'a': _make_check('a'),
+        'b': _make_check('b'),
+    }
+    active = filter_active(
+        plugins, enabled=['a', 'nonexistent'], disabled=[],
+    )
+    assert set(active) == {'a'}
+
+
+def test_audit_plugins_respects_c11_plugins_enabled():
+    """End-to-end: a paper with c11_plugins_enabled=
+    ['synth-yes'] only runs the synth-yes plugin, even
+    if more plugins are installed.
+
+    This is the integration test for the v0.5.0 per-paper
+    config + audit_plugins path. The whitelist is read
+    from the per-paper config dict (the canonical
+    entry point); `audit_plugins` is expected to filter
+    before running.
+    """
+    reset_loader_cache()
+    import tmaudit.plugins as _plugins
+
+    @check(name="synth-yes", severity="MEDIUM",
+           help_text="y")
+    def synth_yes(tex, config=None):
+        return [Finding(category='Y', severity='MEDIUM',
+                        message='yes', line=1)]
+
+    @check(name="synth-no", severity="MEDIUM",
+           help_text="n")
+    def synth_no(tex, config=None):
+        return [Finding(category='N', severity='MEDIUM',
+                        message='no', line=1)]
+
+    real_load = _plugins.load_plugins
+    _plugins.load_plugins = lambda force_reload=False: {
+        'synth-yes': synth_yes,
+        'synth-no': synth_no,
+    }
+    try:
+        from pathlib import Path
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / 'main.tex').write_text(
+                'hi\n', encoding='utf-8',
+            )
+            findings = _plugins.audit_plugins(
+                paper_n=1,
+                paper_dir=Path(td),
+                config={
+                    'c11_plugins_enabled': ['synth-yes'],
+                },
+            )
+        assert len(findings) == 1
+        assert findings[0].category == 'Y'
+    finally:
+        _plugins.load_plugins = real_load
+        reset_loader_cache()
+
+
+def test_paper_configs_can_carry_c11_plugins_enabled():
+    """PAPER_CONFIGS schema permits c11_plugins_enabled.
+
+    The field is optional (None or missing is fine). If
+    present, it must be a `list[str]`. This is a
+    forward-compat check: future maintainers can add
+    the field to any paper without breaking the audit.
+
+    The check is purely structural — it does not assert
+    the v0.5.0 implementation logic. The implementation
+    lives in `audit_plugins` and `filter_active`; this
+    test only verifies that the schema is honoured.
+    """
+    from tmaudit.configs.paper_configs import PAPER_CONFIGS
+    for n, cfg in PAPER_CONFIGS.items():
+        d = cfg.get('c11_plugins_enabled')
+        assert d is None or (
+            isinstance(d, list)
+            and all(isinstance(x, str) for x in d)
+        ), (
+            f'paper {n}: c11_plugins_enabled must be None '
+            f'or list[str], got {type(d).__name__}'
+        )
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
