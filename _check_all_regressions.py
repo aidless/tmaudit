@@ -637,9 +637,10 @@ def inject_bug14() -> None:
     disables it.
 
     The anchor is the line
-        ``plugins = filter_active(load_plugins(), disabled)``
+        ``plugins = filter_active(load_plugins(), disabled, enabled)``
     in ``audit_plugins``. The injection changes it to
-    ``plugins = load_plugins()`` (no filter).
+    ``plugins = load_plugins()`` (no filter, ignores both
+    disabled and enabled).
     With the bug, the regression test
     ``test_audit_plugins_respects_per_paper_disable`` sees
     the synthetic plugin's finding even though it was
@@ -648,7 +649,7 @@ def inject_bug14() -> None:
     plugins_path = TEMPLATE / 'src' / 'tmaudit' / 'plugins.py'
     with _patched(plugins_path):
         original = plugins_path.read_text(encoding='utf-8')
-        old = '    plugins = filter_active(load_plugins(), disabled)'
+        old = '    plugins = filter_active(load_plugins(), disabled, enabled)'
         new = ('    plugins = load_plugins()  # BROKEN: ignore disabled'
                ' list')
         if old not in original:
