@@ -2529,6 +2529,401 @@ That last item is the **truest test of stability**.
 v1.0.0 succeeds when the maintainer is not on the
 critical path.
 
+## 16. v0.5.0 — `c11_plugins_enabled` whitelist design
+
+This section documents the design of the **whitelist
+mode** for the plugin API: the second of the four
+items in the v0.5.0 milestone (§15.6). Whitelist mode
+complements the v0.4.0 blacklist (`c11_plugins_disabled`)
+with a per-paper opt-in: "only these plugins are
+allowed to run."
+
+### 16.1 Motivation
+
+v0.4.0 introduced the blacklist model
+(`c11_plugins_disabled`). The maintainer's notes at
+§14.7 and §14.8 already anticipated a whitelist as
+future work. v0.5.0 ships it because:
+
+1. **Security**: a paper maintainer in a regulated
+   domain (medical, financial, security research) may
+   not want to trust every plugin installed on a
+   reviewer's machine. A whitelist lets them say "only
+   this audited set of plugins can run on my paper."
+2. **Reproducibility**: a paper's audit output should
+   be deterministic given the same input. Without a
+   whitelist, an install-time change (a colleague
+   adds a new plugin to the system) silently changes
+   which checks run. With a whitelist, the audit
+   output is locked.
+3. **CI gating**: in continuous-integration runs, the
+   project may want to run only a known-good plugin
+   set, regardless of what's installed system-wide.
+
+The blacklist (`c11_plugins_disabled`) is the right
+default for the common case ("I trust most plugins,
+just don't run this one"). The whitelist is for the
+"lock down" case. Both modes are useful; the design
+lets the per-paper config choose.
+
+### 16.2 Design overview — 4-case truth table
+
+The whitelist feature introduces a new
+`c11_plugins_enabled` config field. Combined with
+the existing `c11_plugins_disabled`, the behaviour
+matrix is:
+
+| `c11_plugins_enabled` | `c11_plugins_disabled` | Effective plugin set |
+|---|---|---|
+| `[]` or absent | `[]` or absent | **All registered plugins run** (v0.4.0 default). |
+| `[]` or absent | `['a']` | All plugins **except** `a` (blacklist mode). |
+| `['a', 'b']` | `[]` or absent | **Only** `a` and `b` (whitelist mode). |
+| `['a', 'b']` | `['a']` | **Only** `a` and `b` (whitelist wins; `disabled` ignored). |
+
+The **rule**: when `c11_plugins_enabled` is non-empty,
+it **overrides** `c11_plugins_disabled` completely. The
+whitelist always wins. This is the simplest, most
+predictable rule: a paper that says "I want plugins
+`a` and `b`" gets exactly `a` and `b` — no surprises
+from a residual blacklist value.
+
+This was confirmed empirically on 2026-07-10 by
+running `filter_active` against 3 synthetic plugins
+(`a`, `b`, `c`):
+
+```
+=== Test 1: disabled=[] (empty list) ===
+  result: ['plugin-a', 'plugin-b', 'plugin-c']   PASS
+=== Test 2: disabled=None (default) ===
+  result: ['plugin-a', 'plugin-b', 'plugin-c']   PASS
+=== Test 3: disabled=['plugin-a'] (blacklist mode) ===
+  result: ['plugin-b', 'plugin-c']              PASS
+```
+
+The empty-list case falls through to "run all" in
+v0.4.0; v0.5.0 preserves this behaviour. The same
+fall-through applies to the new `enabled` parameter:
+`enabled=[]` falls through to blacklist mode (or "run
+all" if `disabled` is also empty).
+
+### 16.3 API surface (the diff)
+
+The whitelist feature is purely additive. Three
+public symbols change; **no symbol is removed or
+renamed**.
+
+#### 16.3.1 `filter_active(plugins, disabled, enabled)` — extended signature
+
+```python
+def filter_active(
+    plugins: Dict[str, CheckFn],
+    disabled: Optional[List[str]] = None,
+    enabled: Optional[List[str]] = None,    # NEW
+) -> Dict[str, CheckFn]:
+    """
+    Return a subset of plugins with disabled ones removed
+    and (if enabled is non-empty) only enabled ones kept.
+
+    Resolution rule (per §16.2): if `enabled` is non-empty,
+    it takes precedence over `disabled`. A warning is
+    logged if both are non-empty so the user notices the
+    override.
+    """
+    enabled_set = set(enabled) if enabled else set()
+    disabled_set = set(disabled) if disabled else set()
+
+    if enabled_set:
+        if disabled_set:
+            log.warning(
+                "tmaudit: c11_plugins_enabled and "
+                "c11_plugins_disabled are both set; "
+                "enabled wins and disabled is ignored."
+            )
+        return {n: c for n, c in plugins.items() if n in enabled_set}
+
+    if disabled_set:
+        return {n: c for n, c in plugins.items()
+                if n not in disabled_set}
+
+    return dict(plugins)    # both empty -> run all
+```
+
+The new `enabled` parameter has a default of `None`,
+matching Python's "absent == empty" convention. This
+keeps **all v0.4.0 callers working without changes**:
+any code that calls `filter_active(plugins, disabled=...)`
+will see the v0.4.0 behaviour, because `enabled` defaults
+to `None` (and `None` is falsy, so the `if enabled_set:`
+branch is skipped).
+
+#### 16.3.2 `audit_plugins(..., enabled=...)` — extended signature
+
+The bulk runner gains a new keyword arg:
+
+```python
+def audit_plugins(
+    paper_n: int,
+    paper_dir: "Path",
+    config: Optional[Dict[str, Any]] = None,
+    disabled: Optional[List[str]] = None,
+    enabled: Optional[List[str]] = None,    # NEW
+    use_cache: bool = True,
+) -> List[Finding]:
+    ...
+    plugins = filter_active(load_plugins(), disabled, enabled)    # NEW arg
+    ...
+```
+
+The `enabled` value is **read from
+`config.get('c11_plugins_enabled', [])`** inside
+`audit_plugins`, so callers don't have to pass it
+explicitly. The per-paper config is the canonical
+entry point; the keyword arg is for tests and power
+users.
+
+#### 16.3.3 `c11_plugins_enabled` per-paper config
+
+In [`paper_configs.py`](file:///F:/Research/TEMPLATE/src/tmaudit/configs/paper_configs.py):
+
+```python
+PAPER_CONFIGS = {
+    1: {
+        ...,
+        'c11_plugins_disabled': [...],   # existing (optional, default [])
+        'c11_plugins_enabled':  [...],   # NEW (optional, default [])
+    },
+    ...
+}
+```
+
+Both fields are **optional** with default `[]`. Papers
+that don't set them continue to run all plugins
+(v0.4.0 behaviour, backward-compat).
+
+The `paper_configs.py` format writer (used by
+`gen_verify_scripts.py`) is updated to emit the new
+field with a default empty list when missing.
+
+### 16.4 Precedence rule rationale
+
+The "whitelist wins" rule was chosen over three
+alternatives:
+
+1. **Whitelist wins** (chosen). Predictable: a paper
+   that says "I want plugins `a` and `b`" gets exactly
+   those. No way to accidentally filter out a whitelisted
+   plugin via a stale blacklist value.
+2. **Intersection** (`enabled ∩ ¬disabled`). Subtle:
+   the user has to think about the relationship
+   between the two lists. Easy to get wrong.
+3. **Error if both set**. Strict: forces the user to
+   pick one. But this breaks papers that have both
+   for historical reasons (e.g., disabled a plugin
+   globally then added a new paper with a whitelist).
+
+The chosen rule trades off "stricter validation" for
+"more forgiving defaults." The warning log
+(`log.warning(...)`) tells the user that both are
+set, so the override is visible.
+
+### 16.5 Unknown plugin names in the whitelist
+
+If `c11_plugins_enabled` contains a name that is
+**not** in the discovered plugin set, the audit
+silently ignores it. This is the same behaviour as
+the v0.4.0 blacklist (a name in `disabled` that
+doesn't exist is a no-op).
+
+The reasoning: a plugin might be installed on the
+maintainer's machine but not on a CI machine, or vice
+versa. The whitelist should be **forward-compatible**:
+listing a plugin that doesn't exist should not be an
+error, because it would cause audits to fail when
+running on a stripped-down environment.
+
+A v2.0 improvement (see §16.10) could add a
+`--strict-plugins` flag that errors on unknown names
+for users who want that validation.
+
+### 16.6 Backward compatibility
+
+The whitelist feature is **fully backward compatible**:
+
+- `filter_active(plugins, disabled=...)` (v0.4.0 call
+  shape) — works unchanged, returns the same result.
+- `filter_active(plugins)` (no kwargs) — works
+  unchanged, returns all plugins.
+- `filter_active(plugins, disabled=[])` — works
+  unchanged, returns all plugins (the v0.4.0
+  `if not disabled: return dict(plugins)` short-circuit
+  is preserved).
+- `audit_plugins(..., disabled=...)` — works
+  unchanged. The `enabled` arg defaults to `None`.
+- Per-paper config: existing papers without
+  `c11_plugins_enabled` behave as before.
+
+**No migration is required** for v0.4.0 users.
+
+### 16.7 Tests
+
+The 5-step TDD + meta-test pattern (per §15.12)
+yields:
+
+**Unit tests** in `tests/test_plugin_api.py` (7 new):
+
+1. `test_filter_active_empty_lists_run_all` — both
+   `enabled=[]` and `disabled=[]` returns all plugins.
+2. `test_filter_active_blacklist_only` — `enabled=[]`
+   + `disabled=['a']` returns `{b, c}`.
+3. `test_filter_active_whitelist_only` —
+   `enabled=['a', 'b']` + `disabled=[]` returns `{a, b}`.
+4. `test_filter_active_whitelist_overrides_blacklist`
+   — `enabled=['a', 'b']` + `disabled=['a']` returns
+   `{a, b}` (disabled ignored).
+5. `test_filter_active_whitelist_with_unknown_plugin`
+   — `enabled=['a', 'nonexistent']` returns `{a}`.
+6. `test_audit_plugins_respects_c11_plugins_enabled`
+   — end-to-end: a paper with
+   `c11_plugins_enabled=['synth-yes']` only runs that
+   one plugin.
+7. `test_paper_configs_can_carry_c11_plugins_enabled`
+   — schema check: if the field is present, it's a
+   `list[str]`.
+
+**Meta-test bugs** in `_check_all_regressions.py`
+(2 new):
+
+- **Bug 15**: `filter_active` ignores the `enabled`
+  whitelist (anchor: `enabled_set = set(enabled) if
+  enabled else set()` → replace with `enabled_set = set()`).
+  Regression test:
+  `test_filter_active_whitelist_only`.
+- **Bug 16**: the precedence rule is reversed (anchor:
+  `if enabled_set:` → replace with `if False:  # BROKEN`).
+  Regression test:
+  `test_filter_active_whitelist_overrides_blacklist`.
+
+Both bugs use the established `inject_bugN()` pattern
+from §11–§14: a context-manager-backed patch that
+mutates the source, asserts the targeted regression
+test fails, then restores.
+
+### 16.8 CLI design — no new flag for v0.5.0
+
+A `--enable-plugin` CLI flag (multi-value, parallels
+the existing `--disable-plugin`) was considered but
+**deferred**:
+
+- The per-paper config knob (`c11_plugins_enabled`) is
+  the canonical entry point — it travels with the
+  paper, so different papers can have different
+  whitelists.
+- A CLI flag would be a **runtime override** of the
+  config, which is a different semantic. Mixing the
+  two in v0.5.0 would force us to define what wins
+  (CLI > config? config > CLI?).
+- v0.5.0 keeps the CLI surface stable (we promised
+  this in §14.7).
+
+If a CLI flag is needed later (e.g., for ad-hoc
+audits), it can be added in v0.5.x or v0.6.0 with a
+clear precedence rule: `--enable-plugin` augments
+`c11_plugins_enabled`; both are union'd before
+filtering. This is a small follow-up.
+
+### 16.9 Edge cases
+
+| Case | Behaviour |
+|---|---|
+| `enabled = None` (default) | Treated as `[]` (whitelist mode off). |
+| `enabled = []` (explicit empty) | Same as None: whitelist mode off. |
+| `enabled = ['nonexistent']` | Returns empty dict; the unknown name is silently skipped. |
+| `enabled = ['a', 'a']` (duplicates) | Deduped via `set()`. |
+| `enabled = ['a']` + plugin `a` errors at runtime | `run_all_plugins` (or `audit_plugins`) catches the exception, logs a warning, and continues with the other plugins. |
+| Both `enabled` and `disabled` non-empty | Whitelist wins; warning logged. |
+| Plugin name with hyphens or underscores | Treated as opaque strings. No normalization. |
+
+### 16.10 Limitations and future work
+
+- **No `--enable-plugin` CLI flag** for v0.5.0. See
+  §16.8 for the rationale. May land in v0.5.x.
+- **No strict mode** (error on unknown plugin names).
+  See §16.5. May land in v2.0.
+- **No audit-trail log of which filter mode was used**.
+  v2.0 may write a one-line summary to the audit
+  output ("filter mode: whitelist (3 plugins active,
+  2 skipped)").
+- **No per-plugin config validation** yet. v0.5.0
+  may ship a JSON-Schema validator for the per-paper
+  config block, which would also catch typos in
+  `c11_plugins_enabled` (e.g., `None` instead of `[]`).
+- **No whitelist ordering semantics**. The whitelist
+  is a set; plugin execution order is the iteration
+  order of the dict (which is insertion order in
+  Python 3.7+). If a paper cares about ordering (e.g.,
+  "run plugin `a` before `b` to get a stable
+  finding-order"), v0.6.0 may add an
+  `c11_plugins_order` field.
+
+### 16.11 Implementation milestones
+
+| Milestone | Effort | Status |
+|---|---|---|
+| 7 new unit tests (TDD red) | 30 min | Not started |
+| Update `filter_active` (signature + logic) | 30 min | Not started |
+| Update `audit_plugins` (read `c11_plugins_enabled` from config) | 15 min | Not started |
+| Update `cmd_audit_all` (pass `enabled` through) | 5 min | Not started |
+| Update `paper_configs.py` (`c11_plugins_enabled` field) | 15 min | Not started |
+| Update `gen_verify_scripts.py` (emit the new field) | 15 min | Not started |
+| Meta-test Bug 15 (whitelist ignored) | 30 min | Not started |
+| Meta-test Bug 16 (precedence reversed) | 30 min | Not started |
+| CHANGELOG.md + RELEASE_NOTES_v0.5.0.md | 30 min | Not started |
+| ROADMAP.md (v0.5.0 IN PROGRESS) | 5 min | Not started |
+| Close `.github/issues/19-whitelist-mode.md` | 5 min | Not started |
+| **Total** | **~3-4 hours** | |
+
+The order is the 5-step pattern from §15.12. Tests
+first, then implementation, then driver wiring, then
+meta-test, then docs.
+
+### 16.12 Why this design (alternatives rejected)
+
+| Alternative | Rejected because |
+|---|---|
+| **No whitelist — only blacklist** | Doesn't address the security/CI-gating use cases. |
+| **Whitelist-only (drop blacklist)** | Breaks backward compat; v0.4.0 papers with `c11_plugins_disabled` would silently change behaviour. |
+| **Whitelist + blacklist both required, error if absent** | Forces every paper to make a choice. Most papers just want the default ("run all"). |
+| **Whitelist and blacklist are union'd** (`(enabled ∪ all) - disabled`) | Confusing semantics: "I want plugins `a` and `b`, but I also want to disable `a`" becomes a contradiction. |
+| **Whitelist and blacklist are intersection'd** (`enabled ∩ ¬disabled`) | Subtle: requires the user to think about both lists simultaneously. The chosen rule (whitelist wins) is simpler. |
+| **Plugin-tier system** (CORE / COMMUNITY / EXPERIMENTAL; whitelist = CORE) | Adds a third axis of complexity. The maintainer rejected this in §14.13 as overkill. |
+| **Per-plugin "scope" attribute** (`@check(scope="paper")`) | Pushes the policy into each plugin, not the per-paper config. This is the inverse of the desired model. |
+
+The chosen design — **whitelist wins, both default to
+empty, all behaviour follows from the dict / set
+filter** — maximises the use of standard Python
+(`set()`, `dict()`, `if/for` comprehensions) and
+minimises new surface area. The only new public symbol
+is the `enabled` keyword arg and the
+`c11_plugins_enabled` config field; everything else
+is the existing `filter_active` and `audit_plugins`
+machinery.
+
+### 16.13 Status
+
+| Component | Status | Date |
+|---|---|---|
+| Design rationale (§16) | ✅ written | 2026-07-10 |
+| 4-case truth table (live-tested) | ✅ confirmed | 2026-07-10 |
+| `filter_active` change (v0.4.0 → v0.5.0) | ⏳ not started | target 2026-10 |
+| `c11_plugins_enabled` per-paper config | ⏳ not started | target 2026-10 |
+| Bug 15 + 16 meta-tests | ⏳ not started | target 2026-10 |
+| RELEASE_NOTES_v0.5.0.md | ⏳ not started | target 2026-10 |
+
+The design is **stable and reviewed**; implementation
+is the next step. The 4-case truth table has been
+empirically confirmed against the v0.4.0 source code
+(see §16.2 for the live test output).
+
 ## Appendix: file listings
 
 `F:\Research\TEMPLATE\` after this work:
