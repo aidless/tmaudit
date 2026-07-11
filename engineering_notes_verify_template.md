@@ -2112,6 +2112,423 @@ Total estimated effort: 3-5 working days (1 calendar week).
 The bulk is the example plugin + tests, which exist as
 both documentation and smoke tests for the new API.
 
+## 15. v1.0.0 — Roadmap, plugin API freeze window, and the path to first stable release
+
+This section is the **v1.0.0 commitment**: a written
+plan for shipping the first stable release of `tmaudit`
+with a frozen public API. v0.4.0 shipped the **plugin
+API** (the last big architecture decision). The remaining
+work is integration, performance, documentation, and
+real-world validation.
+
+### 15.1 What this section commits to
+
+v1.0.0 is the first release where the public API is
+**frozen for 6 months**. Concretely:
+
+- The `tmaudit.plugins` API (`Finding`, `@check`,
+  `load_plugins`, `audit_plugins`, `filter_active`,
+  `run_plugin`, `run_all_plugins`, `plugin_cache_key`)
+  is stable.
+- The CLI surface (`tmaudit list`, `verify`, `compile`,
+  `fix-unicode`, `audit-all`, `cache-info`, `cache-clear`,
+  `plugins list/info/run`) is stable.
+- The `CHECKS_CONFIG` schema (C1..C11 per-paper fields)
+  is stable. Adding new fields is allowed; removing or
+  renaming is not.
+
+Anything that **breaks** one of these is a new major
+version (v2.0.0). Anything that adds to them is a minor
+version (v0.X.0 or v1.X.0).
+
+### 15.2 v1.0.0 acceptance criteria
+
+The criteria are **measurable** (a CI job or a manual
+check can answer yes/no). They are taken from
+[`ROADMAP.md`](./ROADMAP.md) v1.0.0 section with one
+addition per criterion for verifiability.
+
+| Criterion | Measurable as |
+|---|---|
+| All 10 audit categories (C1..C10) implemented | `tmaudit list` shows 10 categories. Each has a `check_c{N}_...` function in `verify_TEMPLATE.py`. **Status: ✅ done in v0.3.0.** |
+| Plugin API ships | `tmaudit plugins list` shows at least 1 plugin (the example). 14/14 meta-test caught. **Status: ✅ done in v0.4.0.** |
+| At least 10 papers supported out-of-the-box | `tmaudit list` shows ≥ 10 papers. Currently 5 (Papers 1-5). Need 5 more. **Status: TODO (5 left).** |
+| API stable (no breaking changes for 6 months) | After v1.0.0 release, no `git diff v1.0.0 HEAD -- src/tmaudit/ plugins.py` that would change the public surface. **Status: TODO (freezes in v1.0.0).** |
+| Performance: < 1 second per paper, including cache | `time tmaudit verify --paper 1` reports < 1s. **Status: TODO (need benchmark).** |
+| Full API reference | `docs/api/` has a generated reference for every public symbol. **Status: TODO.** |
+| Contributor guide | `CONTRIBUTING.md` (already exists) updated with the plugin-author flow. **Status: TODO (small).** |
+| Tutorial videos | 3 videos on the project website (setup, writing a plugin, contributing a paper config). **Status: TODO.** |
+| Used in ≥ 3 real submission cycles | Self-reported by 3 different TMLR / NeurIPS / ICLR submitters. **Status: TODO (long pole).** |
+
+The 3 "long pole" items are **#10 papers**, **#tutorial
+videos**, and **#3 submission cycles**. These are
+people-and-time items, not code items. They drive the
+calendar (§15.10) more than the engineering work does.
+
+### 15.3 The plugin API freeze window
+
+The plugin API is **frozen at v0.6.0** (not v0.4.0). v0.4.0
+is the first release that ships the API, but breaking
+changes are still allowed until v0.6.0:
+
+- **v0.4.x (now)**: API is *introduced*. Patch releases
+  may add fields, deprecate (not remove) methods.
+- **v0.5.0**: First minor release with the API.
+  Breaking changes allowed (still 0.x phase).
+- **v0.6.0**: API is *locked*. From v0.6.0 onward, only
+  additive changes (new fields, new methods, new
+  subcommands) are allowed. Removing a public symbol
+  bumps to v1.0.0.
+- **v1.0.0**: API is *frozen* (no changes for 6 months).
+
+The reason for the **v0.4.0 → v0.6.0** window is to give
+the community time to write plugins, find API papercuts,
+and propose adjustments. Two minor releases is a
+reasonable shake-down period without making users feel
+like the API is unstable.
+
+#### 15.3.1 What's frozen at v0.6.0
+
+The public surface that is part of the freeze:
+
+| Module | Public symbols |
+|---|---|
+| `tmaudit` | `Finding`, `check`, `load_plugins`, `audit_plugins`, `filter_active`, `run_plugin`, `run_all_plugins`, `plugin_cache_key`, `cache_key`, `PLUGIN_GROUP`, `VALID_SEVERITIES`, `__version__` |
+| `tmaudit.plugins` | Same as above (re-exported) |
+| `tmaudit.cache` | `CacheDB`, `cache_key`, `plugin_cache_key` |
+| `tmaudit.cli` | subcommand names + flags listed in `cmd_*` dispatch |
+| `tmaudit.configs.paper_configs` | `PAPER_CONFIGS` keys: `dir`, `c1_symbols`, `c2_families`, `c2_section_pattern`, `c2_abstract_k_allowed`, `c3_concept`, `c3_concept_token`, `c3_formal`, `c3_formal_secondary`, `c4_self_cite_threshold`, `c4_self_cite_prefix`, `c4_max_self_cite_keys`, `c5_d_type`, `c6_blacklist`, `c7_max_ceremonial`, `c8_claimed_effects`, `c9_figure_keywords`, `c10_reproducibility_claims`, `c11_plugins_disabled` |
+
+#### 15.3.2 What's NOT frozen
+
+Internal implementation details are NOT part of the
+freeze:
+
+- The internal `SEVERITY` dict, the `check_cN_...` function
+  bodies, the regex patterns in each check. These may
+  change at any time.
+- The `verify_p<N>.py` generated output format (the
+  user-facing `print()` lines, the cache key format).
+- Internal cache module structure (the `CacheDB` class
+  itself is frozen as a public class, but its private
+  methods can change).
+- The `RELEASE_NOTES_*.md` and `CHANGELOG.md` formatting
+  conventions (we may switch to towncrier or scriv).
+
+The boundary: **public symbols and CLI flags are frozen;
+their internals are not.**
+
+### 15.4 The 5-milestone path to v1.0.0
+
+The path is explicit and date-anchored. Each milestone
+has a **definition of done** (DOD) and a **maximum
+duration** so the schedule doesn't slip indefinitely.
+
+```
+v0.4.0 ──▶ v0.4.1 ──▶ v0.5.0 ──▶ v0.6.0 ──▶ v0.7.0 ──▶ v1.0.0
+[shipped]    (patches)   (adj)      (lock)     (polish)    (freeze)
+   ↓            ↓          ↓           ↓          ↓          ↓
+2026-07-10   2026-08    2026-10    2026-12    2027-02    2027-04
+            3 months   2 months   2 months   2 months   2 months
+```
+
+Total: 9 months from v0.4.0 to v1.0.0. The 3-month
+v0.4.0 → v0.5.0 window absorbs community feedback; the
+2-month cadence after that is to keep momentum.
+
+### 15.5 v0.4.x — Patch releases (≤ 2026-08)
+
+Patches address bug fixes from the community. New
+**features** are deferred to v0.5.0.
+
+DOD for v0.4.1:
+- All bugs filed against the plugin API fixed.
+- No new public symbols added.
+- 100% of existing tests pass.
+- `pip install tmaudit` works on PyPI (currently the
+  package is only installable from source).
+
+DOD for v0.4.2 (if needed):
+- Same as v0.4.1 plus a documentation pass.
+
+**Estimated effort: 1-2 weeks** (mostly waiting on
+community bug reports).
+
+### 15.6 v0.5.0 — First minor release (≤ 2026-10)
+
+This is the **community-feedback-absorbing release**. Any
+breaking change to the plugin API is allowed here, based
+on real-world usage.
+
+Planned changes:
+1. **`c11_plugins_enabled` (whitelist)**: per-paper opt-in
+   for "only these plugins". Currently we have only
+   `c11_plugins_disabled` (blacklist). Some users want
+   the inverse for security.
+2. **Plugin configuration schema validator** (JSON
+   Schema). Plugins can declare what config keys they
+   expect; the loader validates the per-paper config
+   against the schema before calling the plugin.
+3. **Plugin hot-reload** (dev-only): a
+   `tmaudit plugins reload` subcommand that re-imports
+   plugins without restarting the process. Useful during
+   plugin development.
+4. **Async plugins (preview)**: an `async def` plugin
+   shape behind an opt-in flag. Production plugins stay
+   sync. Async plugins are useful for I/O-bound checks
+   (e.g., calling a remote linting service).
+
+DOD for v0.5.0:
+- At least 3 community issues addressed (tracked in
+  `.github/issues/`).
+- Backward-compat shim for any breaking change (the old
+  API still works, just deprecated).
+- All v0.4.x tests still pass.
+- New tests for each new feature.
+- New meta-test bugs (Bug 15, Bug 16) for any new audit
+  categories or plugin-API surface area.
+
+**Estimated effort: 4-6 weeks** (mostly feature work).
+
+### 15.7 v0.6.0 — API lock (≤ 2026-12)
+
+This is the **last release that can break the API**. After
+v0.6.0, only additive changes.
+
+Lock-day changes:
+1. **Plugin `__version__` is required**. Currently the
+   `@check` decorator defaults `version="0.1.0"`. From
+   v0.6.0, plugins without an explicit `version=` argument
+   raise a `TypeError` at registration. This forces plugin
+   authors to think about cache invalidation.
+2. **C1..C10 migrate to `Finding`**. Currently the core
+   categories return `tuple[str, str, int]`. After v0.6.0,
+   they return `Finding`. The legacy tuple form is
+   supported via `Finding.to_tuple()` for one more
+   release, then removed in v1.0.0.
+3. **Severity normalization is finalised**: `MED` alias
+   for `MEDIUM` stays (we promised this in §14). The
+   `HIGH`/`MEDIUM`/`LOW` (long-form) are canonical.
+
+DOD for v0.6.0:
+- All v0.5.0 tests still pass.
+- New test: `test_plugin_version_required` (a plugin
+  without `version=` raises).
+- New test: `test_cN_emit_findings` (C1..C10 each
+  return `Finding` objects).
+- `_check_all_regressions.py` shows 16/16 caught (added
+  Bug 15 and Bug 16).
+- 3 successful `tmaudit audit-all` runs on 3 different
+  papers.
+
+**Estimated effort: 2-3 weeks** (mostly migration
++ tests).
+
+### 15.8 v0.7.0 — Polish (≤ 2027-02)
+
+Performance + documentation + paper-config support. No API
+changes.
+
+Planned work:
+1. **Performance: < 1 second per paper**:
+   - Benchmark suite in `bench/` (timing each C1..C10
+     category on a sample paper).
+   - Profile + optimise the slowest check (typically C1
+     and C8 in practice).
+   - Goal: total audit (C1..C10 + plugins) < 1s on
+     Paper 5 (~26 pages).
+2. **10 papers out-of-the-box**: fill in `c1_symbols`,
+   `c2_families`, etc. for 5 more papers. This is
+   people-time, not code-time.
+3. **Full API reference**: generate `docs/api/` from
+   docstrings using `sphinx-apidoc` or `mkdocstrings`.
+4. **Contributor guide update**: a new
+   `docs/PLUGIN_AUTHOR_GUIDE.md` walking through
+   writing a plugin from scratch.
+5. **Tutorial videos** (3): record screen-casts of
+   (a) setting up `tmaudit`, (b) writing a plugin,
+   (c) contributing a paper config. Hosted on the
+   project website.
+
+DOD for v0.7.0:
+- 10/10 papers in `tmaudit list`.
+- Benchmark `bench/run_benchmark.py` shows < 1s.
+- `docs/api/` exists with every public symbol.
+- 3 tutorial videos on the project site.
+
+**Estimated effort: 6-8 weeks** (dominated by
+paper-config intake + video production).
+
+### 15.9 v1.0.0 — First stable release (≤ 2027-04)
+
+The 6-month freeze begins. v1.0.0 is the **promise of
+stability**: any user who adopts v1.0.0 can build tooling
+on top of `tmaudit` (CI integrations, custom plugins,
+paper-config forks) and trust that the API won't break
+for at least 6 months.
+
+What's in v1.0.0:
+- All v0.7.0 work.
+- 3 documented real-world submission cycles
+  (self-reported by users).
+- A `docs/MAINTAINERS.md` listing the people on call
+  for the 6-month stability window.
+- A `SECURITY.md` for the security reporting policy.
+- A `CODEOWNERS` file mapping files to maintainers.
+- A `LICENSE` clarification (MIT? Apache 2.0?).
+- A `pyproject.toml` updated to declare v1.0.0
+  dependencies (e.g., `tmaudit>=0.6,<2.0`).
+
+DOD for v1.0.0:
+- 9/9 v0.7.0 DOD items met.
+- 3 self-reported submission cycles in `docs/USAGE.md`.
+- `git tag v1.0.0` is signed by at least 2 maintainers.
+- The release is announced on the project website
+  and a draft post is ready for the maintainers' blog.
+
+**Estimated effort: 1-2 weeks** (mostly release engineering,
+not code).
+
+### 15.10 Calendar (release dates)
+
+| Version | Target date | Milestone | Source of truth |
+|---|---|---|---|
+| **v0.4.0** | **2026-07-10** | Plugin API ships | ✅ this release |
+| v0.4.1 | 2026-08-10 | Patch (community bug fixes) | CI failure log |
+| v0.4.2 | 2026-09-10 | Patch (if needed) | CI failure log |
+| v0.5.0 | 2026-10-10 | First minor (community feedback) | GitHub issues |
+| v0.6.0 | 2026-12-10 | API lock | `_check_all_regressions.py` |
+| v0.7.0 | 2027-02-10 | Polish (perf + docs + 10 papers) | `bench/` + `tmaudit list` |
+| **v1.0.0** | **2027-04-10** | First stable release | 3 submission cycles |
+
+All dates are **end-of-month** targets, with a 1-month
+slack for slippage. The 9-month window from v0.4.0 to
+v1.0.0 is intentional: long enough for community
+feedback and real-world validation, short enough to
+maintain momentum.
+
+The longest pole is **3 submission cycles** — each is
+3-6 months from a real TMLR/NeurIPS/ICLR calendar. We
+have:
+- TMLR: rolling submission, no fixed deadline.
+- NeurIPS 2026: deadline ~2026-05 (already past).
+- ICLR 2026: deadline ~2025-09 (already past).
+- NeurIPS 2027: deadline ~2027-05 (just after v1.0.0).
+- ICLR 2027: deadline ~2026-09 (right at v0.5.0).
+- TMLR: continuous — we should be able to count ≥ 3
+  TMLR submissions by 2027-04.
+
+So the submission-cycle goal is **achievable but not
+generous**: at least 3 different authors need to use
+`v0.5.0` (or later) and self-report. This is the part
+the maintainer has the least control over.
+
+### 15.11 Risk register
+
+What could derail v1.0.0? Listed in order of likelihood:
+
+| # | Risk | Probability | Impact | Mitigation |
+|---|---|---|---|---|
+| 1 | The plugin API has a papercut that only surfaces in real use | **High** | Medium (v0.5.0 delay) | Use v0.4.0 in our own papers (1, 3, 5) to exercise it. |
+| 2 | No 3rd author reports a submission cycle | **High** | **Critical** (blocks v1.0.0) | Recruit from the maintainer's academic network; advertise on the TMLR Discord. |
+| 3 | A 4th audit category (C11) is requested and we have to add it | Medium | Low | The plugin API was designed for this; new "core" categories are not required. |
+| 4 | A contributor introduces a 500-line regression in C8 | Medium | Medium (v0.4.x delay) | 18 unit tests + meta-test Bug 11 catch most of this. |
+| 5 | PyPI upload is blocked by a name collision | Low | Low (delays v0.4.1) | Reserve the name early via `pip install tmaudit-dryrun` to check. |
+| 6 | The frozen API is too restrictive | Low | Low | v1.1 can add fields; the freeze only blocks removal. |
+| 7 | We miss the 2027-04 date by 6+ months | Low | Low | The 1-month slack absorbs normal slippage; if we miss by 6 months, we have bigger problems. |
+| 8 | A CVE in the plugin loader (e.g., entry-point format string) | Low | High | Plugins run with full user perms; the threat model is documented in §14.11. |
+
+The **two real risks** are #1 (API papercuts, high
+probability, manageable) and #2 (no submission
+cycles, high probability, hard to mitigate). Everything
+else is incremental.
+
+### 15.12 Cross-cutting lessons (C7-C10 → v1.0.0)
+
+Looking at §11 (C7), §12 (C8 + C10), §13 (C9), §14
+(plugin API), the **pattern that emerged** for every
+audit category was:
+
+1. **TDD red** — write the tests first, even if you
+   think you know the right code. The tests force you to
+   specify the contract.
+2. **TDD green** — implement the function to make the
+   tests pass. Keep the implementation minimal.
+3. **Driver wiring** — call the function from
+   `main()`, add the category to the SEVERITY dict, and
+   verify the per-paper `cN_...` config is threaded
+   through.
+4. **Meta-test** — write an `inject_bugN()` that
+   re-introduces a specific bug, and confirm the
+   regression test catches it.
+5. **Documentation** — update CHANGELOG, RELEASE_NOTES,
+   and the §X engineering notes.
+
+We followed this pattern 11 times (Bug 1 through Bug 11)
+and again for Bug 12, 13, 14. The next 4-6 audit
+categories (if any) will follow the same pattern.
+
+The pattern is **the operational definition of "we know
+how to add a new audit category"**. If a future
+contributor can follow §15.12's 5 steps, they can add a
+new category without breaking the freeze.
+
+### 15.13 v1.0.0 status table
+
+| Milestone | Target | Status | Blocker |
+|---|---|---|---|
+| v0.4.0 plugin API | 2026-07-10 | ✅ done | — |
+| v0.4.1 patches | 2026-08-10 | ⏳ waiting | Community bug reports |
+| v0.5.0 feedback | 2026-10-10 | ⏳ waiting | Plugin usage in real papers |
+| v0.6.0 API lock | 2026-12-10 | ⏳ waiting | v0.5.0 lessons |
+| v0.7.0 polish | 2027-02-10 | ⏳ waiting | v0.6.0 done; 5 more paper configs |
+| **v1.0.0** | **2027-04-10** | ⏳ waiting | All of the above + 3 submission cycles |
+
+Updated 2026-07-10. The maintainer reviews this table
+on the 1st of every month; any date older than 90 days
+without progress triggers a "are we still on track?"
+check.
+
+### 15.14 What v1.0.0 is NOT
+
+To manage expectations:
+
+- **v1.0.0 is not "feature-complete"**. The 10 core
+  categories are the 10 most common reviewer concerns.
+  Domain-specific checks (NeurIPS 2027 page-length,
+  Smith Lab nomenclature) belong in plugins, not in
+  core.
+- **v1.0.0 is not "API-final"**. The v1.x series can
+  add fields (additive) freely. v1.0 just means the
+  next 6 months have no breaking changes.
+- **v1.0.0 is not "ready for every workflow"**. PyPI
+  install works in v0.4.x. The 10-paper support works
+  in v0.7.0. The tutorial videos work in v0.7.0. v1.0.0
+  is the *combination* of all of these.
+- **v1.0.0 is not "abandoned"**. After v1.0.0 we ship
+  v1.1, v1.2, etc. on the same 2-month cadence. v1.0 is
+  the **start** of the stable series, not the end.
+
+### 15.15 Closing — what success looks like
+
+In 9 months, when v1.0.0 ships, the maintainer's
+checklist is:
+
+- [ ] 10 papers supported out-of-the-box.
+- [ ] 3 documented real-world submission cycles.
+- [ ] 14+ meta-test bugs caught (currently 14; expected
+  to grow as we add new categories).
+- [ ] `pip install tmaudit` works on PyPI.
+- [ ] 1.0.0 is tagged and signed.
+- [ ] The release is announced on the project website.
+- [ ] The maintainer can take a 2-week vacation
+  without breaking anything (the API is frozen; no
+  one is depending on the maintainer for a fix).
+
+That last item is the **truest test of stability**.
+v1.0.0 succeeds when the maintainer is not on the
+critical path.
+
 ## Appendix: file listings
 
 `F:\Research\TEMPLATE\` after this work:
