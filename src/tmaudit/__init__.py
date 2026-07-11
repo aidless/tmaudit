@@ -20,7 +20,7 @@ The package can be installed with `pip install tmaudit/` (or
 `pip install -e .` for editable mode) and shipped as a single
 executable .pyz file with `python -m zipapp`.
 """
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 # Re-export the plugin API at the package level so users can
 # `from tmaudit import Finding, check` instead of

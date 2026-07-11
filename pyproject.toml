@@ -4,24 +4,72 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmaudit"
-version = "0.1.0"
+version = "0.4.1"
 description = "Config-driven TMLR paper audit + LaTeX compile pipeline"
-authors = [{name = "Liu Mingrui"}]
+readme = "README.md"
 requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    {name = "Liu Mingrui", email = "liumingrui@example.com"},
+]
+keywords = [
+    "tmaudit",
+    "tmlr",
+    "paper-audit",
+    "latex",
+    "compile",
+    "plugins",
+    "neurips",
+    "iclr",
+    "reviewer",
+    "audit",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7", "mypy>=1.0"]
+dev = [
+    "pytest>=7",
+    "mypy>=1.0",
+    "build>=0.10",
+    "twine>=4",
+]
+
+[project.urls]
+Homepage = "https://github.com/aidless/tmaudit"
+Issues = "https://github.com/aidless/tmaudit/issues"
+Source = "https://github.com/aidless/tmaudit"
+Changelog = "https://github.com/aidless/tmaudit/blob/main/CHANGELOG.md"
+"v0.4.0 release" = "https://github.com/aidless/tmaudit/releases/tag/v0.4.0"
+
+[project.scripts]
+tmaudit = "tmaudit.cli:main"
+
+[project.entry-points."tmaudit.plugins"]
+# The example plugin (tmaudit_example_plugin) registers its
+# own entry-points when installed. We declare no core
+# entry-points here: every audit category lives in
+# `src/tmaudit/templates/verify_TEMPLATE.py` and is wired
+# via the static `check_cN_*` function calls.
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
 markers = [
-    "slow: marks tests as slow (run separately with `pytest -m slow`)",
+    "slow: marks tests as run separately with `pytest -m slow`",
 ]
-
-[project.scripts]
-tmaudit = "tmaudit.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
