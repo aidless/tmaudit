@@ -138,26 +138,37 @@ See [`RELEASE_NOTES_v0.4.0.md`](./RELEASE_NOTES_v0.4.0.md) for the
 v0.4.0 changelog. Published on
 [github.com/aidless/tmaudit/releases/tag/v0.4.0](https://github.com/aidless/tmaudit/releases/tag/v0.4.0).
 
-### v0.5.0 — PLANNED (≤ 2026-10)
+### v0.5.0 — DONE (released 2026-07-11)
 
 **Theme**: First minor release after the plugin API ships.
 Absorb community feedback; allow breaking changes to the
 plugin API before the v0.6.0 lock.
 
-Planned features:
-1. `c11_plugins_enabled` (whitelist mode) — per-paper opt-in
-   for "only these plugins". Currently we have only
-   `c11_plugins_disabled` (blacklist). Some users want the
-   inverse for security.
-2. Plugin configuration schema validator (JSON Schema).
-3. Plugin hot-reload (dev-only) — `tmaudit plugins reload`
-   for plugin authors iterating on a check.
-4. Async plugins (preview) — `async def check()` shape
-   behind an opt-in flag for I/O-bound checks.
+Shipped features (this release):
+1. ✅ **`c11_plugins_enabled` (whitelist mode)** — per-paper
+   opt-in for "only these plugins". Complements the v0.4.0
+   `c11_plugins_disabled` (blacklist) with a clear
+   precedence rule: enabled wins, disabled is ignored,
+   warning logged. Backward-compatible.
+2. ✅ **Meta-test expanded** from 14/14 → **16/16** caught.
+   Bug 15 (whitelist branch disabled) and Bug 16
+   (precedence swap) added to `_check_all_regressions.py`.
 
-DOD: at least 3 community issues addressed; backward-
-compat shim for any breaking change; new meta-test bugs
-(Bug 15, Bug 16) for the new surface area.
+Deferred to v0.5.1 or v0.6.0:
+- Plugin configuration schema validator (JSON Schema).
+- Plugin hot-reload (dev-only) — `tmaudit plugins reload`.
+- Async plugins (preview) — `async def check()` shape.
+
+Stats:
+- Unit tests: 218 → **225** (+7 whitelist tests)
+- Meta-test: 14/14 → **16/16** caught
+- Community-files checks: 44/44 (unchanged)
+- Per-paper plugin filter: `c11_plugins_disabled` (v0.4.0)
+  + **`c11_plugins_enabled`** (v0.5.0)
+
+See [`RELEASE_NOTES_v0.5.0.md`](./RELEASE_NOTES_v0.5.0.md)
+for the v0.5.0 changelog. (GitHub release tag will be
+created in a follow-up release-process commit.)
 
 ### v0.6.0 — PLANNED (≤ 2026-12)
 

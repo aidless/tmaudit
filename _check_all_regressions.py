@@ -664,6 +664,156 @@ def inject_bug14() -> None:
         )
 
 
+def inject_bug15() -> None:
+    """Bug 15: c11_plugins_enabled whitelist is ignored.
+
+    The v0.5.0 implementation in ``filter_active`` (in
+    ``src/tmaudit/plugins.py``) supports an ``enabled`` kwarg
+    that whitelists plugins: when non-empty, only plugins in
+    the list are kept. The implementation has the structure::
+
+        enabled_set = set(enabled) if enabled else set()
+        ...
+        if enabled_set:
+            return {n: c for n, c in plugins.items() if n in enabled_set}
+
+    If the early-return branch is replaced with a fall-through
+    (i.e., the whitelist branch is removed), then any plugins
+    in the ``enabled`` list run but so do plugins NOT in the
+    list -- the whitelist is effectively ignored.
+
+    The injection replaces the whitelist branch with a comment,
+    so that the function falls through to the disabled-check
+    branch (which treats ``enabled`` as if it weren't set).
+
+    With the bug, the regression test
+    ``test_audit_plugins_respects_c11_plugins_enabled`` registers
+    a plugin that's NOT in the whitelist, runs audit, and
+    expects 0 findings. The buggy version would produce findings,
+    causing the test to fail.
+    """
+    plugins_path = TEMPLATE / 'src' / 'tmaudit' / 'plugins.py'
+    with _patched(plugins_path):
+        original = plugins_path.read_text(encoding='utf-8')
+        # Anchor: the whitelist branch block.
+        # The block starts with `if enabled_set:` and ends with
+        # `if n in enabled_set}` (the dict-comprehension line).
+        # We'll replace the whole block with a no-op comment.
+        old_block_start = '    if enabled_set:\n'
+        start_idx = original.find(old_block_start)
+        if start_idx < 0:
+            raise RuntimeError(
+                f'bug-15 anchor (whitelist branch start) not found in {plugins_path}'
+            )
+        # Find the end: the dict comprehension body line.
+        end_marker = '                if n in enabled_set}\n'
+        end_idx = original.find(end_marker, start_idx)
+        if end_idx < 0:
+            raise RuntimeError(
+                f'bug-15 anchor (whitelist branch end) not found in {plugins_path}'
+            )
+        end_idx += len(end_marker)
+        broken = '    # BROKEN: whitelist branch disabled (bug 15)\n    pass\n\n'
+        plugins_path.write_text(
+            original[:start_idx] + broken + original[end_idx:],
+            encoding='utf-8',
+        )
+        _check_bug_inside_patch(
+            '15',
+            'tests/test_plugin_api.py::test_audit_plugins_respects_c11_plugins_enabled',
+        )
+
+
+def inject_bug16() -> None:
+    """Bug 16: precedence rule violated when both enabled and
+    disabled are set (enabled should win).
+
+    The v0.5.0 spec (§16.4) says: when both ``c11_plugins_enabled``
+    and ``c11_plugins_disabled`` are set on a paper config, the
+    enabled list wins and disabled is ignored (with a warning
+    log). The implementation in ``filter_active`` enforces this
+    by checking ``enabled_set`` first and short-circuiting.
+
+    If the precedence check is inverted (e.g., the disabled
+    branch runs first and returns early), then the whitelist
+    is silently ignored.
+
+    The injection swaps the two ``if`` blocks: the disabled
+    branch runs first, returning a blacklisted dict; the
+    enabled branch never executes.
+
+    With the bug, the regression test
+    ``test_filter_active_whitelist_overrides_blacklist`` builds
+    a plugin dict where plugins A, B, C exist, sets
+    enabled=['A'] and disabled=['B'], and expects {'A': ...}
+    only. The buggy version returns {'A', 'C'} (disabled is
+    applied, whitelist ignored), failing the assertion.
+    """
+    plugins_path = TEMPLATE / 'src' / 'tmaudit' / 'plugins.py'
+    with _patched(plugins_path):
+        original = plugins_path.read_text(encoding='utf-8')
+        # We replace the order of the two `if` blocks. The
+        # original order is enabled-first then disabled; we
+        # invert to disabled-first.
+        enabled_start_marker = '    if enabled_set:\n'
+        enabled_start = original.find(enabled_start_marker)
+        if enabled_start < 0:
+            raise RuntimeError(
+                f'bug-16 anchor (enabled start) not found in {plugins_path}'
+            )
+        # The enabled branch body is 5 lines; the closing line
+        # is the dict comprehension continuation. We use a
+        # precise anchor: the closing brace line.
+        end_marker = '        if n in enabled_set}\n'
+        enabled_end = original.find(end_marker, enabled_start)
+        if enabled_end < 0:
+            raise RuntimeError(
+                f'bug-16 anchor (enabled end) not found in {plugins_path}'
+            )
+        enabled_end += len(end_marker)
+        # Extract the enabled block.
+        enabled_block = original[enabled_start:enabled_end]
+        # Find the disabled branch (we move the enabled block
+        # to AFTER the disabled branch). We need the SECOND
+        # occurrence of `if disabled_set:` (the outer one), not
+        # the inner one inside the warning log.
+        disabled_start_marker = '    if disabled_set:\n'
+        first_disabled = original.find(disabled_start_marker)
+        if first_disabled < 0:
+            raise RuntimeError(
+                f'bug-16 anchor (disabled start, first) not found in {plugins_path}'
+            )
+        # The outer `if disabled_set:` is the second occurrence.
+        disabled_start = original.find(
+            disabled_start_marker, first_disabled + len(disabled_start_marker)
+        )
+        if disabled_start < 0:
+            raise RuntimeError(
+                f'bug-16 anchor (disabled start, second) not found in {plugins_path}'
+            )
+        disabled_end_marker = '        if n not in disabled_set}\n'
+        disabled_end = original.find(disabled_end_marker, disabled_start)
+        if disabled_end < 0:
+            raise RuntimeError(
+                f'bug-16 anchor (disabled end) not found in {plugins_path}'
+            )
+        disabled_end += len(disabled_end_marker)
+        disabled_block = original[disabled_start:disabled_end]
+        # Compose: original up to enabled_start, then disabled_block,
+        # then enabled_block, then rest after enabled_end.
+        swapped = (
+            original[:enabled_start]
+            + disabled_block
+            + enabled_block
+            + original[enabled_end:]
+        )
+        plugins_path.write_text(swapped, encoding='utf-8')
+        _check_bug_inside_patch(
+            '16',
+            'tests/test_plugin_api.py::test_filter_active_whitelist_overrides_blacklist',
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-bug test runner
 # ---------------------------------------------------------------------------
@@ -707,6 +857,8 @@ def main() -> int:
         ('12', inject_bug12),
         ('13', inject_bug13),
         ('14', inject_bug14),
+        ('15', inject_bug15),
+        ('16', inject_bug16),
     ]
 
     for bug_id, inject_fn in cases:

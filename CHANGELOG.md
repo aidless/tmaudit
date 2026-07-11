@@ -6,7 +6,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Planned for v0.1.2
+## [v0.5.0] — 2026-07-11
+
+### Added (plugin whitelist — `c11_plugins_enabled`)
+
+- **`filter_active(plugins, disabled, enabled)`** — adds an
+  optional `enabled` whitelist kwarg. When non-empty, only
+  plugins whose name appears in the list are kept. This is
+  the v0.5.0 mechanism for **per-paper plugin lock-down**.
+  Behavior:
+    - Both `enabled` and `disabled` set → `enabled` wins,
+      `disabled` is ignored, a warning is logged.
+    - Only `disabled` set → existing v0.4.0 blacklist
+      behavior (no break in compat).
+    - Only `enabled` set → whitelist filter.
+    - Neither set → all plugins run (existing fall-through).
+- **`audit_plugins(..., enabled)`** — accepts and threads
+  through to `filter_active`. Reads `c11_plugins_enabled`
+  from the paper config when not explicitly passed.
+- **`paper_configs.PAPER5_CONSOLIDATED`** — adds
+  `'c11_plugins_enabled': ['flag-todo-markers']` as a
+  usage example (locked-down plugin set for the most
+  recently authored paper).
+- **`tests/test_plugin_api.py`** — 7 new tests:
+    - `test_filter_active_empty_lists_run_all`
+    - `test_filter_active_blacklist_only`
+    - `test_filter_active_whitelist_only`
+    - `test_filter_active_whitelist_overrides_blacklist`
+    - `test_filter_active_whitelist_with_unknown_plugin`
+    - `test_audit_plugins_respects_c11_plugins_enabled`
+    - `test_paper_configs_can_carry_c11_plugins_enabled`
+- **`_check_all_regressions.py`** — adds Bug 15 (whitelist
+  branch disabled) and Bug 16 (precedence swap) injects.
+  Meta-test now 16/16 caught.
+
+### Changed
+
+- **`filter_active` signature** — added `enabled: Optional[Iterable[str]] = None`
+  as the third positional-or-keyword argument. Backward-
+  compatible: existing callers passing only `disabled`
+  continue to work.
+- **`audit_plugins` signature** — added `enabled` kwarg with
+  the same default. Backward-compatible.
+
+### TDD provenance
+
+- **Red phase** (commit `0d538a1`): added 7 failing tests.
+- **Green phase** (commit `424c806`): minimal changes to
+  `filter_active` + `audit_plugins` + `paper_configs` to
+  make all 7 pass.
+- **Anchor fix** (commit `5129e5d`): updated Bug 14's
+  regression anchor to the new `filter_active` signature.
+- **Meta-test expansion** (commit `5129e5d` + this commit):
+  Bug 15 + 16 injects added, meta-test 14/14 → 16/16.
+
+### Compatibility
+
+- All 218 prior tests continue to pass.
+- All 14 prior regression tests continue to catch their bugs.
+- No CLI changes; `cmd_audit_all` reads `c11_plugins_enabled`
+  from the paper config (no new flag in v0.5.0).
+
+## [Unreleased]
 
 Two enhancement issues are open and ready for community
 contribution. See [`.github/issues/16-c7-citation-context.md`](./.github/issues/16-c7-citation-context.md)
