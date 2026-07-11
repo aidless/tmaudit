@@ -239,10 +239,45 @@ def reset_loader_cache() -> None:
 def filter_active(
     plugins: Dict[str, CheckFn],
     disabled: Optional[List[str]] = None,
+    enabled: Optional[List[str]] = None,
 ) -> Dict[str, CheckFn]:
-    if not disabled:
-        return dict(plugins)
-    return {n: c for n, c in plugins.items() if n not in set(disabled)}
+    """Return a subset of plugins with disabled ones removed
+    and (if enabled is non-empty) only enabled ones kept.
+
+    Resolution rule (per §16.4 in the engineering notes):
+    if `enabled` is non-empty, it takes precedence over
+    `disabled`. A warning is logged if both are non-empty
+    so the user notices the override.
+
+    Args:
+        plugins: full plugin dict from load_plugins().
+        disabled: per-paper blacklist. Ignored if `enabled`
+            is non-empty.
+        enabled: per-paper whitelist. If non-empty, only
+            plugins whose name is in this list are kept.
+
+    Returns:
+        A new dict containing only the active plugins.
+    """
+    enabled_set = set(enabled) if enabled else set()
+    disabled_set = set(disabled) if disabled else set()
+
+    if enabled_set:
+        # Whitelist mode: enabled wins, disabled is ignored.
+        if disabled_set:
+            log.warning(
+                "tmaudit: c11_plugins_enabled and "
+                "c11_plugins_disabled are both set; "
+                "enabled wins and disabled is ignored."
+            )
+        return {n: c for n, c in plugins.items()
+                if n in enabled_set}
+
+    if disabled_set:
+        return {n: c for n, c in plugins.items()
+                if n not in disabled_set}
+
+    return dict(plugins)
 
 
 def run_plugin(
@@ -296,6 +331,7 @@ def audit_plugins(
     paper_dir: "Path",
     config: Optional[Dict[str, Any]] = None,
     disabled: Optional[List[str]] = None,
+    enabled: Optional[List[str]] = None,
     use_cache: bool = True,
 ) -> List[Finding]:
     """Run all active plugins for a paper; cache results.
@@ -332,7 +368,14 @@ def audit_plugins(
         else ""
     )
 
-    plugins = filter_active(load_plugins(), disabled)
+    # If `enabled` is not passed explicitly, read it from
+    # the per-paper config. This is the canonical entry
+    # point (per §16.3.3) — per-paper CHECKS_CONFIG carries
+    # the whitelist, not the caller.
+    if enabled is None and config:
+        enabled = config.get('c11_plugins_enabled', [])
+
+    plugins = filter_active(load_plugins(), disabled, enabled)
     if not plugins:
         return []
 

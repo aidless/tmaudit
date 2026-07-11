@@ -204,6 +204,12 @@ def cmd_audit_all(args: argparse.Namespace) -> int:
                 paper_dir=Path(paper_dir),
                 config=cfg,
                 disabled=cfg.get('c11_plugins_disabled', []),
+                # c11_plugins_enabled is read from the
+                # per-paper config inside audit_plugins;
+                # no need to pass it here. (Per §16.3.3,
+                # the per-paper config is the canonical
+                # entry point; we don't add a CLI flag in
+                # v0.5.0.)
                 use_cache=not no_cache,
             )
             if plugin_findings:

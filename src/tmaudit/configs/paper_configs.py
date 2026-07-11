@@ -372,6 +372,12 @@ PAPER_CONFIGS: dict[int, dict] = {
         'c10_reproducibility_claims': [
             {'type': 'claims_sota', 'dataset': 'length-bias benchmark', 'expected_section': 'data'},
         ],
+        # v0.5.0 whitelist: lock the plugin set to only
+        # the example plugin (the only one we currently
+        # ship). This makes the audit deterministic:
+        # future installs of additional plugins cannot
+        # silently change the audit output for Paper 5.
+        'c11_plugins_enabled': ['flag-todo-markers'],
     },
 }
 
