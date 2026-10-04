@@ -1,4 +1,5 @@
 # Roadmap
+> ⚠️ 本 ROADMAP 停留在 v0.1.x 时期的规划；v0.1.0–v0.5.0 均已发布，最新状态见 [CHANGELOG.md](CHANGELOG.md)。
 
 This document describes the planned future direction of
 `tmaudit`. It is **not a commitment** — features may be
