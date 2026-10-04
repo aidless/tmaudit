@@ -8,8 +8,8 @@
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
 ![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
 ![Security](https://img.shields.io/badge/security-policy%20in%20place-green)
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
-![Roadmap](https://img.shields.io/badge/roadmap-v0.4.0%20planned-yellow)
+![Version](https://img.shields.io/badge/version-0.5.0-blue)
+![Roadmap](https://img.shields.io/badge/roadmap-through%20v0.5.0-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 This directory is a **deployable Python package** named `tmaudit`. It
