@@ -46,7 +46,6 @@ Function signature (planned):
   ) -> list[tuple[str, str, int]]:
 """
 from __future__ import annotations
-import re
 import sys
 from pathlib import Path
 

@@ -128,7 +128,7 @@ def main() -> int:
     main_tex.write_text(new_tex, encoding='utf-8')
     print(f'[WRITE]  {main_tex.name} ({len(new_tex):,} chars)')
     print()
-    print(f'Done.  Re-run _compile_check.py to confirm 0 fatal errors.')
+    print('Done.  Re-run _compile_check.py to confirm 0 fatal errors.')
     return 0
 
 

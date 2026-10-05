@@ -24,11 +24,17 @@ from __future__ import annotations
 import argparse
 import re
 import shutil
+import os
 import sys
 from pathlib import Path
 
-TEMPLATE_DIR = Path('F:/Research/TEMPLATE')
-RESEARCH_DIR = Path('F:/Research')
+# The author's local research tree. Override with TMAUDIT_RESEARCH_DIR so this
+# package can be driven on a machine that does not have F:/Research — without it
+# every per-paper configuration points at a directory that does not exist and
+# audit-all dies with FileNotFoundError before running a single check.
+RESEARCH_DIR = Path(os.environ.get('TMAUDIT_RESEARCH_DIR', 'F:/Research'))
+TEMPLATE_DIR = Path(os.environ.get('TMAUDIT_TEMPLATE_DIR',
+                               str(RESEARCH_DIR / 'TEMPLATE')))
 
 # ---------------------------------------------------------------------------
 # Per-paper CHECKS_CONFIG (6 categories of audit)

@@ -53,6 +53,11 @@ __all__ = [
     "reset_loader_cache",
     "run_all_plugins",
     "run_plugin",
+    # Re-exported for plugin authors. CHANGELOG.md records them as public API, so
+    # listing them here is what tells pyflakes they are not dead imports.
+    "CacheDB",
+    "cache_key",
+    "plugin_cache_key",
 ]  # type: ignore
 
 # Re-export cache helpers that plugin authors will need.

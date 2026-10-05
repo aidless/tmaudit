@@ -419,7 +419,7 @@ def test_audit_plugins_respects_per_paper_disable():
         _plugins.filter_active = _plugins.filter_active  # unchanged
         # Active: no disable → 1 finding.
         from pathlib import Path as _Path
-        import tempfile, os
+        import tempfile
         with tempfile.TemporaryDirectory() as td:
             (Path(td) / "main.tex").write_text("hello world\n", encoding="utf-8")
             findings_active = _plugins.audit_plugins(

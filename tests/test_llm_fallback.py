@@ -51,7 +51,6 @@ from src.tmaudit.llm_fallback import (
     hash_sentence,
     is_borderline,
     _build_prompt,
-    _call_llm,
 )
 
 

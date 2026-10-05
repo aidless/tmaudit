@@ -90,7 +90,6 @@ def detect_arxiv_year_issues_min(text: str, *, config: dict | None = None,
     pattern = re.compile(r"arXiv:(\d{2})(\d{2})\.(\d{4,5})")
     issues: list[dict] = []
     for m in pattern.finditer(text):
-        yymm = m.group(1) + m.group(2)
         year = 2000 + int(m.group(1))
         month = int(m.group(2))
         full = m.group(0)

@@ -23,14 +23,11 @@ engine itself; bugs 4, 5, 6 are tested against the actual
 audit output produced by the forked verify script.
 """
 from __future__ import annotations
-import re
-import textwrap
 import pytest
 
 from tmaudit.forge import (
     _format_simple_value,
     _substitute_verify,
-    _substitute_fix_unicode,
 )
 
 

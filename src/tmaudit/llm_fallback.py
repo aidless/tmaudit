@@ -58,8 +58,7 @@ import os
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Optional
 
 
@@ -290,7 +289,7 @@ class LLMFallback:
                 self.model,
                 self.timeout_sec,
             )
-        except (urllib.error.URLError, json.JSONDecodeError, KeyError) as e:
+        except (urllib.error.URLError, json.JSONDecodeError, KeyError):
             # Network failure, malformed response, or
             # unexpected structure. Return None (caller can
             # decide to fall back to heuristic).

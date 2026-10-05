@@ -11,15 +11,9 @@ Covers:
   T8: detect_arxiv_year_issues_min uses CONFIG['arxiv']['safe_window_months']
 """
 from __future__ import annotations
-import io
-import json
-import os
 import sys
-import tempfile
-from contextlib import redirect_stderr
 from pathlib import Path
 
-import pytest
 
 # Make src/ importable without installing
 ROOT = Path(__file__).resolve().parent.parent

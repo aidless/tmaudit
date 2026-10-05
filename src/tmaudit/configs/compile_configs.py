@@ -24,11 +24,14 @@ from __future__ import annotations
 import argparse
 import re
 import shutil
+import os
 import sys
 from pathlib import Path
 
-TEMPLATE_DIR = Path('F:/Research/TEMPLATE')
-RESEARCH_DIR = Path('F:/Research')
+# Override with TMAUDIT_RESEARCH_DIR; see paper_configs.py for why.
+RESEARCH_DIR = Path(os.environ.get('TMAUDIT_RESEARCH_DIR', 'F:/Research'))
+TEMPLATE_DIR = Path(os.environ.get('TMAUDIT_TEMPLATE_DIR',
+                               str(RESEARCH_DIR / 'TEMPLATE')))
 
 # ---------------------------------------------------------------------------
 # Per-paper configuration

@@ -14,12 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import tmaudit
 from tmaudit.plugins import (
-    Finding,
-    PLUGIN_GROUP,
-    check,
-    filter_active,
     load_plugins,
     reset_loader_cache,
 )

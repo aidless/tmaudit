@@ -21,7 +21,6 @@ the template, but one paper's config is forgotten, leading
 to KeyError at audit time.
 """
 from __future__ import annotations
-import re
 import sys
 from pathlib import Path
 

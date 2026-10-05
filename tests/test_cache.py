@@ -31,7 +31,6 @@ Acceptance criteria (Issue #17):
   5. Corrupt cache file is handled gracefully.
 """
 from __future__ import annotations
-import os
 import sys
 import time
 from pathlib import Path
@@ -57,7 +56,6 @@ def _isolated_cache_dir(monkeypatch):
     subdirectory per test instead of trying to reuse one.
     """
     import shutil
-    import tempfile
     import uuid
     test_dir = ROOT / f'.tmp_test_cache_{uuid.uuid4().hex[:8]}'
     test_dir.mkdir(parents=True, exist_ok=True)
@@ -157,7 +155,6 @@ def test_no_cache_bypasses_read():
     when a sentinel value is set in the cache that should
     be ignored.)
     """
-    from src.tmaudit import cache
     db = _fresh_db()
     # Put a sentinel: if the audit reads the cache, it'll
     # see this. If it doesn't, it'll produce its own.
@@ -210,7 +207,6 @@ def test_clear_cache_drops_all_entries():
 def test_corrupt_cache_file_handled_gracefully():
     """If a cache file contains invalid JSON, get returns None
     and removes the corrupt entry."""
-    import sqlite3
     db = _fresh_db()
     # Inject a corrupt entry directly via SQL
     conn = db._get_conn()

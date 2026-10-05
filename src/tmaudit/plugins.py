@@ -84,7 +84,7 @@ class Finding:
             s = "MEDIUM"
         object.__setattr__(self, "severity", s)
         if not self.category or not isinstance(self.category, str):
-            raise ValueError(f"Finding.category must be a non-empty str")
+            raise ValueError("Finding.category must be a non-empty str")
 
     def to_tuple(self) -> tuple:
         return (self.category, self.message, self.line)
