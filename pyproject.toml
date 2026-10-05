@@ -45,6 +45,15 @@ dev = [
     "mypy>=1.0",
     "build>=0.10",
     "twine>=4",
+    # Tests exercise code paths that are only reached when these are importable.
+    # Without scipy, verify_TEMPLATE.py:1192 falls back to `return 0.5  # fallback:
+    # assume adequate power`, so the c8 power checks never fire and four tests in
+    # tests/test_c8_statistical_power.py fail; without PyYAML, detector_config reports
+    # "PyYAML missing; using defaults" and two tests in tests/test_detector_config.py
+    # fail. Both were green on the author's machine only because it happened to have
+    # them installed system-wide.
+    "scipy>=1.10",
+    "PyYAML>=6.0",
 ]
 
 [project.urls]

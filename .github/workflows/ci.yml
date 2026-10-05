@@ -40,17 +40,23 @@ jobs:
           cache-dependency-path: |
             pyproject.toml
 
-      - name: Install tmaudit and its example plugin
-        # tests/test_example_plugin.py asserts the three demo checks are discoverable,
-        # and discovery goes through entry points. The package ships in this repository
-        # as tmaudit_example_plugin/ but nothing installed it, so entry_points was
-        # empty and all eleven tests in that file failed. Installing the sibling package
-        # is what the test is actually asking for.
+      - name: Install tmaudit and its test dependencies
+        # Three separate gaps used to make this step's job red, all of them about
+        # something not being installed rather than the code being wrong:
+        #   - tests/test_example_plugin.py discovers three demo checks through entry
+        #     points; tmaudit_example_plugin/ ships here but nothing installed it, so
+        #     entry_points was empty and all eleven tests in that file failed.
+        #   - four tests in tests/test_c8_statistical_power.py only reach the real power
+        #     calculation when scipy imports; without it verify_TEMPLATE.py:1192
+        #     returns a constant 0.5.
+        #   - two tests in tests/test_detector_config.py exercise YAML error handling
+        #     that needs PyYAML.
+        # scipy and PyYAML are now declared in the `dev` extra, which is what this
+        # installs alongside the two packages.
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
+          python -m pip install -e ".[dev]"
           python -m pip install -e ./tmaudit_example_plugin
-          python -m pip install pytest
 
       - name: Run pytest
         # The two @pytest.mark.slow end-to-end tests fork a verify script and run the
@@ -92,11 +98,12 @@ jobs:
           cache-dependency-path: |
             pyproject.toml
 
-      - name: Install tmaudit
+      - name: Install tmaudit and its test dependencies
+        # The regression harness runs the same suite, so it needs the same extras.
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
-          python -m pip install pytest
+          python -m pip install -e ".[dev]"
+          python -m pip install -e ./tmaudit_example_plugin
 
       - name: Run meta-test (9-bug regression-injection)
         # Runs _check_all_regressions.py, which:
