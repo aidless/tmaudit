@@ -10,13 +10,18 @@ Usage:
     python tmaudit.pyz --help
     python tmaudit.pyz verify --paper 1
 """
+import os
 import shutil
 import subprocess
 import sys
 import zipapp
 from pathlib import Path
 
-ROOT = Path('F:/Research/TEMPLATE')
+# The author's development tree, which holds the same src/tmaudit/ layout as this
+# repository — so this resolves here by default and can be pointed elsewhere with
+# TMAUDIT_TEMPLATE_DIR, as the configs modules and _check_all_regressions.py are.
+ROOT = Path(os.environ.get('TMAUDIT_TEMPLATE_DIR',
+                           str(Path(__file__).resolve().parent)))
 PKG = ROOT / 'src' / 'tmaudit'
 BUILD = ROOT / 'build_pyz'
 OUT = ROOT / 'tmaudit.pyz'
