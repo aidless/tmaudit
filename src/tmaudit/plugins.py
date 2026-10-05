@@ -202,6 +202,21 @@ def load_plugins(force_reload: bool = False) -> Dict[str, CheckFn]:
     plugins: Dict[str, CheckFn] = {}
     try:
         eps = entry_points(group=PLUGIN_GROUP)
+    except TypeError:
+        # Python 3.9's importlib.metadata.entry_points() takes no arguments and
+        # returns a mapping of group name to entry points; the selectable API with a
+        # `group` keyword only arrived in 3.10. Letting this fall through to the
+        # handler below logged a warning and returned no plugins, which is what made
+        # every test in tests/test_example_plugin.py fail on 3.9 alone while passing
+        # on 3.10 and up.
+        try:
+            eps = entry_points().get(PLUGIN_GROUP, [])
+        except Exception as e:
+            log.warning(
+                "tmaudit could not enumerate entry-points for %s: %s",
+                PLUGIN_GROUP, e,
+            )
+            eps = []
     except Exception as e:
         log.warning(
             "tmaudit could not enumerate entry-points for %s: %s",
