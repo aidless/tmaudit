@@ -33,7 +33,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Iterator
 
-TEMPLATE = Path('F:/Research/TEMPLATE')
+# The author's development tree, which holds the same src/tmaudit/ layout as this
+# repository — so pointing it here lets the harness run anywhere. TMAUDIT_TEMPLATE_DIR
+# overrides it, matching the configs modules.
+TEMPLATE = Path(os.environ.get('TMAUDIT_TEMPLATE_DIR',
+                               str(Path(__file__).resolve().parent)))
 FORGE = TEMPLATE / 'src' / 'tmaudit' / 'forge.py'
 VERIFY_TPL = TEMPLATE / 'src' / 'tmaudit' / 'templates' / 'verify_TEMPLATE.py'
 PAPER_CONFIGS = TEMPLATE / 'src' / 'tmaudit' / 'configs' / 'paper_configs.py'
@@ -45,10 +49,27 @@ PYTEST = [sys.executable, '-m', 'pytest', '--no-header', '-q',
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _run_pytest(test_target: str) -> tuple[int, str]:
+def _paper_dirs_present() -> bool:
+    """True when the paper directories the end-to-end tests audit are present.
+
+    Bugs 4 and 6 are checked through
+    tests/test_forge_happy.py::TestEndToEndAudit::test_paper_{1,5}_forks_and_passes,
+    which fork a verify script and run the real audit expecting zero findings. That
+    needs the manuscripts on the author's machine. The file whose absence fails first
+    is the forked script itself — FileNotFoundError on
+    'F:/Research/PAPER1_CONSOLIDATED/verify_p1.py' — so that is what decides whether
+    the check can run. Requiring only main.tex would treat an empty placeholder as a
+    real paper and let the check pass vacuously.
+    """
+    root = Path(os.environ.get('TMAUDIT_RESEARCH_DIR', 'F:/Research'))
+    return all((root / f'PAPER{n}_CONSOLIDATED' / f'verify_p{n}.py').exists()
+               for n in (1, 5))
+
+
+def _run_pytest(test_target: str, extra: list[str] | None = None) -> tuple[int, str]:
     env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
     result = subprocess.run(
-        PYTEST + [test_target],
+        PYTEST + (extra or []) + [test_target],
         cwd=str(TEMPLATE),
         env=env,
         capture_output=True,
@@ -302,6 +323,12 @@ def inject_bug4() -> None:
         VERIFY_TPL.write_text(patched, encoding='utf-8')
         # Bug 4 is in the verify_TEMPLATE.py, so we need to run
         # the end-to-end audit (which executes the template code).
+        if not _paper_dirs_present():
+            print(f'  SKIPPED: Bug 4 is checked through an end-to-end test')
+            print('           that audits a real paper. TMAUDIT_RESEARCH_DIR')
+            print(f'           has no PAPER1_CONSOLIDATED/verify_p1.py,')
+            print('           so the check cannot run here.')
+            return
         _check_bug_inside_patch('4', 'tests/test_forge_happy.py::TestEndToEndAudit::test_paper_1_forks_and_passes')
 
 
@@ -356,6 +383,12 @@ def inject_bug6() -> None:
             original.replace(old_pat, new_pat, 1),
             encoding='utf-8',
         )
+        if not _paper_dirs_present():
+            print(f'  SKIPPED: Bug 6 is checked through an end-to-end test')
+            print('           that audits a real paper. TMAUDIT_RESEARCH_DIR')
+            print(f'           has no PAPER5_CONSOLIDATED/verify_p5.py,')
+            print('           so the check cannot run here.')
+            return
         _check_bug_inside_patch('6', 'tests/test_forge_happy.py::TestEndToEndAudit::test_paper_5_forks_and_passes')
 
 
@@ -888,7 +921,14 @@ def main() -> int:
     # Final sanity check: all tests should pass on the restored code
     print()
     print('=== Final sanity: full test suite should pass ===')
-    rc, out = _run_pytest('tests/')
+    # The two @pytest.mark.slow end-to-end tests audit a real paper, so they are
+    # excluded when those papers are not on this machine — the same reason the Bug 4
+    # and Bug 6 checks above are skipped. The exclusion is stated, not silent.
+    slow_excluded = not _paper_dirs_present()
+    if slow_excluded:
+        print('  (the @pytest.mark.slow end-to-end tests are excluded: '
+              'TMAUDIT_RESEARCH_DIR has no paper directories)')
+    rc, out = _run_pytest('tests/', ['-m', 'not slow'] if slow_excluded else None)
     if rc == 0:
         print(f'  OK: full test suite passes (rc=0)')
     else:
