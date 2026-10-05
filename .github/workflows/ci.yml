@@ -169,6 +169,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TMAUDIT_RESEARCH_DIR: /tmp/tmaudit-research
+    # The five per-paper directories this audits do not exist on a runner — the
+    # papers live on the author's machine — so audit-all exits non-zero after writing
+    # its report. That is a true statement about the environment rather than about the
+    # code, and it was previously reported as a code failure: the job died on
+    # FileNotFoundError for 'F:/Research/PAPER1_CONSOLIDATED/verify_p1.py' before
+    # writing anything at all. With TMAUDIT_RESEARCH_DIR the job now completes and
+    # uploads a report, so it runs on demand instead of painting the badge red.
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
