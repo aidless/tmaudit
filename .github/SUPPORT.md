@@ -15,9 +15,9 @@ and keeps the maintainers' attention focused.
    development setup, the test suite, and the pre-commit
    hook.
 3. **Search existing issues and discussions**:
-   [issues](https://github.com/liumingrui/tmaudit/issues)
+   [issues](https://github.com/aidless/tmaudit/issues)
    and
-   [discussions](https://github.com/liumingrui/tmaudit/discussions).
+   [discussions](https://github.com/aidless/tmaudit/discussions).
    The answer to your question may already be there.
 4. **Run the diagnostics**:
    ```bash
@@ -33,7 +33,7 @@ and keeps the maintainers' attention focused.
 ### Q&A and how-to questions
 
 **Use GitHub Discussions**:
-[github.com/liumingrui/tmaudit/discussions](https://github.com/liumingrui/tmaudit/discussions)
+[github.com/aidless/tmaudit/discussions](https://github.com/aidless/tmaudit/discussions)
 
 Use this for:
 - "How do I configure X for paper Y?"
@@ -70,7 +70,7 @@ Use this for:
 ### Security vulnerabilities
 
 **File a private security advisory**:
-[github.com/liumingrui/tmaudit/security/advisories/new](https://github.com/liumingrui/tmaudit/security/advisories/new)
+[github.com/aidless/tmaudit/security/advisories/new](https://github.com/aidless/tmaudit/security/advisories/new)
 
 Do **not** open a public issue for security problems.
 See [SECURITY.md](../blob/main/SECURITY.md) for the

@@ -34,8 +34,8 @@ blank_issues_enabled: false
 
 contact_links:
   - name: Q&A / How-to
-    url: https://github.com/liumingrui/tmaudit/discussions
+    url: https://github.com/aidless/tmaudit/discussions
     about: For questions about how to use tmaudit, please use GitHub Discussions instead of filing an issue.
   - name: Security vulnerability
-    url: https://github.com/liumingrui/tmaudit/security/advisories/new
+    url: https://github.com/aidless/tmaudit/security/advisories/new
     about: For security vulnerabilities, please file a private advisory (do NOT file a public issue). See SECURITY.md for the full disclosure policy.

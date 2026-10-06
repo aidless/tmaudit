@@ -390,7 +390,7 @@ For local CI simulation, see the "Local CI simulation
   issue. See [SECURITY.md](./SECURITY.md) for the private
   disclosure process.
 - **Q&A / how-to questions**: use
-  [GitHub Discussions](https://github.com/liumingrui/tmaudit/discussions).
+  [GitHub Discussions](https://github.com/aidless/tmaudit/discussions).
 - **Architecture / design questions**: see
   [`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md)
   for the engineering diary of the original 6 bugs.

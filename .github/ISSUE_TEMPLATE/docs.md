@@ -129,7 +129,7 @@ GOOD:
   ```
 
   Or, download `tmaudit.pyz` directly from the
-  [Releases page](https://github.com/liumingrui/tmaudit/releases).
+  [Releases page](https://github.com/aidless/tmaudit/releases).
   ```
 -->
 

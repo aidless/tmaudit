@@ -1,6 +1,6 @@
 # tmaudit — Deploy & Quick Start
 
-[![CI](https://github.com/liumingrui/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/liumingrui/tmaudit/actions/workflows/ci.yml)
+[![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
 ![Tests](https://img.shields.io/badge/tests-176%20passing-brightgreen)
 ![Meta--tests](https://img.shields.io/badge/meta--tests-12%2F12%20caught-success)
