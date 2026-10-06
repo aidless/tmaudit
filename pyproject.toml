@@ -41,6 +41,10 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = [
+    # The lint job installed pyflakes by hand because it was never declared
+    # here; the mutation-control job installs only the extras and therefore could
+    # not run the lint gate it was trying to measure.
+    "pyflakes>=3.0",
     "pytest>=7",
     "mypy>=1.0",
     "build>=0.10",
