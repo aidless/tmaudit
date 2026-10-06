@@ -394,7 +394,7 @@ jobs:
           # ---------------------------------------------------------------------
           # Pull the two gates' own `run:` blocks out of this file. An anchor that
           # does not hit exactly once aborts the job rather than silently
-          # producing a different script. A leftover ${{ ... }} aborts too:
+          # producing a different script. A leftover Actions expression aborts too:
           # GitHub substitutes those before running, so an unsubstituted one means
           # we would be testing a script CI never runs.
           # ---------------------------------------------------------------------
@@ -410,7 +410,7 @@ jobs:
           WANTED = [
               # (job, step, output name, anchor, replacement)
               ("pytest", "Run pytest", "gate_pytest.sh",
-               "${{ matrix.python-version }}", pyver),
+               "$" + "{{ matrix.python-version }}", pyver),
               ("lint", "Run pyflakes", "gate_lint.sh", "", ""),
           ]
 
@@ -433,7 +433,8 @@ jobs:
                       sys.exit(f"{wf}#{job}/{step}: anchor {anchor!r} occurs "
                                f"{hits} time(s), expected exactly 1")
                   run = run.replace(anchor, replacement)
-              leftover = [ln for ln in run.splitlines() if "${{" in ln]
+              unsub = "$" + "{{"
+              leftover = [ln for ln in run.splitlines() if unsub in ln]
               if leftover:
                   sys.exit(f"{wf}#{job}/{step}: unsubstituted expression left "
                            f"in run block: {leftover}")

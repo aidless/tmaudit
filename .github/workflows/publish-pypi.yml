@@ -70,6 +70,8 @@ jobs:
         # https://upload.pypi.org/legacy/ which is the
         # production PyPI.
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          # print-link-to-check: false  # default; uncomment for verbose
-          pass
+        # No `with:` block. It previously held a bare `pass` under a comment, which
+        # is a scalar where the schema expects a mapping -- the workflow failed to
+        # parse, which is why all 18 runs of this file ended in failure regardless
+        # of the publishing setup. `print-link-to-check` defaults to false; set it
+        # here if you ever need the verbose link output.
