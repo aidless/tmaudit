@@ -70,7 +70,7 @@ Instances of abusive, harassing, or otherwise unacceptable
 behaviour may be reported to the community leaders
 responsible for enforcement at:
 
-**conduct@liumingrui-tmaudit.example** (placeholder for
+**conduct@tmaudit.example** (placeholder for
 the template repo; replace with a real address before
 publishing).
 

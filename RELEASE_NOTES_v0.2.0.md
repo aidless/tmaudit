@@ -367,7 +367,7 @@ cat /tmp/report.md | head -50
 ## Acknowledgements
 
 This release includes work from **15 commits** by **1
-contributor** (liumingrui). Total development time: ~1
+contributor** (aidless). Total development time: ~1
 day (single session).
 
 v0.2.0 builds on v0.1.0, v0.1.1, and v0.1.2 (the C7 + cache

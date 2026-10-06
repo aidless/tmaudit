@@ -42,7 +42,7 @@ readme = "README.md"                                      # NEW
 requires-python = ">=3.9"
 license = {text = "MIT"}                                  # NEW
 authors = [
-    {name = "Liu Mingrui", email = "liumingrui@example.com"},
+    {name = "Liu Zewen", email = "aidless@example.com"},
 ]
 keywords = ["tmaudit", "tmlr", "audit", "latex", "compile", "plugins"]
 classifiers = [                                            # NEW
@@ -105,7 +105,7 @@ The key changes are:
 ```
 MIT License
 
-Copyright (c) 2026 Liu Mingrui
+Copyright (c) 2026 Liu Zewen
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation

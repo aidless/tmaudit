@@ -71,7 +71,7 @@ if _PYTHON_DIR not in _os.environ.get('PATH', ''):
 
 GITHUB_ENV = {
     'GITHUB_WORKSPACE': str(ROOT),
-    'GITHUB_REPOSITORY': 'liumingrui/tmaudit',
+    'GITHUB_REPOSITORY': 'aidless/tmaudit',
     'GITHUB_REF': 'refs/heads/main',
     'GITHUB_SHA': 'local-act-simulation',
     'GITHUB_ACTOR': 'act-simulator',

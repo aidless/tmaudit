@@ -12,7 +12,7 @@
 | **Release** | v0.1.1 |
 | **Released** | 2026-07-10 |
 | **Type** | Patch release (no breaking changes) |
-| **PR** | [#15](https://github.com/liumingrui/tmaudit/pull/15) |
+| **PR** | [#15](https://github.com/aidless/tmaudit/pull/15) |
 | **Commits since v0.1.0** | 1 (squashed) |
 | **Files changed** | 5 |
 | **Lines added** | +248 |
@@ -174,7 +174,7 @@ To verify the fix on your machine:
 # 1. Upgrade
 pip install --upgrade tmaudit==0.1.1
 # or, if you use the .pyz distribution:
-curl -L https://github.com/liumingrui/tmaudit/releases/download/v0.1.1/tmaudit.pyz -o tmaudit.pyz
+curl -L https://github.com/aidless/tmaudit/releases/download/v0.1.1/tmaudit.pyz -o tmaudit.pyz
 chmod +x tmaudit.pyz  # Unix only
 
 # 2. Run the audit on a known paper
@@ -233,7 +233,7 @@ python _check_all_regressions.py
 
 **Total**: 14/14 jobs passed in 1m 24s.
 
-Run URL: https://github.com/liumingrui/tmaudit/actions/runs/<run-id>
+Run URL: https://github.com/aidless/tmaudit/actions/runs/<run-id>
 
 ## Artifacts
 
@@ -266,10 +266,10 @@ flag it (correctly, in that case).
 
 | Role | Name |
 |---|---|
-| **Bug reporter** | @liumingrui (discovered during .github/ audit) |
-| **Investigator** | @liumingrui |
-| **Fix author** | @liumingrui |
-| **Reviewer** | @liumingrui (self-review) |
+| **Bug reporter** | @aidless (discovered during .github/ audit) |
+| **Investigator** | @aidless |
+| **Fix author** | @aidless |
+| **Reviewer** | @aidless (self-review) |
 | **CI** | GitHub Actions (14 jobs) |
 | **Test infrastructure** | `_check_all_regressions.py` (the meta-test) |
 
@@ -302,12 +302,12 @@ The next release will be **v0.2.0** (planned for late
 
 If you have feature requests, please open a GitHub issue
 using the
-[feature request template](https://github.com/liumingrui/tmaudit/issues/new?template=feature_request.md).
+[feature request template](https://github.com/aidless/tmaudit/issues/new?template=feature_request.md).
 
 ## See also
 
-- **Full diff**: https://github.com/liumingrui/tmaudit/compare/v0.1.0...v0.1.1
-- **PR #15**: https://github.com/liumingrui/tmaudit/pull/15
+- **Full diff**: https://github.com/aidless/tmaudit/compare/v0.1.0...v0.1.1
+- **PR #15**: https://github.com/aidless/tmaudit/pull/15
 - **Engineering diary**: [`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md) §10
 - **CHANGELOG.md**: [`CHANGELOG.md`](./CHANGELOG.md) v0.1.1 entry
 - **Commit**: `8f4a2c1` (squashed) / `4a2b8c3` (pre-squash)
@@ -315,12 +315,12 @@ using the
 
 ## Support
 
-- **Discussions**: https://github.com/liumingrui/tmaudit/discussions
+- **Discussions**: https://github.com/aidless/tmaudit/discussions
 - **Bug reports**: use the
-  [bug report template](https://github.com/liumingrui/tmaudit/issues/new?template=bug_report.md)
+  [bug report template](https://github.com/aidless/tmaudit/issues/new?template=bug_report.md)
 - **Security issues**: see
   [SECURITY.md](./SECURITY.md) for private disclosure
 
 ---
 
-*Released on 2026-07-10 by @liumingrui.*
+*Released on 2026-07-10 by @aidless.*

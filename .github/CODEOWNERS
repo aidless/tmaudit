@@ -12,7 +12,7 @@
 #
 # Owner placeholders
 # ------------------
-# Replace @liumingrui with the actual GitHub handles of the
+# Replace @aidless with the actual GitHub handles of the
 # project maintainers. The first listed owner is the
 # "primary" reviewer (the one who gets the auto-assignment
 # notification); additional owners are "secondary" (they
@@ -25,50 +25,50 @@
 # --- Production code (highest review bar) ---
 # Changes to forge.py / templates / configs affect all
 # papers, so they require a maintainer's review.
-/src/tmaudit/forge.py            @liumingrui
-/src/tmaudit/cli.py              @liumingrui
-/src/tmaudit/templates/          @liumingrui
-/src/tmaudit/configs/            @liumingrui
+/src/tmaudit/forge.py            @aidless
+/src/tmaudit/cli.py              @aidless
+/src/tmaudit/templates/          @aidless
+/src/tmaudit/configs/            @aidless
 
 # --- Tests ---
 # Tests are reviewed by the same maintainer as the code
-# they cover, with @liumingrui as a fallback.
-/tests/                          @liumingrui
+# they cover, with @aidless as a fallback.
+/tests/                          @aidless
 
 # --- Build / CI / tooling ---
 # CI workflow and pre-commit hook are critical for
 # the project's "tests must catch regression" property.
-/.github/workflows/              @liumingrui
-/.github/CODEOWNERS              @liumingrui
-/hooks/                          @liumingrui
-/_check_*.py                     @liumingrui
-/_build_pyz.py                   @liumingrui
-/_act_*.py                       @liumingrui
-/.github/dependabot.yml          @liumingrui
+/.github/workflows/              @aidless
+/.github/CODEOWNERS              @aidless
+/hooks/                          @aidless
+/_check_*.py                     @aidless
+/_build_pyz.py                   @aidless
+/_act_*.py                       @aidless
+/.github/dependabot.yml          @aidless
 
 # --- Documentation ---
 # Documentation is lower-stakes; a single reviewer
 # suffices.
-/README.md                       @liumingrui
-/CONTRIBUTING.md                 @liumingrui
-/CHANGELOG.md                    @liumingrui
-/engineering_notes_verify_template.md  @liumingrui
-/act_summary.md                  @liumingrui
+/README.md                       @aidless
+/CONTRIBUTING.md                 @aidless
+/CHANGELOG.md                    @aidless
+/engineering_notes_verify_template.md  @aidless
+/act_summary.md                  @aidless
 
 # --- Community-health files ---
 # These are public-facing, so they need a maintainer
 # to ensure the tone is right.
-/SECURITY.md                     @liumingrui
-/.github/CODE_OF_CONDUCT.md      @liumingrui
-/.github/SUPPORT.md              @liumingrui
-/.github/PULL_REQUEST_TEMPLATE.md @liumingrui
-/.github/ISSUE_TEMPLATE/         @liumingrui
+/SECURITY.md                     @aidless
+/.github/CODE_OF_CONDUCT.md      @aidless
+/.github/SUPPORT.md              @aidless
+/.github/PULL_REQUEST_TEMPLATE.md @aidless
+/.github/ISSUE_TEMPLATE/         @aidless
 
 # --- Build artefacts (auto-generated, no review) ---
 # tmaudit.pyz is built from source; do not edit it directly.
-/tmaudit.pyz                     @liumingrui
+/tmaudit.pyz                     @aidless
 
 # --- Default fallback ---
 # Any file not matched above defaults to a maintainer review.
 # This ensures a human is always in the loop.
-/*                               @liumingrui
+/*                               @aidless

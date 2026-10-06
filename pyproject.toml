@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 authors = [
-    {name = "Liu Mingrui", email = "liumingrui@example.com"},
+    {name = "Liu Zewen", email = "aidless@example.com"},
 ]
 keywords = [
     "tmaudit",

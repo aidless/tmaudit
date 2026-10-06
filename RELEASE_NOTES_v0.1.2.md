@@ -342,7 +342,7 @@ TMAUDIT_CACHE_DIR=$PWD/.tmp_cache_test python -m src.tmaudit cache-info
 ## Acknowledgements
 
 This release includes work from **11 commits** by **1
-contributor** (liumingrui). The cache module was inspired by
+contributor** (aidless). The cache module was inspired by
 similar tools in the Python ecosystem (e.g., `pytest-cache`,
 `ruff --cache-dir`).
 

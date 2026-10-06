@@ -1,6 +1,6 @@
 # Engineering Notes: 6 Bugs in the `verify_p<N>.py` Template Generator
 
-**Authors:** Liu Mingrui
+**Authors:** Liu Zewen
 **Repo path:** `F:\Research\TEMPLATE\`
 **Date:** 2026-07-10
 **Scope:** debugging `gen_verify_scripts.py` — the config-driven fork tool that

@@ -603,7 +603,7 @@ for the full release notes.
 | Files in PR | — | 5 | — |
 | Lines changed | — | +248 / -4 | — |
 | `tmaudit.pyz` size | 46 KB | 46 KB | unchanged |
-| PR | — | [#15](https://github.com/liumingrui/tmaudit/pull/15) | — |
+| PR | — | [#15](https://github.com/aidless/tmaudit/pull/15) | — |
 | Audit (Paper 5) | 1 finding (false positive) | 0 findings ✅ | -1 |
 
 ## [0.1.0] — 2026-07-10

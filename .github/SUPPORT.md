@@ -92,7 +92,7 @@ and a maintainer will prioritise.
 
 ## Maintainers
 
-- @liumingrui (primary)
+- @aidless (primary)
 
 If you would like to become a maintainer, see the
 "Adding maintainers" section of CONTRIBUTING.md.

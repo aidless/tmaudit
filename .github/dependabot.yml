@@ -68,7 +68,7 @@ updates:
     open-pull-requests-limit: 5
     # Request a CODEOWNERS review
     reviewers:
-      - "liumingrui"
+      - "aidless"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -90,4 +90,4 @@ updates:
     ignore: []
     open-pull-requests-limit: 3
     reviewers:
-      - "liumingrui"
+      - "aidless"

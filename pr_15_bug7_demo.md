@@ -3,7 +3,7 @@
 **Simulated**: 2026-07-10
 
 This file is a permanent record of what PR #15
-(https://github.com/liumingrui/tmaudit/pull/15) would look like
+(https://github.com/aidless/tmaudit/pull/15) would look like
 in a real GitHub UI, from the initial push to the final merge.
 The CI runs are simulated (we cannot push to real GitHub from
 this sandbox), but the commands, logs, and JUnit XML are
@@ -131,7 +131,7 @@ that downstream users would download and run.
 
 ## Reviewer
 
-@liumingrui approved the PR. Key points from the review:
+@aidless approved the PR. Key points from the review:
 
 > The min_count = 3 threshold (not 2) is well-justified.
 > The 7 unit tests cover the important cases.

@@ -31,7 +31,7 @@ Use one of these private channels:
 
 1. **GitHub Security Advisories** (preferred):
    [github.com/aidless/tmaudit/security/advisories/new](https://github.com/aidless/tmaudit/security/advisories/new)
-2. **Email**: security@liumingrui-tmaudit.example (PGP key in
+2. **Email**: security@tmaudit.example (PGP key in
    `.gpg/` if you need it; this is a placeholder address for
    the template repo).
 
