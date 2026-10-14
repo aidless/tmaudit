@@ -27,6 +27,7 @@ Usage:
 from __future__ import annotations
 import os
 import re
+import shutil
 import subprocess
 import sys
 from contextlib import contextmanager
@@ -66,8 +67,29 @@ def _paper_dirs_present() -> bool:
                for n in (1, 5))
 
 
+def _purge_pycache() -> None:
+    """Delete every __pycache__ under TEMPLATE.
+
+    Without this, a stale .pyc can be served for an injected source change:
+    the pyc header stores the source mtime with 1-second resolution, and the
+    inject-then-run sequence can land inside the same second. Python then
+    treats the cache as fresh (it does not compare file size), the buggy code
+    is never imported, the regression test passes, and the harness reports
+    "regression test NOT effective" for a test that is actually fine. The
+    same failure mode was already hit by the byte-compile mutation-control job
+    (see .github/workflows/ci.yml).
+    """
+    for cache in TEMPLATE.rglob('__pycache__'):
+        if cache.is_dir():
+            shutil.rmtree(cache, ignore_errors=True)
+
+
 def _run_pytest(test_target: str, extra: list[str] | None = None) -> tuple[int, str]:
-    env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+    # PYTHONDONTWRITEBYTECODE: no .pyc is created between two runs, so there is
+    # nothing to go stale. Cleared at the end of the harness in main().
+    env = {**os.environ, 'PYTHONIOENCODING': 'utf-8',
+           'PYTHONDONTWRITEBYTECODE': '1'}
+    _purge_pycache()
     result = subprocess.run(
         PYTEST + (extra or []) + [test_target],
         cwd=str(TEMPLATE),
