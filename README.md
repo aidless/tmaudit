@@ -49,8 +49,8 @@ to a co-author or to the TMLR reviewers.
 ### (B) `pip install --editable .` (development)
 
 ```powershell
-cd F:\Research\TEMPLATE
-python -m pip install --editable . --break-system-packages
+cd <your tmaudit checkout>
+python -m pip install --editable .
 tmaudit list
 tmaudit verify --paper 1
 ```
@@ -65,7 +65,7 @@ development** of the templates themselves.
 ```bash
 python -m venv .venv
 source .venv/bin/activate           # or .venv\Scripts\activate on Windows
-pip install F:\Research\TEMPLATE
+pip install .
 tmaudit list
 ```
 
@@ -310,8 +310,8 @@ we have already executed successfully on the host:
 |---|---|
 | `python -m pip install -e .` | tmaudit installed ✅ |
 | `python -m pip install pytest scipy` | deps installed ✅ |
-| `python -m pytest` | **176 passed in ~7s** ✅ |
-| `python _check_all_regressions.py` | **12/12 bugs caught** ✅ |
+| `python -m pytest -m "not slow"` | **223 passed, 1 skipped in ~4s** ✅ |
+| `python _check_all_regressions.py` | **14/14 bugs caught** ✅ |
 | `python _check_github_templates.py` | **44/44 OK** ✅ |
 | `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |
 | `python -m src.tmaudit audit-all ...` | report uploaded as artefact ✅ |
