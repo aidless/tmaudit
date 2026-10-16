@@ -28,6 +28,7 @@ import pytest
 from tmaudit.forge import (
     _format_simple_value,
     _substitute_verify,
+    _unicode_to_python_repr,
 )
 
 
@@ -440,3 +441,28 @@ def test_substitute_real_template_for_paper_1_produces_valid_python(
     assert callable(ns.get('check_c4_citation_hygiene'))
     assert callable(ns.get('check_c5_sample_size_and_test'))
     assert callable(ns.get('check_c6_blacklist'))
+
+
+# ============================================================================
+# _unicode_to_python_repr: non-ASCII escapes must pad to four hex digits
+# ============================================================================
+
+class TestUnicodeReprFourHexDigits:
+    """A wrong format spec (e.g. 03x instead of 04x) emits escapes like
+    '\\u394' that are syntax errors in the generated verify script. The
+    fast suite had no coverage for this path: a live 04x->03x mutation
+    passed all 224 fast tests during the 2026-10-16 audit. This class
+    closes that gap.
+    """
+
+    def test_bmp_characters_pad_to_four_digits(self):
+        assert _unicode_to_python_repr('Δ') == '\\u0394'
+        assert _unicode_to_python_repr('中') == '\\u4e2d'
+
+    def test_output_round_trips_through_python_source(self):
+        from ast import literal_eval
+        emitted = _unicode_to_python_repr('Δ中x')
+        assert literal_eval("'" + emitted + "'") == 'Δ中x'
+
+    def test_ascii_passthrough_untouched(self):
+        assert _unicode_to_python_repr('abc 123') == 'abc 123'

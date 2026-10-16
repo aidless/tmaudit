@@ -105,9 +105,9 @@ jobs:
           python -m pip install -e ".[dev]"
           python -m pip install -e ./tmaudit_example_plugin
 
-      - name: Run meta-test (9-bug regression-injection)
+      - name: Run meta-test (14-bug regression-injection)
         # Runs _check_all_regressions.py, which:
-        #   1. For each of 9 historical bugs (Bug 1..Bug 9), injects
+        #   1. For each of 14 historical bugs (Bug 1..Bug 14), injects
         #      a small change into the source code that re-introduces
         #      the bug.
         #   2. Runs the targeted regression test and asserts the test
