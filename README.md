@@ -3,7 +3,7 @@
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
-![Tests](https://img.shields.io/badge/tests-223%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-240%20passing-brightgreen)
 ![Meta--tests](https://img.shields.io/badge/meta--tests-14%2F14%20caught-success)
 ![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
@@ -247,7 +247,7 @@ in `src/tmaudit/forge.py` and
 It consists of **seven** jobs:
 
 1. **pytest** (matrix: Python 3.9, 3.10, 3.11, 3.12 on `ubuntu-latest`)
-   — runs the **223-test** suite and uploads JUnit XML artifacts.
+   — runs the **240-test** suite and uploads JUnit XML artifacts.
 2. **meta-test** (Python 3.11) — runs `_check_all_regressions.py`
    to verify that each of the **14 regression tests** actually catches
    its target bug. Builds `tmaudit.pyz` and runs it as a smoke
@@ -328,7 +328,7 @@ we have already executed successfully on the host:
 |---|---|
 | `python -m pip install -e .` | tmaudit installed ✅ |
 | `python -m pip install pytest scipy` | deps installed ✅ |
-| `python -m pytest -m "not slow"` | **223 passed, 1 skipped in ~4s** ✅ |
+| `python -m pytest -m "not slow"` | **240 passed, 1 skipped in ~5s** ✅ |
 | `python _check_all_regressions.py` | **14/14 bugs caught** ✅ |
 | `python _check_github_templates.py` | **44/44 OK** ✅ |
 | `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |

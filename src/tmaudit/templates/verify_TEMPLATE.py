@@ -10,7 +10,7 @@ This is the GENERIC TEMPLATE. To use:
 Or, run `python gen_verify_scripts.py --paper N` from
 F:/Research/TEMPLATE/ to fork this template automatically.
 
-The seven categories of checks are:
+The ten categories of checks are:
 
   C1  Abstract symbol definitions
       - For each entry in CHECKS_CONFIG['c1_symbols'], verify that the
@@ -47,11 +47,21 @@ The seven categories of checks are:
         lenient by default: up to c7_max_ceremonial (default 2)
         ceremonial cites are silent; (N+1)+ are reported as
         MED severity.
+  C8  Statistical claims (generic, v0.3.0)
+      - Effect-size re-derivation and post-hoc power per declared
+        claim; every significance claim must carry a p-value.
+  C9  Figure captions (generic, v0.3.0)
+      - Every figure needs a caption below its graphic, and every
+        defined fig: label must be referenced somewhere.
+  C10 Reproducibility (generic, v0.3.0)
+      - Availability statement, its tense, and metadata
+        (hyperparameters, seeds, hardware, library versions).
 
 Exit codes:
     0 = no HIGH-severity findings
     1 = at least one HIGH-severity finding
-    2 = I/O error (missing file, etc.)
+    2 = operational error (missing input file, or a check that
+        crashed — a crashed check is not a passed check)
 """
 from __future__ import annotations
 import re
@@ -66,9 +76,17 @@ ROOT = Path('F:/Research/PAPER1_CONSOLIDATED')
 MAIN = ROOT / 'main.tex'
 REFS = ROOT / 'refs.bib'
 
-# Each entry in CHECKS_CONFIG controls one of the 6 categories. The check
-# functions below read from this dict, so per-paper changes happen entirely
-# here — no code edits required.
+# Each entry in CHECKS_CONFIG controls one of the ten categories. The
+# check functions below read from this dict, so per-paper changes happen
+# entirely here — no code edits required.
+#
+# The factory default is an EMPTY dict. Paper-specific categories (C1,
+# C2, C3, C6) report "not applicable" on an unconfigured document
+# instead of firing someone else's configuration at it. The generic
+# checks still run with their built-in defaults: C4 (missing cite
+# keys), C5, C7, C8 sub-check 3 (significance claims), C9 sub-checks
+# 1/2/4 (captions, placement, references), C10 sub-checks 1/3
+# (availability, metadata).
 #
 # Schema (see gen_verify_scripts.py for canonical examples):
 #   c1_symbols: list of dicts, one per symbol that must be defined in the
@@ -111,61 +129,14 @@ REFS = ROOT / 'refs.bib'
 #
 #   c6_blacklist: list[str] of words to flag. Each word is matched with
 #                 case-insensitive word boundaries.
-CHECKS_CONFIG: dict = {
-    'c1_symbols': [
-        {
-            'name': r'$\Delta$CAF (consensus-against-field coefficient)',
-            'token': r'\bCAF\b',
-            'definition': r'\bCAF\b.{0,80}=|consensus.{0,30}agreement|strateg.{0,30}convergence',
-        },
-        {
-            'name': r'$E_T$ (temporal-accumulation effect on calibration)',
-            'token': r'\bE_T\b',
-            'definition': r'E_T.{0,80}=|temporal.{0,30}accumulation|peer.anchored.{0,30}confidence',
-        },
-        {
-            'name': r'$\Delta$ECE (calibration delta)',
-            'token': r'\\Delta\s*ECE|\\Delta\\mathrm\{ECE\}',
-            'definition': r'\\Delta\s*ECE.{0,80}=|calibration.{0,30}loss|calibration.{0,30}degrad',
-        },
-        {
-            'name': 'TTRL (Test-Time Reinforcement Learning)',
-            'token': r'\bTTRL\b',
-            'definition': r'TTRL.{0,80}=|Test.Time.{0,40}Reinforcement.{0,40}Learning',
-        },
-    ],
-
-    'c2_families': {
-        # family_name -> k value
-        'main': 3,
-    },
-    'c2_section_pattern': (
-        r'\\section\*?\{[^}]*Power analysis[^}]*\}|'
-        r'\\subsection\*?\{[^}]*Power analysis[^}]*\}'
-    ),
-    'c2_abstract_k_allowed': [3, 9],  # accept either if both families are declared
-
-    'c3_concept': 'Two Faces (Face 1: Strategy Consensus; Face 2: Calibration Contagion)',
-    'c3_concept_token': r'\\textbf\{Face 1\}|\\textbf\{Face 2\}|\bFace\s+1\b|\bFace\s+2\b',
-    'c3_formal': r'\\section\{Face 1:',
-    'c3_formal_secondary': r'\\section\{Face 2:',  # also required if both halves
-
-    'c4_self_cite_threshold': 0.30,
-    'c4_self_cite_prefix': 'liu2026',
-    'c4_max_self_cite_keys': 3,
-
-    'c5_d_type': "Cohen's d",
-
-    'c6_blacklist': ['paradigm', 'yield', 'reveal'],
-
-    # C7 (citation context): maximum number of ceremonial
-    # citations allowed before C7 is reported as MED severity.
-    # A ceremonial citation is one whose citing sentence does
-    # not engage with the cited work (no engage verb, no
-    # comparison word, no elaboration >= 30 words). Per-paper
-    # threshold; the default 2 is lenient.
-    'c7_max_ceremonial': 2,
-}
+# v0.5.1 (defect D1): this dict ships EMPTY. The previous factory
+# default was pre-filled with one specific paper's configuration
+# (a 'liu2026' self-cite prefix, TTRL symbol definitions, a "Power
+# analysis" section requirement), which made the generic audit fire
+# that paper's checks against any document it was pointed at.
+# `gen_verify_scripts.py` / forge replaces this whole block with the
+# per-paper configuration; the schema comments above describe the keys.
+CHECKS_CONFIG: dict = {}
 # ============================================================================
 
 
@@ -225,13 +196,17 @@ def extract_abstract(tex: str) -> tuple[str, int] | None:
 # ---------------------------------------------------------------------------
 
 def check_c1_abstract_definitions(tex: str) -> list[tuple[str, str, int]]:
-    cfg_syms = CHECKS_CONFIG['c1_symbols']
+    cfg_syms = CHECKS_CONFIG.get('c1_symbols', [])
     if not cfg_syms:
         return []
 
     abs_result = extract_abstract(tex)
     if abs_result is None:
-        return [('C1', 'No abstract environment found.', -1)]
+        # v0.5.1 (defect D6): "no abstract" is an observation failure,
+        # not a violation — it used to be reported as a HIGH finding.
+        # Raise so main() records this category as an error instead.
+        raise ValueError(
+            'no abstract environment found: C1 cannot be observed')
     abstract, abs_start = abs_result
     abs_line_start = line_of(tex, abs_start)
 
@@ -282,8 +257,13 @@ def check_c1_abstract_definitions(tex: str) -> list[tuple[str, str, int]]:
 def check_c2_bonferroni_consistency(tex: str) -> list[tuple[str, str, int]]:
     findings: list[tuple[str, str, int]] = []
 
-    families = CHECKS_CONFIG['c2_families']
-    section_pat = CHECKS_CONFIG['c2_section_pattern']
+    # get() with empty defaults so a direct call (bypassing main()'s
+    # not-applicable gate) degrades to "no config, nothing to check"
+    # instead of KeyError'ing on the factory-default config.
+    families = CHECKS_CONFIG.get('c2_families', {})
+    section_pat = CHECKS_CONFIG.get('c2_section_pattern')
+    if not families:
+        return findings
     abstract_k_allowed = CHECKS_CONFIG.get('c2_abstract_k_allowed',
                                            sorted(set(families.values())))
 
@@ -363,6 +343,22 @@ def check_c3_formalization(tex: str) -> list[tuple[str, str, int]]:
 # C4: Citation hygiene (generic)
 # ---------------------------------------------------------------------------
 
+# A BibTeX entry key. The key may sit on its own line after the entry
+# type, so whitespace (including newlines) is allowed around it:
+#
+#     @article{key,          and        @article{
+#         author = {...},                   somekey2024,
+#     }                                     author = {...},
+#                                      }
+#
+# The pre-v0.5.1 pattern `@\w+\{([^,]+),` swallowed whitespace and
+# newlines into the captured key whenever the key sat on its own line,
+# so cite keys that existed in refs.bib were reported as missing.
+# (Defect D4, found by auditing this tool against 25 real arXiv LaTeX
+# sources; see case-studies/arxiv-corpus/.)
+_BIB_KEY_RE = re.compile(r'@\w+\{\s*([^,\s]+)\s*,')
+
+
 def check_c4_citation_hygiene(tex: str, bib: str) -> list[tuple[str, str, int]]:
     findings: list[tuple[str, str, int]] = []
 
@@ -373,7 +369,7 @@ def check_c4_citation_hygiene(tex: str, bib: str) -> list[tuple[str, str, int]]:
             if k and not any(c in k for c in '$&'):
                 cite_keys.append(k)
 
-    bib_keys = set(re.findall(r'@\w+\{([^,]+),', bib))
+    bib_keys = set(_BIB_KEY_RE.findall(bib))
     cited_keys = set(cite_keys)
 
     missing = cited_keys - bib_keys
@@ -392,11 +388,14 @@ def check_c4_citation_hygiene(tex: str, bib: str) -> list[tuple[str, str, int]]:
             first_missing_line,
         ))
 
-    # Self-citation hygiene
-    threshold = CHECKS_CONFIG['c4_self_cite_threshold']
-    prefix = CHECKS_CONFIG['c4_self_cite_prefix']
-    max_keys = CHECKS_CONFIG['c4_max_self_cite_keys']
-    self_cites = sorted(k for k in cited_keys if k.lower().startswith(prefix))
+    # Self-citation hygiene. Needs c4_self_cite_prefix: without it the
+    # check cannot know what a self-cite looks like, so this sub-check
+    # stays silent (the factory-default config has no prefix).
+    threshold = CHECKS_CONFIG.get('c4_self_cite_threshold', 0.30)
+    prefix = CHECKS_CONFIG.get('c4_self_cite_prefix', '')
+    max_keys = CHECKS_CONFIG.get('c4_max_self_cite_keys', 3)
+    self_cites = sorted(k for k in cited_keys
+                        if prefix and k.lower().startswith(prefix))
     if self_cites:
         rate = len(self_cites) / len(cited_keys) if cited_keys else 0
         if len(self_cites) > max_keys or rate >= threshold:
@@ -1113,8 +1112,9 @@ def check_c10_reproducibility(
 #   MED:  "significantly different" without a p-value.
 #   MED:  d_claimed is small but p_claimed is very small (inconsistent).
 #
-# The check is opt-in via the per-paper c8_claimed_effects
-# config. If the config is empty/None, C8 is a no-op.
+# The effect-size and power sub-checks are opt-in via the per-paper
+# c8_claimed_effects config; if it is empty/None they are skipped.
+# Sub-check 3 (significance claims) is generic and always runs.
 # ---------------------------------------------------------------------------
 
 # Heuristic constants (mirrored in tests/test_c8_statistical_power.py).
@@ -1491,7 +1491,7 @@ _C9_REF_RE = re.compile(
 
 
 def _c9_parse_figure_block(figure_text: str) -> dict:
-    """Parse a single figure environment.
+    r"""Parse a single figure environment.
 
     Returns a dict with optional fields:
       - 'has_caption': bool (whether \caption{...} exists)
@@ -1642,28 +1642,62 @@ def main() -> int:
     tex = read(MAIN)
     bib = read(REFS)
 
+    # v0.5.1: every category runs through run_check, which records one of
+    # three states:
+    #   checked         — the check ran
+    #   not applicable  — the category has no per-paper configuration, so
+    #                     it did NOT run (this is not the same as "ran and
+    #                     found nothing", which was the old silent behaviour)
+    #   error           — the check crashed; recorded in `errors` and the
+    #                     remaining categories still run (previously one
+    #                     missing config key aborted the whole audit with
+    #                     a KeyError)
+    run_status: dict[str, str] = {}
+    errors: list[tuple[str, str]] = []
+
+    # Categories that are pure per-paper configuration: with the
+    # factory-default (empty) CHECKS_CONFIG there is nothing to check.
+    _REQUIRED_KEYS = {
+        'C1': ('c1_symbols',),
+        'C2': ('c2_families',),
+        'C3': ('c3_concept_token', 'c3_formal'),
+        'C6': ('c6_blacklist',),
+    }
+
+    def run_check(cat: str, fn, *args):
+        required = _REQUIRED_KEYS.get(cat, ())
+        if any(not CHECKS_CONFIG.get(k) for k in required):
+            run_status[cat] = 'not applicable'
+            return []
+        run_status[cat] = 'checked'
+        try:
+            return fn(*args)
+        except Exception as exc:
+            errors.append((cat, f'{type(exc).__name__}: {exc}'))
+            return []
+
     all_findings: list[tuple[str, str, int]] = []
-    all_findings += check_c1_abstract_definitions(tex)
-    all_findings += check_c2_bonferroni_consistency(tex)
-    all_findings += check_c3_formalization(tex)
-    all_findings += check_c4_citation_hygiene(tex, bib)
-    all_findings += check_c5_sample_size_and_test(tex)
-    all_findings += check_c6_blacklist(tex)
+    all_findings += run_check('C1', check_c1_abstract_definitions, tex)
+    all_findings += run_check('C2', check_c2_bonferroni_consistency, tex)
+    all_findings += run_check('C3', check_c3_formalization, tex)
+    all_findings += run_check('C4', check_c4_citation_hygiene, tex, bib)
+    all_findings += run_check('C5', check_c5_sample_size_and_test, tex)
+    all_findings += run_check('C6', check_c6_blacklist, tex)
     # C7: read the per-paper threshold from CHECKS_CONFIG.
-    c7_threshold = int(CHECKS_CONFIG.get('c7_max_ceremonial', 2))
-    all_findings += check_c7_citation_context(tex, c7_max_ceremonial=c7_threshold)
-    # C8 (added in v0.3.0): statistical power audit. Uses
-    # the per-paper c8_claimed_effects config.
-    c8_claims = CHECKS_CONFIG.get('c8_claimed_effects', []) or []
-    all_findings += check_c8_statistical_power(tex, c8_claims)
-    # C9 (added in v0.3.0): figure-caption audit. Uses
-    # the per-paper c9_figure_keywords config.
-    c9_keywords = CHECKS_CONFIG.get('c9_figure_keywords', []) or []
-    all_findings += check_c9_figure_caption(tex, c9_keywords)
-    # C10 (added in v0.3.0): reproducibility audit. Uses
-    # the per-paper c10_reproducibility_claims config.
-    c10_claims = CHECKS_CONFIG.get('c10_reproducibility_claims', []) or []
-    all_findings += check_c10_reproducibility(tex, c10_claims)
+    all_findings += run_check(
+        'C7', check_c7_citation_context, tex,
+        int(CHECKS_CONFIG.get('c7_max_ceremonial', 2)))
+    # C8-C10 (added in v0.3.0): per-paper config read here and passed in;
+    # their generic sub-checks run regardless.
+    all_findings += run_check(
+        'C8', check_c8_statistical_power, tex,
+        CHECKS_CONFIG.get('c8_claimed_effects', []) or [])
+    all_findings += run_check(
+        'C9', check_c9_figure_caption, tex,
+        CHECKS_CONFIG.get('c9_figure_keywords', []) or [])
+    all_findings += run_check(
+        'C10', check_c10_reproducibility, tex,
+        CHECKS_CONFIG.get('c10_reproducibility_claims', []) or [])
 
     summary = {k: 0 for k in SEVERITY}
     for cat, _, _ in all_findings:
@@ -1674,7 +1708,7 @@ def main() -> int:
     print('=' * 72)
     print(f'Source: {MAIN}')
     print(f'Size:   {len(tex):,} chars')
-    bib_key_count = len(set(re.findall(r'@\w+\{([^,]+),', bib)))
+    bib_key_count = len(set(_BIB_KEY_RE.findall(bib)))
     print(f'Refs:   {bib_key_count} entries in refs.bib')
     print()
     print('Findings by category:')
@@ -1682,35 +1716,43 @@ def main() -> int:
         sev = SEVERITY[cat]
         n = summary[cat]
         marker = '[OK]' if n == 0 else f'[{sev}]'
-        print(f'  {cat}  {marker:7s}  {n} finding(s)')
+        note = ('  [not applicable: no per-paper config]'
+                if run_status.get(cat) == 'not applicable' else '')
+        print(f'  {cat}  {marker:7s}  {n} finding(s){note}')
+    for cat, err in errors:
+        print(f'  {cat}  [ERROR]   check crashed: {err}')
     print()
 
-    sev_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
-    all_findings.sort(
-        key=lambda x: (sev_order[SEVERITY[x[0]]], x[0], x[2] if x[2] > 0 else 99999)
-    )
+    if all_findings:
+        sev_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2}
+        all_findings.sort(
+            key=lambda x: (sev_order[SEVERITY[x[0]]], x[0],
+                           x[2] if x[2] > 0 else 99999)
+        )
+        print('-' * 72)
+        print('DETAILED FINDINGS')
+        print('-' * 72)
+        for cat, msg, line in all_findings:
+            sev = SEVERITY[cat]
+            loc = f'line {line}' if line > 0 else 'global'
+            print(f'\n[{sev}] {cat}  ({loc})')
+            for m in msg.splitlines():
+                print(f'    {m}')
+        print()
 
-    if not all_findings:
-        print('All checks passed.  No issues detected.')
-        return 0
-
-    print('-' * 72)
-    print('DETAILED FINDINGS')
-    print('-' * 72)
-    for cat, msg, line in all_findings:
-        sev = SEVERITY[cat]
-        loc = f'line {line}' if line > 0 else 'global'
-        print(f'\n[{sev}] {cat}  ({loc})')
-        for m in msg.splitlines():
-            print(f'    {m}')
-
-    print()
     print('=' * 72)
     print(f'TOTAL: {len(all_findings)} findings '
           f'(HIGH={sum(summary[c] for c in summary if SEVERITY[c] == "HIGH")}, '
           f'MEDIUM={sum(summary[c] for c in summary if SEVERITY[c] == "MEDIUM")}, '
           f'LOW={sum(summary[c] for c in summary if SEVERITY[c] == "LOW")})')
     print('=' * 72)
+
+    if errors:
+        # A crashed check is not a passed check. Exit 2, the same code
+        # as a missing input file: the audit did not run to completion.
+        print(f'{len(errors)} check(s) crashed — a crashed check is not a '
+              'passed check; exit code 2.')
+        return 2
 
     return 1 if any(SEVERITY[c] == 'HIGH' for c, _, _ in all_findings) else 0
 

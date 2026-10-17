@@ -16,6 +16,19 @@ rulepack and were built for five specific papers. What is measured below is the
 *configuration surface*: what a reader gets when they do what the README says
 and what the tool does when its assumptions do not hold.
 
+> **Status: fixed in v0.5.1.** The audit below was run against the template
+> **as shipped in v0.5.0** and its findings are preserved as evidence. All four
+> defects plus the two smaller things were fixed in v0.5.1 (see the repo
+> CHANGELOG): the factory config is now empty with paper-specific categories
+> reporting *not applicable*, the summary distinguishes checked / not
+> applicable / error, one crashed check no longer aborts the audit, the bib-key
+> regex is relaxed with regression tests, the docstring is raw, and C1's
+> missing-abstract observation is filed as an error instead of a HIGH finding.
+> Running `audit_corpus.py` against a v0.5.1+ template restores the v0.5.0
+> factory config, so the config-driven defects (D1/D2/D3) replay as recorded;
+> the D4 regex fix and D6's re-filing live in the function bodies, so a re-run's
+> C1 and C4 rows differ, as documented in the script.
+
 ## Coverage matrix: 25 papers, 10 categories
 
 Corpus: the first 25 entries of arXiv's `cs.CL` recent listing at run time, taken
@@ -206,3 +219,5 @@ matrix above can be read without downloading 100 MB of arXiv sources.
 **两处小问题**：导入该模板会打印 `SyntaxWarning: invalid escape sequence '\c'`（`verify_TEMPLATE.py:1494` 的文档字符串未用 raw）；C1 把「未找到 abstract 环境」记在 **C1** 名下，而 C1 声明为 HIGH、职责是「摘要符号定义」——问题被正确发现、被错误归类。
 
 **方法与不成立的推论**：语料是机械选取的（规则写在 `ids.txt` 旁、未按结果筛选）；预处理会展开 `\input` 并选取论文自述的 `.bib`，**每条 C4 结论都先与原始文件手工比对过才判定为伪造**——缺陷 4 正是这样找出来的，而不是推给预处理。**不成立的推论**：说这些类别设计得不好，或说这 25 篇近期预印本有代表性。它们是**逐篇配置的规则包**，缺陷 1 的诚实表述是「默认值是某一篇的配置」，而不是「规则是错的」。
+
+> **状态：上述缺陷已在 v0.5.1 修复。** 本审计针对 **v0.5.0 出厂状态**运行，结果作为证据保留。四个缺陷与两处小问题全部修复（见仓库 CHANGELOG）：出厂配置改为空表、逐篇配置类别改报 *not applicable*、汇总区分 checked / not applicable / error、单个检查崩溃不再中断整篇审计、bib key 正则放宽并附回归测试、文档字符串改 raw、C1 的无摘要观测改记为 error 而非 HIGH finding。在 v0.5.1+ 模板上重跑 `audit_corpus.py` 会自动恢复 v0.5.0 出厂配置，配置驱动的缺陷（D1/D2/D3）按原样复现；D4 的正则修复与 D6 的 C1 改归类在函数体内，重跑的 C1/C4 两行会不同——脚本内有说明。

@@ -6,6 +6,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [v0.5.1] — 2026-10-16
+
+### Fixed (self-audit defects D1-D6)
+
+All six defects were found by auditing this tool's own template against
+25 real arXiv LaTeX sources (`case-studies/arxiv-corpus/`).
+
+- **D1 — neutral factory config.** `CHECKS_CONFIG` in
+  `verify_TEMPLATE.py` shipped pre-filled with one specific paper's
+  configuration (a `'liu2026'` self-cite prefix, TTRL symbol
+  definitions, a "Power analysis" section requirement), so a generic
+  audit fired paper-specific checks against any document it was pointed
+  at. The factory default is now an empty dict: the paper-specific
+  categories (C1, C2, C3, C6) report **not applicable** instead. The
+  generic checks (C4 missing cite keys, C5, C7, C8 sub-check 3, C9
+  sub-checks 1/2/4, C10 sub-checks 1/3) still run with built-in
+  defaults, and C4's self-cite sub-check stays silent without a prefix
+  instead of requiring one.
+- **D2 — "clean" is no longer conflated with "did not run".** The
+  summary distinguishes `checked` / `not applicable` / `error` per
+  category. Previously a category whose configuration was missing
+  returned zero findings and printed as `[OK]`.
+- **D3 — one crashed check no longer aborts the audit.** `main()` runs
+  each category through a guarded wrapper: a crash degrades that one
+  category to `[ERROR]` and the remaining categories still run. Exit
+  code 2 now also covers a crashed check (a crashed check is not a
+  passed check). Previously one missing config key aborted the whole
+  audit with a `KeyError`.
+- **D4 — BibTeX key regex.** `@\w+\{([^,]+),` swallowed whitespace and
+  newlines, so a key on its own line (`@article{\n  key,`) was captured
+  with its surroundings and cite keys that existed in refs.bib were
+  reported as missing. Replaced by `_BIB_KEY_RE = @\w+\{\s*([^,\s]+)\s*,`
+  with regression tests for the multiline, padded, and inline forms.
+- **D5 — raw docstring.** `_c9_parse_figure_block`'s docstring contained
+  `\caption` / `\includegraphics`, producing a `SyntaxWarning` on every
+  import. It is now a raw string.
+- **D6 — C1 observation failures are errors, not findings.** C1 on a
+  document without an abstract reported a HIGH finding ("No abstract
+  environment found."). It now raises, and `main()` records the
+  category as an error. Also hardened C1/C2/C4 to use `get()` defaults
+  so a direct call bypassing `main()`'s gate degrades to "nothing to
+  check" instead of `KeyError`.
+
+### Added
+
+- **`tests/test_template_defaults.py`** — 21 tests covering D1-D6,
+  including end-to-end `main()` runs over synthetic documents and a
+  compile-with-`SyntaxWarning`-as-error check.
+- **`tests/test_c6_threshold.py`** — sets the blacklist explicitly
+  (the factory config it implicitly relied on no longer exists).
+
 ## [v0.5.0] — 2026-07-11
 
 ### Added (plugin whitelist — `c11_plugins_enabled`)

@@ -4,6 +4,7 @@
     "n_with_latex": 25,
     "source": "arXiv cs.CL recent listing, first 25 entries in page order"
   },
+  "tmaudit_version_audited": "0.5.0 (as shipped; defects D1-D6 fixed in 0.5.1, see CHANGELOG)",
   "generated_by": "case-studies/arxiv-corpus/audit_corpus.py",
   "per_category_totals": {
     "C1": {

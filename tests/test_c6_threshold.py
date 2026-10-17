@@ -22,6 +22,19 @@ sys.path.insert(0, str(ROOT))
 from src.tmaudit.templates import verify_TEMPLATE
 
 
+@pytest.fixture(autouse=True)
+def _default_blacklist(monkeypatch):
+    """C6 is config-driven and the factory config ships EMPTY as of
+    v0.5.1 (defect D1: the old factory default was one specific paper's
+    configuration). These tests exercise the blacklisting behaviour
+    itself, so they set the classic blacklist explicitly.
+    """
+    monkeypatch.setattr(
+        verify_TEMPLATE, 'CHECKS_CONFIG',
+        {'c6_blacklist': ['paradigm', 'yield', 'reveal']},
+    )
+
+
 def test_c6_does_not_flag_single_occurrence():
     """A blacklist word appearing once should NOT be reported."""
     tex = (

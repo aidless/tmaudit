@@ -15,6 +15,17 @@ isolated in a ``try`` so that one failure does not hide the other nine. That
 isolation lives in the harness, not in the tool, and the difference is itself
 one of the results.
 
+Version note
+------------
+The committed ``results.json`` was produced against the template **as shipped
+in v0.5.0**. As of v0.5.1 the factory ``CHECKS_CONFIG`` is empty (defect D1)
+and C1/C2/C4 read the config with ``get()`` defaults (D3/D6), so on a v0.5.1+
+template this script injects ``V0_5_0_CHECKS_CONFIG`` to reproduce the
+v0.5.0 behaviour for the config-driven categories. The bib-key regex fix
+(D4) lives in the function body and cannot be restored by configuration: on
+a v0.5.1+ template, C4 will no longer fabricate the "missing cite key"
+findings recorded in the committed results.
+
 The corpus is mechanical: the first 25 entries in arXiv's ``cs.CL`` recent
 listing at the time of the run, taken in page order, no content screening. The
 ID list is committed next to this script so the selection can be replayed.
@@ -50,6 +61,54 @@ REPO = HERE.parent.parent
 TEMPLATE = REPO / "src" / "tmaudit" / "templates" / "verify_TEMPLATE.py"
 
 MAX_INPUT_DEPTH = 8
+
+# The factory CHECKS_CONFIG exactly as it shipped in v0.5.0. Injected when
+# the template on disk no longer carries it (v0.5.1+ ships an empty dict),
+# so the audit below measures the shipped-in-v0.5.0 surface it claims to.
+V0_5_0_CHECKS_CONFIG = {
+    "c1_symbols": [
+        {
+            "name": r"$\Delta$CAF (consensus-against-field coefficient)",
+            "token": r"\bCAF\b",
+            "definition": r"\bCAF\b.{0,80}=|consensus.{0,30}agreement|strateg.{0,30}convergence",
+        },
+        {
+            "name": r"$E_T$ (temporal-accumulation effect on calibration)",
+            "token": r"\bE_T\b",
+            "definition": r"E_T.{0,80}=|temporal.{0,30}accumulation|peer.anchored.{0,30}confidence",
+        },
+        {
+            "name": r"$\Delta$ECE (calibration delta)",
+            "token": r"\\Delta\s*ECE|\\Delta\\mathrm\{ECE\}",
+            "definition": r"\\Delta\s*ECE.{0,80}=|calibration.{0,30}loss|calibration.{0,30}degrad",
+        },
+        {
+            "name": "TTRL (Test-Time Reinforcement Learning)",
+            "token": r"\bTTRL\b",
+            "definition": r"TTRL.{0,80}=|Test.Time.{0,40}Reinforcement.{0,40}Learning",
+        },
+    ],
+    "c2_families": {"main": 3},
+    "c2_section_pattern": (
+        r"\\section\*?\{[^}]*Power analysis[^}]*\}|"
+        r"\\subsection\*?\{[^}]*Power analysis[^}]*\}"
+    ),
+    "c2_abstract_k_allowed": [3, 9],
+    "c3_concept": (
+        "Two Faces (Face 1: Strategy Consensus; Face 2: Calibration Contagion)"
+    ),
+    "c3_concept_token": (
+        r"\\textbf\{Face 1\}|\\textbf\{Face 2\}|\bFace\s+1\b|\bFace\s+2\b"
+    ),
+    "c3_formal": r"\\section\{Face 1:",
+    "c3_formal_secondary": r"\\section\{Face 2:",
+    "c4_self_cite_threshold": 0.30,
+    "c4_self_cite_prefix": "liu2026",
+    "c4_max_self_cite_keys": 3,
+    "c5_d_type": "Cohen's d",
+    "c6_blacklist": ["paradigm", "yield", "reveal"],
+    "c7_max_ceremonial": 2,
+}
 
 
 def load_template(path: Path):
@@ -176,6 +235,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     tmpl = load_template(args.template)
+    if not tmpl.CHECKS_CONFIG:
+        # v0.5.1+ ships an empty factory config (D1 fix). Restore the
+        # v0.5.0 values so the audit measures the surface it claims to.
+        tmpl.CHECKS_CONFIG.update(V0_5_0_CHECKS_CONFIG)
     checks = build_checks(tmpl)
     default_config = {
         "c1_symbols": [s.get("name") for s in tmpl.CHECKS_CONFIG.get("c1_symbols", [])],
