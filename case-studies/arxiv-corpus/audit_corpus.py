@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Run tmaudit's audit core over a real arXiv corpus, as shipped.
 
 Why this exists
