@@ -279,25 +279,25 @@ def check_dependabot(results, json_mode):
     _print(json_mode, '\n[6] .github/dependabot.yml')
     p = GITHUB_DIR / 'dependabot.yml'
     if not p.exists():
-        results.append(Result('6. dependabot.yml exists', 'WARN', 'missing'))
+        # Deliberate: this repo is in maintenance freeze and dependency
+        # bumps are handled manually. Dependabot's own schema requires
+        # `updates` to contain at least one item, so an empty-but-present
+        # config is invalid and fails the check Dependabot posts on every
+        # PR — removing the file is the only clean way to switch
+        # scheduled version updates off. Re-add the file to re-enable.
+        results.append(Result('6. dependabot.yml exists', 'OK',
+                              'absent (maintenance freeze)'))
         return
     try:
         cfg = yaml.safe_load(p.read_text(encoding='utf-8'))
         results.append(Result('6. dependabot.yml valid YAML', 'OK', 'parsed'))
         updates = cfg.get('updates', [])
         if not updates:
-            # An empty `updates` list is a valid, deliberate configuration
-            # when the repo is in maintenance freeze (the file itself says
-            # so via the intent marker below). Only an *accidental* empty
-            # list -- no marker -- deserves the warning.
-            text = p.read_text(encoding='utf-8')
-            if 'intentionally disabled' in text:
-                results.append(Result(
-                    '6. dependabot.yml updates', 'OK',
-                    'empty (scheduled updates intentionally disabled)'))
-            else:
-                results.append(Result('6. dependabot.yml updates',
-                                      'WARN', 'empty'))
+            # Dependabot's schema sets minItems: 1 on `updates`, so an
+            # empty list is not a valid way to pause updates.
+            results.append(Result(
+                '6. dependabot.yml updates', 'WARN',
+                'empty (Dependabot schema requires at least one item)'))
         else:
             results.append(Result('6. dependabot.yml updates', 'OK', f'{len(updates)} update configs'))
     except yaml.YAMLError as e:
