@@ -4,6 +4,7 @@ Usage:
     tmaudit list
     tmaudit verify --paper N [--paper-dir PATH] [--dry-run]
                      [--no-cache] [--clear-cache] [--cache-info]
+    tmaudit verify --paper-dir PATH [--dry-run]   # generic audit, empty config
     tmaudit compile --paper N [--paper-dir PATH]
     tmaudit fix-unicode --paper N [--paper-dir PATH] [--apply]
     tmaudit audit-all [--start 1] [--end 5]
@@ -17,9 +18,10 @@ The CLI works equally well when the package is installed via
 `pip install` or when it is run as a zipapp via `python tmaudit.pyz`.
 
 Papers 1..5 are the built-in rulepacks. To audit a manuscript the
-built-in config was not written for, write a plugin and point it at
-your own directory with `plugins run NAME --paper-dir DIR`
-(see docs/PLUGINS.md).
+built-in config was not written for, run the generic checks with
+`verify --paper-dir DIR` (the per-paper categories report "not
+applicable"), or write a plugin and point it at your own directory
+with `plugins run NAME --paper-dir DIR` (see docs/PLUGINS.md).
 """
 from __future__ import annotations
 import argparse
@@ -36,7 +38,10 @@ from . import cache as _cache
 def _add_paper_arg(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '--paper', type=int, required=False,
-        help='paper number to operate on (e.g., 1, 2, ..., 5)',
+        help=(
+            'paper number to operate on (1..5); for verify, omit it and '
+            'pass --paper-dir to run the generic checks instead'
+        ),
     )
     parser.add_argument(
         '--paper-dir', type=Path, default=None,
@@ -64,10 +69,11 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    if args.paper is None:
-        print('ERROR: --paper N is required for verify', file=sys.stderr)
+    if args.paper is None and args.paper_dir is None:
+        print('ERROR: verify needs --paper N or --paper-dir DIR',
+              file=sys.stderr)
         return 2
-    if args.paper not in VERIFY_CONFIGS:
+    if args.paper is not None and args.paper not in VERIFY_CONFIGS:
         print(f'ERROR: no VERIFY_CONFIGS for paper {args.paper}', file=sys.stderr)
         return 2
 
@@ -83,12 +89,23 @@ def cmd_verify(args: argparse.Namespace) -> int:
         db.close()
 
     if args.dry_run:
-        print(f'[DRY-RUN] would fork verify_p{args.paper}.py for paper {args.paper}')
-        cfg = VERIFY_CONFIGS[args.paper]
-        paper_dir = args.paper_dir or cfg['dir']
-        print(f'  target: {paper_dir / f"verify_p{args.paper}.py"}')
+        if args.paper is not None:
+            print(f'[DRY-RUN] would fork verify_p{args.paper}.py '
+                  f'for paper {args.paper}')
+            cfg = VERIFY_CONFIGS[args.paper]
+            paper_dir = args.paper_dir or cfg['dir']
+            print(f'  target: {paper_dir / f"verify_p{args.paper}.py"}')
+        else:
+            print('[DRY-RUN] would fork verify_generic.py (empty config)')
+            print(f'  target: {args.paper_dir / "verify_generic.py"}')
         return 0
-    target = forge.fork_verify(args.paper, args.paper_dir)
+    if args.paper is not None:
+        target = forge.fork_verify(args.paper, args.paper_dir)
+    else:
+        # --paper-dir without --paper: audit an arbitrary manuscript with
+        # the factory (empty) config. See docs/PLUGINS.md for the plugin
+        # path, which adds checks the generic categories do not cover.
+        target = forge.fork_verify_generic(args.paper_dir)
     print(f'[WRITE] {target} ({target.stat().st_size:,} chars)')
     # Run the freshly-forked verify script to give the user immediate feedback.
     rc = subprocess.run(
@@ -384,9 +401,12 @@ def cmd_plugins_run(args: argparse.Namespace) -> int:
         config = VERIFY_CONFIGS[paper_n]
         paper_id = str(paper_n)
 
-    main_tex = paper_dir / 'main.tex'
-    if not main_tex.exists():
-        sys.stderr.write(f"main.tex not found at {main_tex}\n")
+    main_tex = forge.find_main_tex(paper_dir)
+    if main_tex is None:
+        sys.stderr.write(
+            f"no manuscript .tex found in {paper_dir} (looked for main.tex "
+            f"and a sole .tex declaring \\begin{{document}})\n"
+        )
         return 1
     tex = main_tex.read_text(encoding='utf-8', errors='replace')
 

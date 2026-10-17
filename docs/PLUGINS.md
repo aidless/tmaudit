@@ -11,10 +11,13 @@ The ten built-in categories (C1..C10) are **configured per paper** in
 the five papers of this project only. Concretely:
 
 - `tmaudit verify --paper N` accepts `N` in 1..5. It forks that paper's
-  C1..C10 rules and runs them. `--paper-dir` only changes where the
-  forked script is written, not which rules it contains.
-- So auditing **your own** manuscript means supplying your own checks.
-  A plugin is the supported way to do that.
+  C1..C10 rules and runs them.
+- `tmaudit verify --paper-dir DIR` (no `--paper`) forks the shipped
+  **factory template** into `DIR`: the per-paper categories (C1/C2/C3/C6)
+  report **not applicable** and the generic categories run. That is the
+  config-free baseline for a manuscript the rulepack was not written for.
+- Neither covers checks the generic categories do not have. For those,
+  write a plugin — the supported path for your own checks.
 
 Everything below is the whole contract. A plugin needs no
 dependencies beyond `tmaudit` itself.
@@ -134,7 +137,9 @@ Run it against **your own paper** — no `--paper N` needed:
 tmaudit plugins run my-symbol-defined --paper-dir /path/to/your/paper
 ```
 
-The directory must contain a `main.tex`. Findings print as
+The directory must contain the manuscript's root `.tex` — named
+`main.tex`, or the sole `.tex` that declares `\begin{document}`.
+Findings print as
 `[SEVERITY] CATEGORY L<line>: message`; exit code is 0 whether or not
 findings were emitted.
 

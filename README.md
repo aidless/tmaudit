@@ -3,7 +3,7 @@
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Tests](https://img.shields.io/badge/tests-246%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-262%20passing-brightgreen)
 ![Meta--tests](https://img.shields.io/badge/meta--tests-14%2F14%20caught-success)
 ![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
@@ -30,9 +30,12 @@ ships three things in one place:
 **Scope, stated plainly:** the built-in rulepack covers this
 project's five papers. `verify` / `compile` / `fix-unicode` /
 `audit-all` take `--paper 1..5`, and `--paper-dir` changes where the
-forked script is written — not which rules it contains. Auditing a
-manuscript those configs were not written for means writing your own
-checks: see [docs/PLUGINS.md](docs/PLUGINS.md).
+forked script is written — not which rules it contains. For a manuscript
+those configs were not written for, `tmaudit verify --paper-dir DIR`
+(no `--paper`) forks the **factory template** into `DIR`: the per-paper
+categories report *not applicable* and the generic categories run. To add
+checks the generic categories do not have, write your own plugin: see
+[docs/PLUGINS.md](docs/PLUGINS.md).
 
 ## Four ways to use it
 
@@ -108,9 +111,11 @@ The built-in categories are this project's rulepack for five papers. To
 add checks of your own — including for a manuscript those configs do not
 cover — write a plugin: a function decorated with `@check`, registered
 under the `tmaudit.plugins` entry-point group, receiving your paper's
-`main.tex` and returning `Finding` objects.
+root `.tex` and returning `Finding` objects. (The generic categories run
+without a plugin via `tmaudit verify --paper-dir /path/to/your/paper`.)
 
 ```bash
+tmaudit verify --paper-dir /path/to/your/paper   # generic checks, no config
 pip install -e ./my-paper-checks      # plugins are found via installed entry points
 tmaudit plugins list                  # confirm it registered
 tmaudit plugins run my-check --paper-dir /path/to/your/paper
@@ -145,6 +150,18 @@ evidence, and the harness restores the v0.5.0 config so the config-driven
 defects replay: [`case-studies/arxiv-corpus/`](case-studies/arxiv-corpus/README.md)
 has the coverage matrix, the method, and what the numbers do **not**
 establish.
+
+### Auditing a paper the rulepack was not written for
+
+[`case-studies/arxiv-2502.14074/`](case-studies/arxiv-2502.14074/README.md)
+runs the two public extension paths — `verify --paper-dir` and two plugin
+checks — against one real paper (*Investigating Non-Transitivity in
+LLM-as-a-Judge*, arXiv:2502.14074, ICML 2025). It reports two
+reporting-standards observations, records three candidate weaknesses that
+were checked and **withdrawn**, and surfaced a caption-parsing defect in
+the tool (nested braces), fixed in this commit. Every input is pinned by
+SHA-256; the results, and what the audit does **not** establish, are in its
+README.
 
 ## v0.3.0 highlights
 

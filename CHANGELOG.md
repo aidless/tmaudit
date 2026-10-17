@@ -6,6 +6,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`tmaudit verify --paper-dir DIR` without `--paper`** runs the generic
+  checks on an arbitrary manuscript: `forge.fork_verify_generic()` forks
+  the factory template (empty `CHECKS_CONFIG`) into `DIR`, so the per-paper
+  categories (C1/C2/C3/C6) report *not applicable* and the generic
+  categories run. No `--main` flag is needed — the root `.tex` is located by
+  name (`main.tex`) or, failing that, as the sole `.tex` declaring
+  `\begin{document}` (`forge.find_main_tex`). `plugins run --paper-dir` uses
+  the same resolution, so a plugin can audit a directory whose root file is
+  not `main.tex`.
+- **Bibliography from a compiled `.bbl`.** C4 reads cite keys from
+  `refs.bib` (`@type{key,`) *or* a `.bbl` (`\bibitem[label]{key}`) through
+  the new `_bib_keys` helper; a paper that ships only its `.bbl`, as arXiv
+  submissions often do, no longer needs a `refs.bib` for its citations to
+  be checked.
+- **`case-studies/arxiv-2502.14074/`** — the generic path plus two
+  `requires_config=False` plugin checks (`claims-significance-no-test`,
+  `claims-percent-table-no-uncertainty`) run against one real paper, every
+  input pinned by SHA-256. The checks ship as an installable plugin package
+  (`case-studies/arxiv-2502.14074/tmaudit_claims_plugin/`).
+
+### Fixed
+
+- **C4 no longer aborts the whole audit when no bibliography is present.**
+  `main()` used to `return 2` when `refs.bib` was missing. With neither a
+  `.bib` nor a `.bbl`, C4 now reports **not applicable** and the remaining
+  categories still run; a genuinely absent manuscript `.tex` is still exit
+  2. Surfaced by the arbitrary-paper path: the subject paper ships no
+  `.bib`.
+- **C9 caption extraction handles nested braces.** The brace-bounded regex
+  `\\caption\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}` accepted only one nesting
+  level, so a figure whose caption nested twice — e.g.
+  `\caption{\textbf{... \textsc{Swim} ...}}` or
+  `\caption{\textcolor[HTML]{2f70b8}{{Llama-3-70B}} ...}` — was reported as
+  having **no caption** (a HIGH false positive). Caption extraction is now
+  a balanced-brace scan (`_c9_balanced_content`), with regression tests for
+  both nested forms and for a genuinely unbalanced group. Found by auditing
+  arXiv:2502.14074 (see `case-studies/arxiv-2502.14074/`).
+- **C4's missing-key message** now reads "missing from the bibliography
+  (.bib/.bbl)" instead of naming `refs.bib`, which is inaccurate once the
+  source may be a `.bbl`.
+
+### Changed
+
+- **Test count: 246 → 262** (fast suite, `pytest -m "not slow"`). Added
+  `tests/test_verify_paper_dir.py` (13 tests) and three nested-brace
+  regression tests in `tests/test_c9_figure_caption.py`. The `README.md`
+  test badge is updated to 262 to match.
+
 ## [v0.5.1] — 2026-10-16
 
 ### Fixed (self-audit defects D1-D6)

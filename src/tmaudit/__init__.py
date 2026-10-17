@@ -11,6 +11,7 @@ and exposes a single CLI:
 
     tmaudit --list
     tmaudit verify --paper N [--paper-dir PATH]
+    tmaudit verify --paper-dir PATH        # generic checks, empty config
     tmaudit compile --paper N
     tmaudit fix-unicode --paper N
     tmaudit audit-all
