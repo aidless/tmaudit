@@ -286,7 +286,18 @@ def check_dependabot(results, json_mode):
         results.append(Result('6. dependabot.yml valid YAML', 'OK', 'parsed'))
         updates = cfg.get('updates', [])
         if not updates:
-            results.append(Result('6. dependabot.yml updates', 'WARN', 'empty'))
+            # An empty `updates` list is a valid, deliberate configuration
+            # when the repo is in maintenance freeze (the file itself says
+            # so via the intent marker below). Only an *accidental* empty
+            # list -- no marker -- deserves the warning.
+            text = p.read_text(encoding='utf-8')
+            if 'intentionally disabled' in text:
+                results.append(Result(
+                    '6. dependabot.yml updates', 'OK',
+                    'empty (scheduled updates intentionally disabled)'))
+            else:
+                results.append(Result('6. dependabot.yml updates',
+                                      'WARN', 'empty'))
         else:
             results.append(Result('6. dependabot.yml updates', 'OK', f'{len(updates)} update configs'))
     except yaml.YAMLError as e:
