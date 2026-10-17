@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
-![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![Tests](https://img.shields.io/badge/tests-240%20passing-brightgreen)
 ![Meta--tests](https://img.shields.io/badge/meta--tests-14%2F14%20caught-success)
 ![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
@@ -271,7 +271,7 @@ in `src/tmaudit/forge.py` and
 `.github/workflows/ci.yml` runs on every push and pull request.
 It consists of **seven** jobs:
 
-1. **pytest** (matrix: Python 3.9, 3.10, 3.11, 3.12 on `ubuntu-latest`)
+1. **pytest** (matrix: Python 3.11, 3.12, 3.13 on `ubuntu-latest`)
    — runs the **240-test** suite and uploads JUnit XML artifacts.
 2. **meta-test** (Python 3.11) — runs `_check_all_regressions.py`
    to verify that each of the **14 regression tests** actually catches
@@ -366,7 +366,7 @@ we have already executed successfully on the host:
 
 - `actions/setup-python@v5` cannot actually install a different
   Python version (the host has only one Python; the matrix
-  includes 3.9/3.10/3.11/3.12). The simulator prints a
+  includes 3.11/3.12/3.13). The simulator prints a
   warning but does not fail.
 - `actions/upload-artifact@v4` is simulated by copying files
   to `_act_run/artifacts/<name>/`.

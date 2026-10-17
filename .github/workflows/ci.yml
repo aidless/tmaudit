@@ -1,7 +1,7 @@
 name: CI
 
 # Run the test suite + meta-test on every push and pull request.
-# Matrix-tests against Python 3.9, 3.10, 3.11, 3.12 to catch any
+# Matrix-tests against Python 3.11, 3.12, 3.13 to catch any
 # version-specific issue with importlib.resources, raw-string
 # regex, or zipapp.
 on:
