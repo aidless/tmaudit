@@ -63,9 +63,16 @@ write a plugin instead ([docs/PLUGINS.md](docs/PLUGINS.md)).
 ```powershell
 cd <your tmaudit checkout>
 python -m pip install --editable .
+python -m pip install --editable ./tmaudit_example_plugin
 tmaudit list
 tmaudit verify --paper 1
 ```
+
+**The second install is not optional for tests**: `tests/test_example_plugin.py`
+asserts that the in-repo demo plugin is discoverable via registered
+entry points. Without that editable install, 11 plugin tests fail with
+`KeyError: 'flag-long-abstract'`. The CI workflow (`ci.yml`) runs the
+same two installs.
 
 Edits to `src/tmaudit/templates/*.py` or
 `src/tmaudit/configs/*.py` are picked up immediately on the next
@@ -331,6 +338,7 @@ To run the same checks locally before pushing:
 
 ```bash
 pip install -e . pytest pyflakes
+pip install -e ./tmaudit_example_plugin
 pytest
 python _check_all_regressions.py
 python _check_pyz_fresh.py
@@ -340,9 +348,13 @@ python -m pyflakes src/tmaudit/ tests/
 ```
 
 `pytest` runs the full suite: **246 passed, 3 skipped** on a machine
-without the research tree — the two end-to-end audit tests require the
-real `PAPER<N>_CONSOLIDATED` papers and auto-skip when the directory is
-absent (point `TMAUDIT_RESEARCH_DIR` at the tree to run them).
+without the research tree — the two `@pytest.mark.slow` end-to-end audit
+tests require the real `PAPER<N>_CONSOLIDATED` papers and auto-skip when
+the directory is absent (point `TMAUDIT_RESEARCH_DIR` at the tree to run
+them). **Scope note:** CI runs `pytest -m "not slow"`, which deselects
+those two and reports **246 passed, 1 skipped, 2 deselected** — both
+lines above are the same 249 collected tests, differing only in the two
+deselected slow tests.
 
 ### Local CI simulation (`act` / `_act_*`)
 
