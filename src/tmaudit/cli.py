@@ -9,9 +9,17 @@ Usage:
     tmaudit audit-all [--start 1] [--end 5]
     tmaudit cache-info
     tmaudit cache-clear
+    tmaudit plugins list
+    tmaudit plugins info NAME
+    tmaudit plugins run NAME --paper N | --paper-dir DIR
 
 The CLI works equally well when the package is installed via
 `pip install` or when it is run as a zipapp via `python tmaudit.pyz`.
+
+Papers 1..5 are the built-in rulepacks. To audit a manuscript the
+built-in config was not written for, write a plugin and point it at
+your own directory with `plugins run NAME --paper-dir DIR`
+(see docs/PLUGINS.md).
 """
 from __future__ import annotations
 import argparse
@@ -32,7 +40,11 @@ def _add_paper_arg(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         '--paper-dir', type=Path, default=None,
-        help='override the paper directory (default: from config)',
+        help=(
+            'use this paper directory instead of the one in the config '
+            '(verify/compile write the forked script here; '
+            'plugins run audits this directory)'
+        ),
     )
     parser.add_argument(
         '--dry-run', action='store_true',
@@ -347,11 +359,31 @@ def cmd_plugins_run(args: argparse.Namespace) -> int:
         return 1
     plugin = loaded[name]
 
-    paper_n = args.paper
-    if paper_n not in VERIFY_CONFIGS:
-        sys.stderr.write(f"Unknown paper {paper_n!r}\n")
-        return 1
-    paper_dir = Path(args.paper_dir or VERIFY_CONFIGS[paper_n]['dir'])
+    # Two ways to pick the target:
+    #   --paper N     : one of the built-in papers (1..5), whose
+    #                   C1..C10 config is passed to the plugin.
+    #   --paper-dir D : an arbitrary paper directory with no
+    #                   built-in config (the plugin receives {}).
+    #                   This is the path for a plugin author outside
+    #                   this project auditing their own manuscript,
+    #                   which the built-in rulepack does not cover.
+    if args.paper_dir is not None:
+        paper_dir = Path(args.paper_dir)
+        config: dict = {}
+        paper_id = str(paper_dir)
+    else:
+        paper_n = args.paper
+        if paper_n not in VERIFY_CONFIGS:
+            sys.stderr.write(
+                f"Unknown paper {paper_n!r}. Pass --paper 1..5, or "
+                f"--paper-dir DIR to audit an arbitrary paper "
+                f"(see docs/PLUGINS.md).\n"
+            )
+            return 1
+        paper_dir = Path(VERIFY_CONFIGS[paper_n]['dir'])
+        config = VERIFY_CONFIGS[paper_n]
+        paper_id = str(paper_n)
+
     main_tex = paper_dir / 'main.tex'
     if not main_tex.exists():
         sys.stderr.write(f"main.tex not found at {main_tex}\n")
@@ -360,11 +392,11 @@ def cmd_plugins_run(args: argparse.Namespace) -> int:
 
     findings = _plugins.run_plugin(
         plugin, tex=tex,
-        config=VERIFY_CONFIGS[paper_n],
-        paper_id=str(paper_n),
+        config=config,
+        paper_id=paper_id,
     )
     if not findings:
-        print(f"Plugin {name!r} emitted 0 findings on paper {paper_n}.")
+        print(f"Plugin {name!r} emitted 0 findings on {paper_id}.")
         return 0
     for f in findings:
         print(f"[{f.severity}] {f.category} L{f.line}: {f.message}")

@@ -24,8 +24,15 @@ ships three things in one place:
    in v0.1.0–v0.2.0, plus C8 statistical power, C9 figure-caption,
    and C10 reproducibility in v0.3.0; abstract Unicode
    replacements) for Paper 1, 2, 3, 4, 5.
-3. A **CLI** (`tmaudit`) that forks the templates into any paper
-   directory and (optionally) runs them.
+3. A **CLI** (`tmaudit`) that forks the templates and (optionally)
+   runs them.
+
+**Scope, stated plainly:** the built-in rulepack covers this
+project's five papers. `verify` / `compile` / `fix-unicode` /
+`audit-all` take `--paper 1..5`, and `--paper-dir` changes where the
+forked script is written — not which rules it contains. Auditing a
+manuscript those configs were not written for means writing your own
+checks: see [docs/PLUGINS.md](docs/PLUGINS.md).
 
 ## Four ways to use it
 
@@ -41,11 +48,15 @@ python tmaudit.pyz audit-all
 ```
 
 The `.pyz` is a self-extracting Python zip archive; the user does not
-need to `pip install` anything. The file is `~46 KB` and contains all
+need to `pip install` anything. The file is `~64 KB` and contains all
 five `PAPER_CONFIGS` and all three templates.
 
-This is the **recommended distribution form** for handing the tool
-to a co-author or to the TMLR reviewers.
+It is a convenient way to hand the tool to a **collaborator working in
+the same research tree**: the built-in configs point at
+`PAPER1..PAPER5_CONSOLIDATED`, so they will need
+`TMAUDIT_RESEARCH_DIR` set to a tree with that layout. For a manuscript
+outside those five papers the built-in commands will not audit it —
+write a plugin instead ([docs/PLUGINS.md](docs/PLUGINS.md)).
 
 ### (B) `pip install --editable .` (development)
 
@@ -83,6 +94,25 @@ tmaudit list
 Published on PyPI via trusted publishing (OIDC) from
 `.github/workflows/publish-pypi.yml`; new versions are cut from GitHub
 Releases. This is the quickest form for someone who just wants the CLI.
+
+## Extend it: your own checks
+
+The built-in categories are this project's rulepack for five papers. To
+add checks of your own — including for a manuscript those configs do not
+cover — write a plugin: a function decorated with `@check`, registered
+under the `tmaudit.plugins` entry-point group, receiving your paper's
+`main.tex` and returning `Finding` objects.
+
+```bash
+pip install -e ./my-paper-checks      # plugins are found via installed entry points
+tmaudit plugins list                  # confirm it registered
+tmaudit plugins run my-check --paper-dir /path/to/your/paper
+```
+
+The full contract, a copy-paste package layout, and what a plugin does
+and does not get are in [docs/PLUGINS.md](docs/PLUGINS.md). A working
+three-check example ships in
+[`tmaudit_example_plugin/`](tmaudit_example_plugin/).
 
 ## Self-audit: the audit core on 25 real papers
 
@@ -180,11 +210,11 @@ tmaudit compile --paper N
 ```
 TEMPLATE/
 ├── pyproject.toml                            # build config
-├── tmaudit.pyz                               # single-file distribution (46 KB)
+├── tmaudit.pyz                               # single-file distribution (64 KB)
 ├── README.md                                 # this file
 ├── engineering_notes_verify_template.md      # 6-bug engineering diary
 ├── _setup_pkg.py                             # one-time: copy templates into src/
-├── _build_pyz.py                             # one-time: build tmaudit.pyz
+├── _build_pyz.py                             # rebuild tmaudit.pyz after any src/ change
 ├── _compile_appendix.py                      # LaTeX compile for the appendix
 ├── _regen_appendix.py                        # regenerate appendix_engineering.tex
 ├── _status.py                                # TEMPLATE/ state summary
@@ -231,7 +261,7 @@ tmaudit verify --paper 6   # fork + run; will report any HIGH-severity
 ```bash
 # On the source machine:
 python _build_pyz.py
-# -> tmaudit.pyz (46 KB)
+# -> tmaudit.pyz (64 KB)
 
 # Copy tmaudit.pyz to a fresh machine with no Python packages installed
 # (only a base Python 3.9+ interpreter):
