@@ -9,7 +9,7 @@
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
 ![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
 ![Security](https://img.shields.io/badge/security-policy%20in%20place-green)
-![Version](https://img.shields.io/badge/version-0.5.0-blue)
+![Version](https://img.shields.io/badge/version-0.5.1-blue)
 ![Roadmap](https://img.shields.io/badge/roadmap-through%20v0.5.0-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -83,6 +83,31 @@ tmaudit list
 Published on PyPI via trusted publishing (OIDC) from
 `.github/workflows/publish-pypi.yml`; new versions are cut from GitHub
 Releases. This is the quickest form for someone who just wants the CLI.
+
+## Self-audit: the audit core on 25 real papers
+
+The rulepack is per-paper by design, so the sharpest question a reader can
+ask is: *what does this tool do on a paper its config was not written for?*
+We ran all ten categories over **25 real arXiv `cs.CL` LaTeX sources**,
+exactly as `main()` runs them.
+
+It found four defects in the tool itself:
+
+- the factory `CHECKS_CONFIG` was one specific paper's config, so a generic
+  run fired that paper's checks against any document;
+- "clean" could mean "did not run" — a category with no configuration
+  reported zero findings, indistinguishable from a pass;
+- one missing config key aborted the whole audit with a `KeyError`;
+- the BibTeX key pattern fabricated "missing citation" findings for keys
+  that were present in `refs.bib`, whenever a key sat on its own line.
+
+**All four are fixed in v0.5.1**, with regression tests; the two smaller
+findings (a `SyntaxWarning` on import, and an observation failure filed as a
+HIGH finding) are fixed as well. The v0.5.0 findings are kept verbatim as
+evidence, and the harness restores the v0.5.0 config so the config-driven
+defects replay: [`case-studies/arxiv-corpus/`](case-studies/arxiv-corpus/README.md)
+has the coverage matrix, the method, and what the numbers do **not**
+establish.
 
 ## v0.3.0 highlights
 
