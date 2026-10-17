@@ -1,9 +1,10 @@
 # tmaudit — Deploy & Quick Start
 
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
-![Tests](https://img.shields.io/badge/tests-176%20passing-brightgreen)
-![Meta--tests](https://img.shields.io/badge/meta--tests-12%2F12%20caught-success)
+![Tests](https://img.shields.io/badge/tests-223%20passing-brightgreen)
+![Meta--tests](https://img.shields.io/badge/meta--tests-14%2F14%20caught-success)
 ![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
 ![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
@@ -26,7 +27,7 @@ ships three things in one place:
 3. A **CLI** (`tmaudit`) that forks the templates into any paper
    directory and (optionally) runs them.
 
-## Three ways to use it
+## Four ways to use it
 
 ### (A) Run the single-file `tmaudit.pyz` (zero install)
 
@@ -71,6 +72,17 @@ tmaudit list
 
 This produces a `tmaudit` console-script entry in the venv. The
 template and config files are inside the wheel.
+
+### (D) `pip install tmaudit` (from PyPI)
+
+```bash
+pip install tmaudit          # or: pipx install tmaudit
+tmaudit list
+```
+
+Published on PyPI via trusted publishing (OIDC) from
+`.github/workflows/publish-pypi.yml`; new versions are cut from GitHub
+Releases. This is the quickest form for someone who just wants the CLI.
 
 ## v0.3.0 highlights
 
@@ -218,7 +230,7 @@ Each bug has a dedicated regression test in
 `tests/test_c8_statistical_power.py`, and
 `tests/test_c9_figure_caption.py`. The meta-test
 (`_check_all_regressions.py`) injects each bug in turn, asserts the
-regression test catches it, and restores the source. **12/12 bugs
+regression test catches it, and restores the source. **14/14 bugs
 are caught.**
 
 The fix patterns (raw-string regex literals, brace-counting state
@@ -232,12 +244,12 @@ in `src/tmaudit/forge.py` and
 ### Workflow
 
 `.github/workflows/ci.yml` runs on every push and pull request.
-It consists of **five** jobs:
+It consists of **seven** jobs:
 
 1. **pytest** (matrix: Python 3.9, 3.10, 3.11, 3.12 on `ubuntu-latest`)
-   — runs the **176-test** suite and uploads JUnit XML artifacts.
+   — runs the **223-test** suite and uploads JUnit XML artifacts.
 2. **meta-test** (Python 3.11) — runs `_check_all_regressions.py`
-   to verify that each of the **12 regression tests** actually catches
+   to verify that each of the **14 regression tests** actually catches
    its target bug. Builds `tmaudit.pyz` and runs it as a smoke
    test.
 3. **validate-community-files** (Python 3.11) — runs
@@ -249,6 +261,12 @@ It consists of **five** jobs:
    --no-cache` and uploads the Markdown report as a CI artefact.
 5. **lint** (Python 3.11) — runs `pyflakes` on `src/tmaudit/`
    and `tests/`.
+6. **mutation-control** (Python 3.11) — proves the pytest and lint
+   gates can actually fail: injects a known mutation, asserts both
+   gates go red, then asserts a deliberately neutralised gate (wrapped
+   in `|| true`) is rejected as a negative control.
+7. **secret-scan** (Python 3.11) — scans the full history with
+   `gitleaks`, so a committed credential fails the build.
 
 ### Local validation (before pushing)
 
