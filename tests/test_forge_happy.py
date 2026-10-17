@@ -21,6 +21,18 @@ from tmaudit import forge
 from tmaudit.configs import VERIFY_CONFIGS, COMPILE_CONFIGS
 
 
+def _paper_dir_missing(paper_number: int) -> bool:
+    """True when the real per-paper research directory is absent.
+
+    The end-to-end tests fork a verify script into the actual
+    PAPER<N>_CONSOLIDATED directory and run it against the real paper
+    files, so they can only execute on a machine whose research tree
+    (override with TMAUDIT_RESEARCH_DIR) contains that paper. On any
+    other machine the honest outcome is a skip, not a failure.
+    """
+    return not VERIFY_CONFIGS[paper_number]['dir'].is_dir()
+
+
 # ============================================================================
 # fork_verify integration
 # ============================================================================
@@ -77,6 +89,11 @@ class TestEndToEndAudit:
     `pytest -m "not slow"` during fast iteration.
     """
 
+    @pytest.mark.skipif(
+        _paper_dir_missing(1),
+        reason='PAPER1_CONSOLIDATED research dir not present on this machine '
+               '(set TMAUDIT_RESEARCH_DIR to point at the research tree)',
+    )
     def test_paper_1_forks_and_passes(self):
         """Fork and run verify on Paper 1; expect 0 findings."""
         target = forge.fork_verify(1)
@@ -112,6 +129,11 @@ class TestEndToEndAudit:
                 f'got:\n{result.stdout}'
             )
 
+    @pytest.mark.skipif(
+        _paper_dir_missing(5),
+        reason='PAPER5_CONSOLIDATED research dir not present on this machine '
+               '(set TMAUDIT_RESEARCH_DIR to point at the research tree)',
+    )
     def test_paper_5_forks_and_passes(self):
         target = forge.fork_verify(5)
         result = subprocess.run(

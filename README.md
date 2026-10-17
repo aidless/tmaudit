@@ -306,6 +306,11 @@ python tmaudit.pyz list
 python -m pyflakes src/tmaudit/ tests/
 ```
 
+`pytest` runs the full suite: **240 passed, 3 skipped** on a machine
+without the research tree — the two end-to-end audit tests require the
+real `PAPER<N>_CONSOLIDATED` papers and auto-skip when the directory is
+absent (point `TMAUDIT_RESEARCH_DIR` at the tree to run them).
+
 ### Local CI simulation (`act` / `_act_*`)
 
 The preferred tool for local CI simulation is
