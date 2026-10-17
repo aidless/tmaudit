@@ -100,7 +100,7 @@ def check_page_length(tex, config=None):
   plugin against one paper (no caching).
 
 The full design rationale is in
-[`engineering_notes_verify_template.md` §14](file:///F:/Research/TEMPLATE/engineering_notes_verify_template.md#L1705-L2120) (~415 lines).
+[`engineering_notes_verify_template.md`](../../engineering_notes_verify_template.md) §14 (~415 lines).
 
 ## Alternatives considered
 

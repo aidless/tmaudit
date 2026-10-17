@@ -52,9 +52,13 @@ from typing import Any
 
 import yaml
 
-ROOT = Path('F:/Research/TEMPLATE')
+# Repo root, derived from this file so the script runs from any checkout.
+ROOT = Path(__file__).resolve().parent
 WORKFLOW = ROOT / '.github' / 'workflows' / 'ci.yml'
-PYTHON = Path('C:/Users/Administrator/AppData/Roaming/uv/python/cpython-3.9.25-windows-x86_64-none/python.exe')
+# Interpreter used for the simulated `run:` steps. This used to be an absolute
+# path into the author's uv install; use the interpreter already running this
+# script, so the simulator works from any checkout.
+PYTHON = Path(sys.executable)
 
 # Ensure `python` is on PATH for any `subprocess.run(cmd, shell=True)`
 # step. Real GitHub Actions runners have python on PATH automatically.

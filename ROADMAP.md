@@ -282,7 +282,7 @@ The two **real risks** for v1.0.0:
 | 1 | The plugin API has a papercut that only surfaces in real use | **High** | Medium (v0.5.0 delay) | Use v0.4.0 in our own papers (1, 3, 5) to exercise it. |
 | 2 | No 3rd author reports a submission cycle | **High** | **Critical** (blocks v1.0.0) | Recruit from the maintainer's academic network; advertise on the TMLR Discord. |
 
-See [`engineering_notes_verify_template.md` §15.11](file:///F:/Research/TEMPLATE/engineering_notes_verify_template.md#15.11-risk-register)
+See [`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md) §15.11
 for the full 8-row register.
 
 ### Cross-cutting lessons (C7–C10 → v1.0.0)
@@ -338,7 +338,7 @@ checklist is:
   depending on the maintainer for a fix. That last item
   is the **truest test of stability**.
 
-See [`engineering_notes_verify_template.md` §15](file:///F:/Research/TEMPLATE/engineering_notes_verify_template.md#15-v100--roadmap-plugin-api-freeze-window-and-the-path-to-first-stable-release)
+See [`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md) §15
 for the full 15-sub-section v1.0.0 plan.
 
 ## Versioning policy

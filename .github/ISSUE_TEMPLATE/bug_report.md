@@ -49,7 +49,7 @@ Numbered, minimal steps. Assume the reader has never seen your
 machine. Avoid "etc." and "..." — be explicit.
 
 GOOD:
-  1. `cd F:/Research/TEMPLATE`
+  1. `cd path/to/your/tmaudit/checkout`
   2. `pip install -e .`
   3. `tmaudit verify --paper 4`
   4. Observe: audit crashes with `KeyError: 'c2_section_pattern'`

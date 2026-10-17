@@ -25,7 +25,8 @@ from typing import Any
 
 import yaml
 
-ROOT = Path('F:/Research/TEMPLATE')
+# Repo root, derived from this file so the script runs from any checkout.
+ROOT = Path(__file__).resolve().parent
 WORKFLOW = ROOT / '.github' / 'workflows' / 'ci.yml'
 
 _MATRIX_RE = re.compile(r'\$\{\{\s*matrix\.([\w\-]+)\s*\}\}')

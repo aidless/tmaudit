@@ -9,7 +9,8 @@ import sys
 
 import yaml  # pyyaml
 
-WORKFLOW = Path('F:/Research/TEMPLATE/.github/workflows/ci.yml')
+WORKFLOW = (Path(__file__).resolve().parent
+            / '.github' / 'workflows' / 'ci.yml')
 
 text = WORKFLOW.read_text(encoding='utf-8')
 try:
