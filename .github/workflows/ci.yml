@@ -1,7 +1,8 @@
 name: CI
 
 # Run the test suite + meta-test on every push and pull request.
-# Matrix-tests against Python 3.11, 3.12, 3.13 to catch any
+# Matrix-tests against every version the package claims to support
+# (requires-python >=3.9, so 3.9 through 3.13) to catch any
 # version-specific issue with importlib.resources, raw-string
 # regex, or zipapp.
 on:
@@ -18,7 +19,7 @@ concurrency:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Job 1: install tmaudit, run the 46-test pytest suite, upload JUnit XML
+  # Job 1: install tmaudit, run the 240-test pytest suite, upload JUnit XML
   # --------------------------------------------------------------------------
   pytest:
     name: pytest (Python ${{ matrix.python-version }})
@@ -26,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
       - name: Checkout repository

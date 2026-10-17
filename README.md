@@ -271,7 +271,8 @@ in `src/tmaudit/forge.py` and
 `.github/workflows/ci.yml` runs on every push and pull request.
 It consists of **seven** jobs:
 
-1. **pytest** (matrix: Python 3.11, 3.12, 3.13 on `ubuntu-latest`)
+1. **pytest** (matrix: Python 3.9, 3.10, 3.11, 3.12, 3.13 on
+   `ubuntu-latest` — every version `requires-python >=3.9` claims)
    — runs the **240-test** suite and uploads JUnit XML artifacts.
 2. **meta-test** (Python 3.11) — runs `_check_all_regressions.py`
    to verify that each of the **14 regression tests** actually catches
@@ -345,7 +346,7 @@ python _act_simulate.py --job pytest    # run pytest job
 pushing. Results:
 
 - ✅ `ci.yml` is valid YAML (parsed by PyYAML)
-- ✅ **7 jobs** (a 4-version pytest matrix plus 6 single-run jobs), ~25 steps
+- ✅ **7 jobs** (a 5-version pytest matrix plus 6 single-run jobs)
 - ✅ `meta-test` correctly depends on `pytest` (Kahn's algorithm topo sort)
 - ✅ `matrix.python-version` substituted correctly into `${{ ... }}` expressions
 - ✅ `if: always()` preserved on the upload-artifact step
@@ -371,7 +372,7 @@ we have already executed successfully on the host:
 
 - `actions/setup-python@v5` cannot actually install a different
   Python version (the host has only one Python; the matrix
-  includes 3.11/3.12/3.13). The simulator prints a
+  includes 3.9–3.13). The simulator prints a
   warning but does not fail.
 - `actions/upload-artifact@v4` is simulated by copying files
   to `_act_run/artifacts/<name>/`.
