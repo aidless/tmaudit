@@ -361,7 +361,7 @@ we have already executed successfully on the host:
 | `python -m pip install pytest scipy` | deps installed ✅ |
 | `python -m pytest -m "not slow"` | **240 passed, 1 skipped in ~5s** ✅ |
 | `python _check_all_regressions.py` | **14/14 bugs caught** ✅ |
-| `python _check_github_templates.py` | **45/45 OK** ✅ |
+| `python _check_github_templates.py` | **44/44 OK** ✅ |
 | `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |
 | `python -m src.tmaudit audit-all ...` | report uploaded as artefact ✅ |
 | `python _build_pyz.py` | tmaudit.pyz built ✅ |
