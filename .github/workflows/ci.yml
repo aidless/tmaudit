@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Job 1: install tmaudit, run the 240-test pytest suite, upload JUnit XML
+  # Job 1: install tmaudit, run the 246-test pytest suite, upload JUnit XML
   # --------------------------------------------------------------------------
   pytest:
     name: pytest (Python ${{ matrix.python-version }})
@@ -122,6 +122,14 @@ jobs:
         # in production).
         run: |
           python _check_all_regressions.py
+
+      - name: Check the committed tmaudit.pyz is not stale
+        # Must run BEFORE the step below, which overwrites the archive.
+        # CI previously only rebuilt and smoke-ran the artifact, never
+        # comparing the result with what was committed -- so a v0.1.x-era
+        # archive (Python 3.9 bytecode; no plugins/cache/report/
+        # llm_fallback) sat in the repository unnoticed until v0.5.1.
+        run: python _check_pyz_fresh.py
 
       - name: Build tmaudit.pyz (smoke)
         run: |

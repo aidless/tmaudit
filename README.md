@@ -3,7 +3,7 @@
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Tests](https://img.shields.io/badge/tests-240%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-246%20passing-brightgreen)
 ![Meta--tests](https://img.shields.io/badge/meta--tests-14%2F14%20caught-success)
 ![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
@@ -303,11 +303,12 @@ It consists of **seven** jobs:
 
 1. **pytest** (matrix: Python 3.9, 3.10, 3.11, 3.12, 3.13 on
    `ubuntu-latest` — every version `requires-python >=3.9` claims)
-   — runs the **240-test** suite and uploads JUnit XML artifacts.
+   — runs the **246-test** suite and uploads JUnit XML artifacts.
 2. **meta-test** (Python 3.11) — runs `_check_all_regressions.py`
    to verify that each of the **14 regression tests** actually catches
-   its target bug. Builds `tmaudit.pyz` and runs it as a smoke
-   test.
+   its target bug, then runs `_check_pyz_fresh.py` to confirm the
+   committed `tmaudit.pyz` still matches `src/tmaudit/`, and finally
+   builds the archive and runs it as a smoke test.
 3. **validate-community-files** (Python 3.11) — runs
    `_check_github_templates.py` to verify the `.github/`
    directory structure (4 issue templates, PR template, CODEOWNERS,
@@ -332,12 +333,13 @@ To run the same checks locally before pushing:
 pip install -e . pytest pyflakes
 pytest
 python _check_all_regressions.py
+python _check_pyz_fresh.py
 python _build_pyz.py
 python tmaudit.pyz list
 python -m pyflakes src/tmaudit/ tests/
 ```
 
-`pytest` runs the full suite: **240 passed, 3 skipped** on a machine
+`pytest` runs the full suite: **246 passed, 3 skipped** on a machine
 without the research tree — the two end-to-end audit tests require the
 real `PAPER<N>_CONSOLIDATED` papers and auto-skip when the directory is
 absent (point `TMAUDIT_RESEARCH_DIR` at the tree to run them).
@@ -389,7 +391,7 @@ we have already executed successfully on the host:
 |---|---|
 | `python -m pip install -e .` | tmaudit installed ✅ |
 | `python -m pip install pytest scipy` | deps installed ✅ |
-| `python -m pytest -m "not slow"` | **240 passed, 1 skipped in ~5s** ✅ |
+| `python -m pytest -m "not slow"` | **246 passed, 1 skipped in ~5s** ✅ |
 | `python _check_all_regressions.py` | **14/14 bugs caught** ✅ |
 | `python _check_github_templates.py` | **44/44 OK** ✅ |
 | `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |
