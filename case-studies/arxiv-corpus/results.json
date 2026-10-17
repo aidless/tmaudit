@@ -1,0 +1,1982 @@
+{
+  "corpus": {
+    "n_ids": 25,
+    "n_with_latex": 25,
+    "source": "arXiv cs.CL recent listing, first 25 entries in page order"
+  },
+  "generated_by": "case-studies/arxiv-corpus/audit_corpus.py",
+  "per_category_totals": {
+    "C1": {
+      "clean": 23,
+      "fired": 2
+    },
+    "C10": {
+      "clean": 1,
+      "fired": 24
+    },
+    "C2": {
+      "fired": 25
+    },
+    "C3": {
+      "clean": 25
+    },
+    "C4": {
+      "clean": 11,
+      "fired": 14
+    },
+    "C5": {
+      "clean": 25
+    },
+    "C6": {
+      "clean": 9,
+      "fired": 16
+    },
+    "C7": {
+      "clean": 2,
+      "fired": 23
+    },
+    "C8": {
+      "clean": 25
+    },
+    "C9": {
+      "clean": 10,
+      "fired": 15
+    }
+  },
+  "per_paper": [
+    {
+      "bib_chars": 21416,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 3,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"paradigm\" appears 11x in main.tex (e.g., line 167). Reviewer \u00a75 #5.",
+            "Blacklist word \"yield\" appears 5x in main.tex (e.g., line 167). Reviewer \u00a75 #5."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'sora2_system_card' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) tota",
+            "MED: citation 'veo3_model_card' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total ",
+            "MED: citation 'wang2026liveedit' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total",
+            "MED: citation 'wang2026subjectanchor' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) ",
+            "MED: citation 'zhang2026zo3t' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (t",
+            "MED: citation 'mmgr' at line 230 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (threshold:",
+            "MED: citation 'tan2026dreamworld' at line 231 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) tota",
+            "MED: citation 'zhang2025mind' at line 231 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (t",
+            "MED: citation 'zhang2026robostereo' at line 231 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) to",
+            "MED: citation 'emu3.5' at line 232 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (threshol",
+            "MED: citation 'labs2025flux' at line 401 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (th",
+            "MED: citation 'qwen-image-edit2509' at line 401 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) to",
+            "MED: citation 'seed2026seed1.8' at line 401 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total ",
+            "MED: citation 'team2025zimage' at line 401 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (",
+            "MED: citation 'omniverifier' at line 403 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (th",
+            "MED: citation 'zheng2025diffusionnft' at line 544 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) "
+          ],
+          "n": 16,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "example_paper.tex",
+      "paper_id": "2610.22355",
+      "status": "latex",
+      "tex_chars": 99620
+    },
+    {
+      "bib_chars": 19620,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "6 cite key(s) in main.tex missing from refs.bib: ['dubois2404length', 'lanchantin2025diverse', 'shypula2025evaluating', 'sprague2025to', 'zhang2025noveltybench']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"paradigm\" appears 25x in main.tex (e.g., line 904). Reviewer \u00a75 #5.",
+            "Blacklist word \"reveal\" appears 4x in main.tex (e.g., line 1302). Reviewer \u00a75 #5."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'multi-answer-rl' at line 634 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total ",
+            "MED: citation 'vpo' at line 634 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (threshold: ",
+            "MED: citation 'wang2024scimon' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (",
+            "MED: citation 'chen2026measuring' at line 640 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tota",
+            "MED: citation 'giants' at line 640 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (threshol",
+            "MED: citation 'li2025darling' at line 640 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (t",
+            "MED: citation 'wadhwa2026create' at line 682 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total",
+            "MED: citation 'dubois2404length' at line 794 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total",
+            "MED: citation 'lin1991divergence' at line 797 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tota",
+            "MED: citation 'sprague2025to' at line 872 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (t",
+            "MED: citation 'jiang2026artificial' at line 1014 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) t",
+            "MED: citation 'lanchantin2025diverse' at line 1014 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s)",
+            "MED: citation 'padmakumar2024does' at line 1014 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) to",
+            "MED: citation 'shypula2025evaluating' at line 1014 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s)",
+            "MED: citation 'zhang2025noveltybench' at line 1014 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s)",
+            "MED: citation 'cohan2019structural' at line 1086 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) t",
+            "MED: citation 'sheng2024hybridflow' at line 1181 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) t",
+            "MED: citation 'olmo2025olmo3' at line 1251 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (",
+            "MED: citation 'zheng2023judging' at line 1271 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tota"
+          ],
+          "n": 19,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "iclr2025_conference.tex",
+      "paper_id": "2610.22324",
+      "status": "latex",
+      "tex_chars": 213269
+    },
+    {
+      "bib_chars": 45572,
+      "categories": {
+        "C1": {
+          "messages": [
+            "No abstract environment found."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "6 cite key(s) in main.tex missing from refs.bib: ['he2026vitabench', 'ibrahim2026multiturn', 'naous2026flipping', 'pombal2026selfpreference', 'who_mental_health']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'who_mental_health' at line 817 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) tota",
+            "MED: citation 'ICLR2026_99946cb6' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) tota",
+            "MED: citation 'arora2025healthbench' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) t",
+            "MED: citation 'lai2023psy' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (thre",
+            "MED: citation 'malik2026mentalhealthbench' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cit",
+            "MED: citation 'na2024cbt' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (thres",
+            "MED: citation 'wang2025can' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (thr",
+            "MED: citation 'xu2025mentalchat16k' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) to",
+            "MED: citation 'zhang-etal-2025-cbt' at line 823 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) to",
+            "MED: citation 'qiu2026psyclientclientsimulationconversational' at line 844 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words",
+            "MED: citation 'wang-etal-2024-patient' at line 844 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s)",
+            "MED: citation 'wu2026llm' at line 844 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (thres",
+            "MED: citation 'BENTLEY2026' at line 853 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (thr",
+            "MED: citation 'Weilnhammer2026' at line 853 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total ",
+            "MED: citation 'lee-etal-2024-cactus' at line 853 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) t",
+            "MED: citation 'pombal2025mindevalbenchmarkinglanguagemodels' at line 853 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words).",
+            "MED: citation 'akyurek2026prbench' at line 861 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) tot",
+            "MED: citation 'goel2025training' at line 861 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total",
+            "MED: citation 'he2026advancedif' at line 861 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total",
+            "MED: citation 'shi2026plawbench' at line 861 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total",
+            "MED: citation 'ye2024flask' at line 861 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (thr",
+            "MED: citation 'zheng2023judging' at line 861 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total",
+            "MED: citation 'anthropic2026opus55' at line 945 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) to",
+            "MED: citation 'deepseek2026v41' at line 945 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total ",
+            "MED: citation 'openai2026gpt61' at line 945 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total ",
+            "MED: citation 'openai2026gpt6astra' at line 945 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) to",
+            "MED: citation 'tencent2026hy4' at line 945 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (",
+            "MED: citation 'John1999' at line 1071 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) total (thres",
+            "MED: citation 'nvidia/Nemotron-Personas-USA' at line 1071 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial ",
+            "MED: citation 'beck1979cognitive' at line 1081 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) tot",
+            "MED: citation 'hoang2026psibenchclinicallygroundedinterpretable' at line 1114 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 wo",
+            "MED: citation 'louie-etal-2024-roleplay' at line 1114 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite",
+            "MED: citation 'ekman1992argument' at line 1126 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 35 ceremonial cite(s) tot"
+          ],
+          "n": 33,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:compaction-prompt is defined but never referenced in the body text (no \\ref{fig:compaction-prompt} or \\autoref{fig:compaction-prompt}). Reviewer \u00a75 #9."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": false,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22314",
+      "status": "latex",
+      "tex_chars": 445428
+    },
+    {
+      "bib_chars": 18593,
+      "categories": {
+        "C1": {
+          "messages": [
+            "No abstract environment found."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no hardware specs reported (no \"GPU\", \"RTX\", \"A100\", or \"T4\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 3,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "48 cite key(s) in main.tex missing from refs.bib: ['agarwal2026origami', 'bao2024autobenchv', 'fu2025livevqa', 'gao2025biaslens', 'hu2025remindrag']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"yield\" appears 4x in main.tex (e.g., line 92). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'khan2024text2cad' at line 115 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total",
+            "MED: citation 'shridhar2021alfworld' at line 115 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) t",
+            "MED: citation 'mirzaee2021spartqa' at line 179 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) tot",
+            "MED: citation 'mirzaee2022transfer' at line 180 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) to",
+            "MED: citation 'kaesberg2025sparc' at line 185 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) tota",
+            "MED: citation 'wang2024spatialeval' at line 186 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) to",
+            "MED: citation 'gao2026cubebench' at line 187 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total",
+            "MED: citation 'gao2026spatialworld' at line 187 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) to",
+            "MED: citation 'li2026jigshape' at line 188 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (",
+            "MED: citation 'agarwal2026origami' at line 189 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) tot",
+            "MED: citation 'vishwakarma2025snorkelspatial' at line 191 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial ",
+            "MED: citation 'chapra2026complexity' at line 208 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) t",
+            "MED: citation 'walker2026chess' at line 210 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total ",
+            "MED: citation 'li2026figedit' at line 803 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (t",
+            "MED: citation 'mayer2025ivispar' at line 833 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total",
+            "MED: citation 'weston2015babi' at line 847 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (",
+            "MED: citation 'bosselut2018process' at line 855 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) to",
+            "MED: citation 'storks2021trip' at line 860 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (",
+            "MED: citation 'kim2023entity' at line 866 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (t",
+            "MED: citation 'li2021implicit' at line 870 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (",
+            "MED: citation 'xu2025socialmaze' at line 876 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total",
+            "MED: citation 'li2025personaconvbench' at line 878 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s)",
+            "MED: citation 'xu2026hyperskill' at line 886 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total",
+            "MED: citation 'dziri2023faith' at line 947 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (",
+            "MED: citation 'nye2021scratchpads' at line 954 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) tot",
+            "MED: citation 'mitchell2025abstract' at line 960 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) t",
+            "MED: citation 'li2025causal' at line 972 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (th",
+            "MED: citation 'xu2026algoworlds' at line 982 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total",
+            "MED: citation 'song2025quite' at line 984 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (t",
+            "MED: citation 'wu2026terminaltraj' at line 986 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) tot",
+            "MED: citation 'xu2026jevout' at line 1011 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (t",
+            "MED: citation 'bao2024autobenchv' at line 1023 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) tot",
+            "MED: citation 'yang2025adllm' at line 1025 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) total (",
+            "MED: citation 'zhou2026checkability' at line 1041 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 36 ceremonial cite(s) "
+          ],
+          "n": 34,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:dimensions-full is defined but never referenced in the body text (no \\ref{fig:dimensions-full} or \\autoref{fig:dimensions-full}). Reviewer \u00a75 #9.",
+            "MED: figure fig:workloads-full is defined but never referenced in the body text (no \\ref{fig:workloads-full} or \\autoref{fig:workloads-full}). Reviewer \u00a75 #9.",
+            "MED: figure fig:workloads-full-2 is defined but never referenced in the body text (no \\ref{fig:workloads-full-2} or \\autoref{fig:workloads-full-2}). Reviewer \u00a75 #9.",
+            "MED: figure fig:workloads-full-3 is defined but never referenced in the body text (no \\ref{fig:workloads-full-3} or \\autoref{fig:workloads-full-3}). Reviewer \u00a75 #9.",
+            "MED: figure fig:workloads-full-4 is defined but never referenced in the body text (no \\ref{fig:workloads-full-4} or \\autoref{fig:workloads-full-4}). Reviewer \u00a75 #9."
+          ],
+          "n": 5,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": false,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22312",
+      "status": "latex",
+      "tex_chars": 126796
+    },
+    {
+      "bib_chars": 0,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "24 cite key(s) in main.tex missing from refs.bib: ['10.1145/3618260.3649777', '10.1162/coli_a_00492', '3491440.3491977', '3495724.3497422', 'DBLP:conf/icml/PaccanaroH00']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation '3491440.3491977' at line 1262 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(s) total",
+            "MED: citation '3495724.3497422' at line 1262 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(s) total",
+            "MED: citation 'DBLP:conf/icml/PaccanaroH00' at line 1303 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial c",
+            "MED: citation '10.1145/3618260.3649777' at line 1324 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(",
+            "MED: citation 'DBLP:journals/corr/abs-2309-05922' at line 1324 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremo",
+            "MED: citation 'gekhman-etal-2024-fine' at line 1339 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(s",
+            "MED: citation 'hernandez2024linearity' at line 1599 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(s",
+            "MED: citation 'soldaini2024dolma' at line 1831 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(s) tot",
+            "MED: citation 'liu2024infinigram' at line 1834 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(s) tot",
+            "MED: citation 'wiland2024bear' at line 2714 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 12 ceremonial cite(s) total "
+          ],
+          "n": 10,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "HIGH: figure (line 964) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 1568) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 1898) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 2054) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 2352) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 2364) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 2373) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "MED: figure fig:predictor-label-set is defined but never referenced in the body text (no \\ref{fig:predictor-label-set} or \\autoref{fig:predictor-label-set}). Reviewer \u00a75 #9.",
+            "MED: figure fig:relation-heatmap is defined but never referenced in the body text (no \\ref{fig:relation-heatmap} or \\autoref{fig:relation-heatmap}). Reviewer \u00a75 #9."
+          ],
+          "n": 9,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "LinTransfer_arXiv.tex",
+      "paper_id": "2610.22300",
+      "status": "latex",
+      "tex_chars": 134525
+    },
+    {
+      "bib_chars": 30563,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 3,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"reveal\" appears 23x in main.tex (e.g., line 1550). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'kim2024mdagents' at line 275 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total ",
+            "MED: citation 'sun2026mcc' at line 275 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (thre",
+            "MED: citation 'cabral2024clinical' at line 279 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) tot",
+            "MED: citation 'goh2024diagnostic' at line 279 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) tota",
+            "MED: citation 'kopanichuk2026beyond' at line 299 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) t",
+            "MED: citation 'soukup2020mdt' at line 299 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (t",
+            "MED: citation 'shi2026physicianjudge' at line 336 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) ",
+            "MED: citation 'link2024nejmmedqa' at line 483 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) tota",
+            "MED: citation 'tang2024medagents' at line 501 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) tota",
+            "MED: citation 'openrouter2026models' at line 513 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) t",
+            "MED: citation 'deepseek2026v4pro' at line 515 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) tota",
+            "MED: citation 'kimi2026k26' at line 515 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (thr",
+            "MED: citation 'minimax2026m3' at line 515 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (t",
+            "MED: citation 'asgari2025framework' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) to",
+            "MED: citation 'basta2017mdt' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (th",
+            "MED: citation 'brodeur2026performance' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s)",
+            "MED: citation 'kocaman2025clever' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) tota",
+            "MED: citation 'koco2021mdt' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (thr",
+            "MED: citation 'lamb2011mdt' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (thr",
+            "MED: citation 'mccoy2025assessment' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) to",
+            "MED: citation 'savage2025uncertainty' at line 532 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) ",
+            "MED: citation 'khrulkov2025gigaevo' at line 595 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) to",
+            "MED: citation 'lehman2022evolution' at line 595 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) to",
+            "MED: citation 'lim2024llmqd' at line 595 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total (th",
+            "MED: citation 'mouret2015mapelites' at line 595 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) to",
+            "MED: citation 'gneiting2011pointforecasts' at line 614 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cit",
+            "MED: citation 'willmott2005mae' at line 614 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 29 ceremonial cite(s) total "
+          ],
+          "n": 27,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:consilium-token-usage is defined but never referenced in the body text (no \\ref{fig:consilium-token-usage} or \\autoref{fig:consilium-token-usage}). Reviewer \u00a75 #9."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main_-_publication.tex",
+      "paper_id": "2610.22298",
+      "status": "latex",
+      "tex_chars": 280137
+    },
+    {
+      "bib_chars": 0,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "57 cite key(s) in main.tex missing from refs.bib: ['arriola2025block', 'austin2021structured', 'bavarian2022efficient', 'brown2020language', 'cheng2023batch']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"reveal\" appears 27x in main.tex (e.g., line 131). Reviewer \u00a75 #5.",
+            "Blacklist word \"yield\" appears 6x in main.tex (e.g., line 353). Reviewer \u00a75 #5."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'zhao2021calibrate' at line 171 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tota",
+            "MED: citation 'kim2026dapd' at line 178 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (thr",
+            "MED: citation 'xu2026predict' at line 182 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (t",
+            "MED: citation 'zhang2025flexible' at line 182 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tota",
+            "MED: citation 'gulwani2011automating' at line 215 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) ",
+            "MED: citation 'gupta2023grace' at line 215 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (",
+            "MED: citation 'meng2011systematic' at line 215 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tot",
+            "MED: citation 'pang2023guideline' at line 215 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tota",
+            "MED: citation 'shin2022fewshot' at line 215 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total ",
+            "MED: citation 'wei2024coeditor' at line 215 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total ",
+            "MED: citation 'cheng2023batch' at line 216 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (",
+            "MED: citation 'lin2024batchprompt' at line 216 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tot",
+            "MED: citation 'austin2021structured' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) t",
+            "MED: citation 'sahoo2024simple' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total ",
+            "MED: citation 'shi2024simplified' at line 228 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tota",
+            "MED: citation 'fu2026nemotron' at line 229 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (",
+            "MED: citation 'nie2025large' at line 229 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (th",
+            "MED: citation 'sahoo2026unlocking' at line 229 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tot",
+            "MED: citation 'xue2026dqwen' at line 229 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (th",
+            "MED: citation 'ye2025dream' at line 229 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (thr",
+            "MED: citation 'ding2026beyond' at line 230 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (",
+            "MED: citation 'devlin2019bert' at line 287 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (",
+            "MED: citation 'fruytier2026pig' at line 290 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total ",
+            "MED: citation 'wu2025fastdllm' at line 290 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (",
+            "MED: citation 'ou2025your' at line 366 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (thre",
+            "MED: citation 'xu2026swerefactor' at line 746 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) tota",
+            "MED: citation 'zhu2026llada' at line 749 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (th",
+            "MED: citation 'socher2013recursive' at line 1108 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) t",
+            "MED: citation 'wang2018glue' at line 1108 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total (t",
+            "MED: citation 'liu2012conversational' at line 1111 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s)",
+            "MED: citation 'yang2025qwen3' at line 1127 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 33 ceremonial cite(s) total ("
+          ],
+          "n": 31,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "HIGH: figure (line 41) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 549) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 599) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 627) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 660) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 1290) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 1348) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 1384) has no \\caption{...}. Reviewer \u00a75 #9."
+          ],
+          "n": 8,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main_arxiv.tex",
+      "paper_id": "2610.22294",
+      "status": "latex",
+      "tex_chars": 96651
+    },
+    {
+      "bib_chars": 22660,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "MED: availability statement uses future tense (\"we will release\" or \"upon acceptance\"). The release is conditional, not a real release. Reviewer \u00a75 #10.",
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 3,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'yao2024taubench' at line 58 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) total (",
+            "MED: citation 'goldberg2006constructions' at line 73 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(",
+            "MED: citation 'shao2010bushi' at line 73 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) total (th",
+            "MED: citation 'zuo2025opposition' at line 73 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) total",
+            "MED: citation 'hu-etal-2023-fine' at line 92 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) total",
+            "MED: citation 'ruis2023goldilocks' at line 92 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) tota",
+            "MED: citation 'sravanthi-etal-2024-pub' at line 92 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s)",
+            "MED: citation 'weissweiler-etal-2022-better' at line 92 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial ci",
+            "MED: citation 'kirk2024understanding' at line 100 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) ",
+            "MED: citation 'lambert2024tulu' at line 100 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) total ",
+            "MED: citation 'olmo2025furious' at line 100 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) total ",
+            "MED: citation 'roberts2012information' at line 115 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s)",
+            "MED: citation 'rooth1992focus' at line 115 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) total (",
+            "MED: citation 'stalnaker2002common' at line 115 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial cite(s) to",
+            "MED: citation 'toosarvandani2013corrective' at line 115 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 17 ceremonial ci"
+          ],
+          "n": 15,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:full-stages is defined but never referenced in the body text (no \\ref{fig:full-stages} or \\autoref{fig:full-stages}). Reviewer \u00a75 #9."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22249",
+      "status": "latex",
+      "tex_chars": 60975
+    },
+    {
+      "bib_chars": 0,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no hardware specs reported (no \"GPU\", \"RTX\", \"A100\", or \"T4\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 4,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "34 cite key(s) in main.tex missing from refs.bib: ['amabench2026', 'ami_corpus', 'anatomy2026', 'anonymous2026intrinsic', 'ariadnemem2026']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"paradigm\" appears 7x in main.tex (e.g., line 42). Reviewer \u00a75 #5.",
+            "Blacklist word \"reveal\" appears 10x in main.tex (e.g., line 42). Reviewer \u00a75 #5."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'latimer2025hindsight' at line 47 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) to",
+            "MED: citation 'packer2023memgpt' at line 47 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total ",
+            "MED: citation 'rasmussen2025zep' at line 47 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total ",
+            "MED: citation 'amabench2026' at line 75 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (thr",
+            "MED: citation 'longmemeval2026' at line 75 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (",
+            "MED: citation 'memoryagentbench2026' at line 75 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) to",
+            "MED: citation 'anatomy2026' at line 80 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (thre",
+            "MED: citation 'du2026memory' at line 80 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (thr",
+            "MED: citation 'hu2025memoryage' at line 80 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (",
+            "MED: citation 'huang2026rethinking' at line 80 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) tot",
+            "MED: citation 'luo2026storage' at line 80 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (t",
+            "MED: citation 'memoryops2025' at line 80 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (th",
+            "MED: citation 'magic2025' at line 83 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (thresh",
+            "MED: citation 'anonymous2026intrinsic' at line 89 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) ",
+            "MED: citation 'baroni2014predict' at line 89 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total",
+            "MED: citation 'schnabel2015evaluation' at line 89 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) ",
+            "MED: citation 'titanembedv2' at line 876 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 19 ceremonial cite(s) total (th"
+          ],
+          "n": 17,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "paper_arxiv.tex",
+      "paper_id": "2610.22209",
+      "status": "latex",
+      "tex_chars": 76607
+    },
+    {
+      "bib_chars": 4132,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'memoryos' at line 87 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thresho",
+            "MED: citation 'memos' at line 87 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (threshold:",
+            "MED: citation 'memagent' at line 93 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thresho",
+            "MED: citation 'memcoe' at line 93 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (threshold",
+            "MED: citation 'memoryr1' at line 93 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thresho",
+            "MED: citation 'locomo' at line 113 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (threshol",
+            "MED: citation 'longmemeval' at line 113 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thr",
+            "MED: citation 'codedelegator' at line 129 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (t",
+            "MED: citation 'lightman' at line 156 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thresh",
+            "MED: citation 'minillm' at line 225 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thresho",
+            "MED: citation 'he2026' at line 256 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (threshol",
+            "MED: citation 'grpo' at line 419 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (threshold:"
+          ],
+          "n": 12,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:data is defined but never referenced in the body text (no \\ref{fig:data} or \\autoref{fig:data}). Reviewer \u00a75 #9.",
+            "MED: figure fig:results is defined but never referenced in the body text (no \\ref{fig:results} or \\autoref{fig:results}). Reviewer \u00a75 #9."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22196",
+      "status": "latex",
+      "tex_chars": 52940
+    },
+    {
+      "bib_chars": 34097,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"yield\" appears 4x in main.tex (e.g., line 107). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'lawless1986comparison' at line 107 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) ",
+            "MED: citation 'schwarz1991rating' at line 111 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) tota",
+            "MED: citation 'tourangeau2007color' at line 111 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) to",
+            "MED: citation 'Pandita2024ThreeRoots' at line 119 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) ",
+            "MED: citation 'evans2002emotion' at line 119 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total",
+            "MED: citation 'sheth2022defining' at line 119 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) tota",
+            "MED: citation 'FeldmanJohnston2014Ideology' at line 463 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial ci",
+            "MED: citation 'TreierHillygus2009Ideology' at line 463 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cit",
+            "MED: citation 'Volkens2021ManifestoCodebook' at line 463 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial c",
+            "MED: citation 'PangLee2008OpinionMining' at line 466 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(",
+            "MED: citation 'jigsaw-unintended-bias-in-toxicity-classification' at line 669 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 wo"
+          ],
+          "n": 11,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "HIGH: figure (line 311) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "HIGH: figure (line 325) has no \\caption{...}. Reviewer \u00a75 #9.",
+            "MED: figure fig:factor_effects is defined but never referenced in the body text (no \\ref{fig:factor_effects} or \\autoref{fig:factor_effects}). Reviewer \u00a75 #9."
+          ],
+          "n": 3,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22187",
+      "status": "latex",
+      "tex_chars": 72880
+    },
+    {
+      "bib_chars": 17908,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "HIGH: paper has no code/data availability statement (no \\section{...Availability...}, no GitHub/GitLab/Zenodo URL, and no \"code is available\" phrase). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 3,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"yield\" appears 10x in main.tex (e.g., line 602). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'zhang2026agentic' at line 602 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total",
+            "MED: citation 'zhou2026externalization' at line 602 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s",
+            "MED: citation 'song2025llm' at line 604 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thr",
+            "MED: citation 'team2026kimi' at line 604 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (th",
+            "MED: citation 'xu2026self' at line 604 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thre",
+            "MED: citation 'dressage' at line 613 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thresh",
+            "MED: citation 'xu2026polar' at line 613 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thr",
+            "MED: citation 'qwen3.5' at line 617 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (thresho",
+            "MED: citation 'wei2025browsecompsimplechallengingbenchmark' at line 617 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). ",
+            "MED: citation 'li2026compactionrlreinforcementlearningcontext' at line 961 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words",
+            "MED: citation 'hou2026singlerolloutasynchronousoptimizationagentic' at line 964 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 ",
+            "MED: citation 'yao2022react' at line 974 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 14 ceremonial cite(s) total (th"
+          ],
+          "n": 12,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:intro is defined but never referenced in the body text (no \\ref{fig:intro} or \\autoref{fig:intro}). Reviewer \u00a75 #9.",
+            "MED: figure fig:teaser is defined but never referenced in the body text (no \\ref{fig:teaser} or \\autoref{fig:teaser}). Reviewer \u00a75 #9."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22174",
+      "status": "latex",
+      "tex_chars": 97562
+    },
+    {
+      "bib_chars": 31902,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'geva2022concepts' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s) total",
+            "MED: citation 'halawi2023overthinking' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s)",
+            "MED: citation 'jastrzebski2017residual' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s",
+            "MED: citation 'katz2024backward' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s) total",
+            "MED: citation 'lad2024remarkable' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s) tota",
+            "MED: citation 'nostalgebraist2020logitlens' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial ci",
+            "MED: citation 'wendler2024llamas' at line 638 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s) tota",
+            "MED: citation 'gu2024vocabulary' at line 677 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s) total",
+            "MED: citation 'guo2017calibration' at line 1051 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 11 ceremonial cite(s) to"
+          ],
+          "n": 9,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22169",
+      "status": "latex",
+      "tex_chars": 83230
+    },
+    {
+      "bib_chars": 0,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "HIGH: paper has no code/data availability statement (no \\section{...Availability...}, no GitHub/GitLab/Zenodo URL, and no \"code is available\" phrase). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "38 cite key(s) in main.tex missing from refs.bib: ['aggarwal2025l1controllinglongreasoning', 'artificialanalysis2026models', 'artificialanalysis2026smallmodels', 'chang-etal-2020-convokit', 'chen2022c"
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'aggarwal2025l1controllinglongreasoning' at line 171 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 4 cer",
+            "MED: citation 'wilcoxon1945individual' at line 478 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 4 ceremonial cite(s) "
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "HIGH: figure (line 182) has no \\caption{...}. Reviewer \u00a75 #9."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "acl.tex",
+      "paper_id": "2610.22167",
+      "status": "latex",
+      "tex_chars": 133104
+    },
+    {
+      "bib_chars": 15774,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "1 cite key(s) in main.tex missing from refs.bib: ['#1']"
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"yield\" appears 9x in main.tex (e.g., line 643). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'shao2024deepseekmath' at line 622 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) t",
+            "MED: citation 'madaan2023self' at line 623 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (",
+            "MED: citation 'yuksekgonul2025textgrad' at line 623 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s",
+            "MED: citation 'zhang2026agentic' at line 623 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total",
+            "MED: citation 'Yu2025DAPOAO' at line 658 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (th",
+            "MED: citation 'agarwal2024policy' at line 658 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) tota",
+            "MED: citation 'guo2025deepseek' at line 658 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total ",
+            "MED: citation 'schulman2017proximal' at line 658 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) t",
+            "MED: citation 'snell2022learning' at line 658 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) tota",
+            "MED: citation 'Turner2023SteeringLM' at line 669 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) t",
+            "MED: citation 'li2023contrastive' at line 669 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) tota",
+            "MED: citation 'he2025context' at line 670 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (t",
+            "MED: citation 'hu2026distribution' at line 670 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) tot",
+            "MED: citation 'li2026just' at line 670 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (thre",
+            "MED: citation 'xia2026sda' at line 670 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cite(s) total (thre",
+            "MED: citation 'deepseek2025r10528distill' at line 1646 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 18 ceremonial cit"
+          ],
+          "n": 16,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:app_aime2025 is defined but never referenced in the body text (no \\ref{fig:app_aime2025} or \\autoref{fig:app_aime2025}). Reviewer \u00a75 #9.",
+            "MED: figure fig:app_gpqa is defined but never referenced in the body text (no \\ref{fig:app_gpqa} or \\autoref{fig:app_gpqa}). Reviewer \u00a75 #9.",
+            "MED: figure fig:app_math_500 is defined but never referenced in the body text (no \\ref{fig:app_math_500} or \\autoref{fig:app_math_500}). Reviewer \u00a75 #9.",
+            "MED: figure fig:app_mmlu is defined but never referenced in the body text (no \\ref{fig:app_mmlu} or \\autoref{fig:app_mmlu}). Reviewer \u00a75 #9."
+          ],
+          "n": 4,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "2026_conference.tex",
+      "paper_id": "2610.22160",
+      "status": "latex",
+      "tex_chars": 140454
+    },
+    {
+      "bib_chars": 33527,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "1 cite key(s) in main.tex missing from refs.bib: ['lee2024trustsql']"
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"reveal\" appears 5x in main.tex (e.g., line 86). Reviewer \u00a75 #5.",
+            "Blacklist word \"yield\" appears 3x in main.tex (e.g., line 812). Reviewer \u00a75 #5."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C7": {
+          "outcome": "clean"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:case_flawed_ambiguity_claude is defined but never referenced in the body text (no \\ref{fig:case_flawed_ambiguity_claude} or \\autoref{fig:case_flawed_ambiguity_claude}). Reviewer \u00a75 #9.",
+            "MED: figure fig:case_flawed_ambiguity_deepseek is defined but never referenced in the body text (no \\ref{fig:case_flawed_ambiguity_deepseek} or \\autoref{fig:case_flawed_ambiguity_deepseek}). Reviewer ",
+            "MED: figure fig:case_flawed_contradiction is defined but never referenced in the body text (no \\ref{fig:case_flawed_contradiction} or \\autoref{fig:case_flawed_contradiction}). Reviewer \u00a75 #9.",
+            "MED: figure fig:case_flawed_contradiction_gpt is defined but never referenced in the body text (no \\ref{fig:case_flawed_contradiction_gpt} or \\autoref{fig:case_flawed_contradiction_gpt}). Reviewer \u00a75 ",
+            "MED: figure fig:case_flawed_contradiction_sonnet is defined but never referenced in the body text (no \\ref{fig:case_flawed_contradiction_sonnet} or \\autoref{fig:case_flawed_contradiction_sonnet}). Rev",
+            "MED: figure fig:case_flawed_inexpressible_deepseek is defined but never referenced in the body text (no \\ref{fig:case_flawed_inexpressible_deepseek} or \\autoref{fig:case_flawed_inexpressible_deepseek}",
+            "MED: figure fig:case_flawed_inexpressible_llama is defined but never referenced in the body text (no \\ref{fig:case_flawed_inexpressible_llama} or \\autoref{fig:case_flawed_inexpressible_llama}). Review",
+            "MED: figure fig:case_flawed_semantic_gap is defined but never referenced in the body text (no \\ref{fig:case_flawed_semantic_gap} or \\autoref{fig:case_flawed_semantic_gap}). Reviewer \u00a75 #9.",
+            "MED: figure fig:case_flawed_semantic_gap_gpt is defined but never referenced in the body text (no \\ref{fig:case_flawed_semantic_gap_gpt} or \\autoref{fig:case_flawed_semantic_gap_gpt}). Reviewer \u00a75 #9.",
+            "MED: figure fig:case_flawed_semantic_gap_sonnet is defined but never referenced in the body text (no \\ref{fig:case_flawed_semantic_gap_sonnet} or \\autoref{fig:case_flawed_semantic_gap_sonnet}). Review",
+            "MED: figure fig:case_original_base_claude is defined but never referenced in the body text (no \\ref{fig:case_original_base_claude} or \\autoref{fig:case_original_base_claude}). Reviewer \u00a75 #9.",
+            "MED: figure fig:case_original_base_doubao is defined but never referenced in the body text (no \\ref{fig:case_original_base_doubao} or \\autoref{fig:case_original_base_doubao}). Reviewer \u00a75 #9.",
+            "MED: figure fig:case_original_explicit_deepseek is defined but never referenced in the body text (no \\ref{fig:case_original_explicit_deepseek} or \\autoref{fig:case_original_explicit_deepseek}). Review",
+            "MED: figure fig:case_original_explicit_doubao is defined but never referenced in the body text (no \\ref{fig:case_original_explicit_doubao} or \\autoref{fig:case_original_explicit_doubao}). Reviewer \u00a75 ",
+            "MED: figure fig:case_original_implicit is defined but never referenced in the body text (no \\ref{fig:case_original_implicit} or \\autoref{fig:case_original_implicit}). Reviewer \u00a75 #9.",
+            "MED: figure fig:case_original_implicit_deepseek is defined but never referenced in the body text (no \\ref{fig:case_original_implicit_deepseek} or \\autoref{fig:case_original_implicit_deepseek}). Review",
+            "MED: figure fig:case_original_implicit_llama is defined but never referenced in the body text (no \\ref{fig:case_original_implicit_llama} or \\autoref{fig:case_original_implicit_llama}). Reviewer \u00a75 #9."
+          ],
+          "n": 17,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "acl_latex.tex",
+      "paper_id": "2610.22158",
+      "status": "latex",
+      "tex_chars": 114564
+    },
+    {
+      "bib_chars": 15359,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"reveal\" appears 4x in main.tex (e.g., line 338). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "outcome": "clean"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:appendix-shapes is defined but never referenced in the body text (no \\ref{fig:appendix-shapes} or \\autoref{fig:appendix-shapes}). Reviewer \u00a75 #9.",
+            "MED: figure fig:appendix-snake is defined but never referenced in the body text (no \\ref{fig:appendix-snake} or \\autoref{fig:appendix-snake}). Reviewer \u00a75 #9.",
+            "MED: figure fig:appendix-vizdoom is defined but never referenced in the body text (no \\ref{fig:appendix-vizdoom} or \\autoref{fig:appendix-vizdoom}). Reviewer \u00a75 #9.",
+            "MED: figure fig:method is defined but never referenced in the body text (no \\ref{fig:method} or \\autoref{fig:method}). Reviewer \u00a75 #9.",
+            "MED: figure fig:visual-game-control is defined but never referenced in the body text (no \\ref{fig:visual-game-control} or \\autoref{fig:visual-game-control}). Reviewer \u00a75 #9."
+          ],
+          "n": 5,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22131",
+      "status": "latex",
+      "tex_chars": 66115
+    },
+    {
+      "bib_chars": 27437,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "18 cite key(s) in main.tex missing from refs.bib: ['bandarkar2026multilingual', 'bussmann2024batchtopk', 'cao2024personalized', 'fayyaz2026steering', 'gurnee2023finding']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"yield\" appears 4x in main.tex (e.g., line 130). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'huben2024sparse' at line 147 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) total ",
+            "MED: citation 'minder2025overcoming' at line 147 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) t",
+            "MED: citation 'muennighoff2025olmoe' at line 174 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) t",
+            "MED: citation 'shazeer2017' at line 174 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) total (thr",
+            "MED: citation 'bussmann2024batchtopk' at line 192 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) ",
+            "MED: citation 'bandarkar2026multilingual' at line 283 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite",
+            "MED: citation 'li2026expert' at line 283 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) total (th",
+            "MED: citation 'lee2024aligning' at line 319 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) total "
+          ],
+          "n": 8,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:kl_patching is defined but never referenced in the body text (no \\ref{fig:kl_patching} or \\autoref{fig:kl_patching}). Reviewer \u00a75 #9.",
+            "MED: figure fig:latent_norm_dist_mixtral is defined but never referenced in the body text (no \\ref{fig:latent_norm_dist_mixtral} or \\autoref{fig:latent_norm_dist_mixtral}). Reviewer \u00a75 #9.",
+            "MED: figure fig:latent_norm_dist_olmoe is defined but never referenced in the body text (no \\ref{fig:latent_norm_dist_olmoe} or \\autoref{fig:latent_norm_dist_olmoe}). Reviewer \u00a75 #9.",
+            "MED: figure fig:latent_norm_dist_qwen is defined but never referenced in the body text (no \\ref{fig:latent_norm_dist_qwen} or \\autoref{fig:latent_norm_dist_qwen}). Reviewer \u00a75 #9.",
+            "MED: figure fig:latent_to_expert_mapping_hyperparameter_mixtral is defined but never referenced in the body text (no \\ref{fig:latent_to_expert_mapping_hyperparameter_mixtral} or \\autoref{fig:latent_to",
+            "MED: figure fig:latent_to_expert_mapping_hyperparameter_omloe is defined but never referenced in the body text (no \\ref{fig:latent_to_expert_mapping_hyperparameter_omloe} or \\autoref{fig:latent_to_exp",
+            "MED: figure fig:layerwise_routing_jsd_entropy_mixtral is defined but never referenced in the body text (no \\ref{fig:layerwise_routing_jsd_entropy_mixtral} or \\autoref{fig:layerwise_routing_jsd_entropy",
+            "MED: figure fig:layerwise_routing_jsd_entropy_omloe is defined but never referenced in the body text (no \\ref{fig:layerwise_routing_jsd_entropy_omloe} or \\autoref{fig:layerwise_routing_jsd_entropy_oml",
+            "MED: figure fig:layerwise_routing_jsd_entropy_qwen3 is defined but never referenced in the body text (no \\ref{fig:layerwise_routing_jsd_entropy_qwen3} or \\autoref{fig:layerwise_routing_jsd_entropy_qwe"
+          ],
+          "n": 9,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22127",
+      "status": "latex",
+      "tex_chars": 83739
+    },
+    {
+      "bib_chars": 14111,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"paradigm\" appears 3x in main.tex (e.g., line 215). Reviewer \u00a75 #5.",
+            "Blacklist word \"reveal\" appears 3x in main.tex (e.g., line 85). Reviewer \u00a75 #5."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'mercadocampos2023design' at line 81 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s)",
+            "MED: citation 'hu2022lora' at line 89 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total (thres",
+            "MED: citation 'bird2020decolonising' at line 113 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) t",
+            "MED: citation 'beesley2003finite' at line 116 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) tota",
+            "MED: citation 'li2020syntax' at line 116 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total (th",
+            "MED: citation 'sennrich2016linguistic' at line 116 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s)",
+            "MED: citation 'sennrich2016' at line 194 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total (th",
+            "MED: citation 'linden2011hfst' at line 217 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total (",
+            "MED: citation 'xue2021' at line 367 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total (thresho",
+            "MED: citation 'he2022unified' at line 382 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total (t",
+            "MED: citation 'klein2017opennmt' at line 565 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 13 ceremonial cite(s) total"
+          ],
+          "n": 11,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22110",
+      "status": "latex",
+      "tex_chars": 63647
+    },
+    {
+      "bib_chars": 7991,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 3,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'slagle2024spacebyte' at line 145 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) to",
+            "MED: citation 'vera2026easy' at line 156 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) total (th",
+            "MED: citation 'ziv1977universal' at line 167 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) total",
+            "MED: citation 'zheng2026scratchpad' at line 213 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) to",
+            "MED: citation 'kallini2026fastblt' at line 214 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) tot",
+            "MED: citation 'liu2026entropymoe' at line 215 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) tota",
+            "MED: citation 'deletang2024language' at line 233 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) t",
+            "MED: citation 'kit1999unsupervised' at line 235 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 10 ceremonial cite(s) to"
+          ],
+          "n": 8,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22100",
+      "status": "latex",
+      "tex_chars": 37010
+    },
+    {
+      "bib_chars": 0,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "38 cite key(s) in main.tex missing from refs.bib: ['Allal2025SmolLM2WS', 'Cobbe2021TrainingVT', 'Cohen1960', 'DBLP:journals/corr/abs-2112-10668', 'Gwet2008']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"yield\" appears 4x in main.tex (e.g., line 49). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'lambert2024tulu' at line 111 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 9 ceremonial cite(s) total (",
+            "MED: citation 'longpre2023flan' at line 111 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 9 ceremonial cite(s) total (",
+            "MED: citation 'singh2024aya' at line 112 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 9 ceremonial cite(s) total (thr",
+            "MED: citation 'kim2023soda' at line 142 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 9 ceremonial cite(s) total (thre",
+            "MED: citation 'wang2023self' at line 148 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 9 ceremonial cite(s) total (thr",
+            "MED: citation 'dua2019drop' at line 320 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 9 ceremonial cite(s) total (thre",
+            "MED: citation 'zhou2023ifeval' at line 320 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 9 ceremonial cite(s) total (t"
+          ],
+          "n": 7,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22086",
+      "status": "latex",
+      "tex_chars": 57124
+    },
+    {
+      "bib_chars": 30119,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "outcome": "clean"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "outcome": "clean"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"yield\" appears 4x in main.tex (e.g., line 418). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'bolmonature' at line 402 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (thr",
+            "MED: citation 'nllb' at line 418 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshold:",
+            "MED: citation 'uax29' at line 509 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshold",
+            "MED: citation 'fineweb2' at line 634 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (thresh",
+            "MED: citation 'olmo2' at line 768 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshold",
+            "MED: citation 'olmo3' at line 769 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshold",
+            "MED: citation 'cao2021marginal' at line 1012 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total",
+            "MED: citation 'chirkova2023marginalize' at line 1012 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(",
+            "MED: citation 'vieira2025canonical' at line 1012 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) t",
+            "MED: citation 'ahia2024magnet' at line 1021 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total ",
+            "MED: citation 'hayase2026bytesampler' at line 1031 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s)",
+            "MED: citation 'phan2025exact' at line 1031 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (",
+            "MED: citation 'vieira2025characters' at line 1031 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) ",
+            "MED: citation 'tokenizersfail2026' at line 1032 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) to",
+            "MED: citation 'tokenpremiums' at line 1033 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (",
+            "MED: citation 'bbpe16' at line 1039 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (thresho",
+            "MED: citation 'bitbpe' at line 1040 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (thresho",
+            "MED: citation 'latom' at line 1040 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshol",
+            "MED: citation 'ube' at line 1041 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshold:",
+            "MED: citation 'hnet' at line 1053 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshold",
+            "MED: citation 'cute' at line 1066 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 23 ceremonial cite(s) total (threshold"
+          ],
+          "n": 21,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "paper.tex",
+      "paper_id": "2610.22071",
+      "status": "latex",
+      "tex_chars": 164972
+    },
+    {
+      "bib_chars": 25672,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "MED: availability statement uses future tense (\"we will release\" or \"upon acceptance\"). The release is conditional, not a real release. Reviewer \u00a75 #10.",
+            "LOW: no hyperparameters reported (no \"learning rate\", \"batch size\", or \"optimizer\" found). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no hardware specs reported (no \"GPU\", \"RTX\", \"A100\", or \"T4\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 5,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "3 cite key(s) in main.tex missing from refs.bib: ['lei2024s3eval', 'li2026scitrek', 'liu2024ringattention']"
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "messages": [
+            "Blacklist word \"reveal\" appears 3x in main.tex (e.g., line 604). Reviewer \u00a75 #5."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'lu2026corpusqa' at line 604 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (",
+            "MED: citation 'glm5_2026' at line 644 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (thres",
+            "MED: citation 'lee2025ethic' at line 659 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (th",
+            "MED: citation 'papke_wooldridge_1996' at line 803 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) ",
+            "MED: citation 'kuratov2024babilong' at line 980 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) to",
+            "MED: citation 'wan2025qwenlong' at line 996 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total ",
+            "MED: citation 'zhang2024bench' at line 1002 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total ",
+            "MED: citation 'tang2024citeeval' at line 1006 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tota",
+            "MED: citation 'an2024eval' at line 1010 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (thr",
+            "MED: citation 'lee2024can' at line 1014 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (thr",
+            "MED: citation 'bai2025longbench' at line 1016 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tota",
+            "MED: citation 'chen2026longbench' at line 1018 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tot",
+            "MED: citation 'zhang2025longcite' at line 1020 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tot",
+            "MED: citation 'wu2024longmemeval' at line 1022 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tot",
+            "MED: citation 'chen2025essential' at line 1024 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tot",
+            "MED: citation 'ling2025longreason' at line 1026 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) to",
+            "MED: citation 'yuan2024lv' at line 1030 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (thr",
+            "MED: citation 'lei2024s3eval' at line 1032 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) total (",
+            "MED: citation 'yang2018hotpotqa' at line 1036 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 21 ceremonial cite(s) tota"
+          ],
+          "n": 19,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "messages": [
+            "MED: figure fig:performance_distribution is defined but never referenced in the body text (no \\ref{fig:performance_distribution} or \\autoref{fig:performance_distribution}). Reviewer \u00a75 #9."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22067",
+      "status": "latex",
+      "tex_chars": 100833
+    },
+    {
+      "bib_chars": 7929,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 2,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "1 cite key(s) in main.tex missing from refs.bib: ['doi:10.1073/pnas.2416228122']"
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'gan2024applicationllmagentsrecruitment' at line 272 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 5 cer",
+            "MED: citation 'deoliveira2025fairnesstestingretrievalaugmentedgeneration' at line 290 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration ",
+            "MED: citation 'reddy2025metamorphictestingfairnessevaluation' at line 290 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words)"
+          ],
+          "n": 3,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22053",
+      "status": "latex",
+      "tex_chars": 27357
+    },
+    {
+      "bib_chars": 0,
+      "categories": {
+        "C1": {
+          "outcome": "clean"
+        },
+        "C10": {
+          "messages": [
+            "HIGH: paper has no code/data availability statement (no \\section{...Availability...}, no GitHub/GitLab/Zenodo URL, and no \"code is available\" phrase). Reviewer \u00a75 #10.",
+            "LOW: no random seed reported (no \"random seed\" or \"torch.manual_seed\" found). Reviewer \u00a75 #10.",
+            "LOW: no hardware specs reported (no \"GPU\", \"RTX\", \"A100\", or \"T4\" found). Reviewer \u00a75 #10.",
+            "LOW: no library version reported (no \"PyTorch 2\", \"TensorFlow 2\", or \"transformers 4\" found). Reviewer \u00a75 #10."
+          ],
+          "n": 4,
+          "outcome": "fired"
+        },
+        "C2": {
+          "messages": [
+            "No Power analysis section declaring Bonferroni k found. Reviewer \u00a73 #4."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C3": {
+          "outcome": "clean"
+        },
+        "C4": {
+          "messages": [
+            "63 cite key(s) in main.tex missing from refs.bib: ['agentfounder', 'aptbench', 'arc', 'beforesolve', 'browsecomp']..."
+          ],
+          "n": 1,
+          "outcome": "fired"
+        },
+        "C5": {
+          "outcome": "clean"
+        },
+        "C6": {
+          "outcome": "clean"
+        },
+        "C7": {
+          "messages": [
+            "MED: citation 'rejuvenation' at line 571 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (th",
+            "MED: citation 'davincidev' at line 587 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thre",
+            "MED: citation 'kimidev' at line 587 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thresho",
+            "MED: citation 'qwen3codernext' at line 587 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (",
+            "MED: citation 'beforesolve' at line 705 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thr",
+            "MED: citation 'nemotron3super' at line 706 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (",
+            "MED: citation 'deepswe' at line 817 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thresho",
+            "MED: citation 'cwm' at line 902 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (threshold: ",
+            "MED: citation 'livecodebench' at line 1058 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (",
+            "MED: citation 'browsecomp' at line 1234 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thr",
+            "MED: citation 'arc' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (threshold:",
+            "MED: citation 'gsm8k' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (threshol",
+            "MED: citation 'hellaswag' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thre",
+            "MED: citation 'humaneval' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thre",
+            "MED: citation 'math' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (threshold",
+            "MED: citation 'mbpp' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (threshold",
+            "MED: citation 'mmlu' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (threshold",
+            "MED: citation 'mmlupro' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thresh",
+            "MED: citation 'openbookqa' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thr",
+            "MED: citation 'piqa' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (threshold",
+            "MED: citation 'winogrande' at line 1236 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thr",
+            "MED: citation 'locodiff' at line 1242 is ceremonial (citing sentence does not engage with the cited work: no engage verb, no comparison, no elaboration >= 30 words). 24 ceremonial cite(s) total (thres"
+          ],
+          "n": 22,
+          "outcome": "fired"
+        },
+        "C8": {
+          "outcome": "clean"
+        },
+        "C9": {
+          "outcome": "clean"
+        }
+      },
+      "has_abstract": true,
+      "main_tex": "main.tex",
+      "paper_id": "2610.22019",
+      "status": "latex",
+      "tex_chars": 77778
+    }
+  ],
+  "shipped_default_config": {
+    "c10_reproducibility_claims": [],
+    "c1_symbols": [
+      "$\\Delta$CAF (consensus-against-field coefficient)",
+      "$E_T$ (temporal-accumulation effect on calibration)",
+      "$\\Delta$ECE (calibration delta)",
+      "TTRL (Test-Time Reinforcement Learning)"
+    ],
+    "c2_families": {
+      "main": 3
+    },
+    "c2_section_pattern": "\\\\section\\*?\\{[^}]*Power analysis[^}]*\\}|\\\\subsection\\*?\\{[^}]*Power analysis[^}]*\\}",
+    "c3_concept_token": "\\\\textbf\\{Face 1\\}|\\\\textbf\\{Face 2\\}|\\bFace\\s+1\\b|\\bFace\\s+2\\b",
+    "c3_formal": "\\\\section\\{Face 1:",
+    "c4_self_cite_prefix": "liu2026",
+    "c6_blacklist": [
+      "paradigm",
+      "yield",
+      "reveal"
+    ],
+    "c8_claimed_effects": [],
+    "c9_figure_keywords": []
+  },
+  "template": "src/tmaudit/templates/verify_TEMPLATE.py"
+}
