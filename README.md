@@ -340,7 +340,7 @@ python _act_simulate.py --job pytest    # run pytest job
 pushing. Results:
 
 - ✅ `ci.yml` is valid YAML (parsed by PyYAML)
-- ✅ **5 jobs**, 4 + 1 + 1 + 1 + 1 matrix rows, ~25 steps
+- ✅ **7 jobs** (a 4-version pytest matrix plus 6 single-run jobs), ~25 steps
 - ✅ `meta-test` correctly depends on `pytest` (Kahn's algorithm topo sort)
 - ✅ `matrix.python-version` substituted correctly into `${{ ... }}` expressions
 - ✅ `if: always()` preserved on the upload-artifact step
@@ -355,7 +355,7 @@ we have already executed successfully on the host:
 | `python -m pip install pytest scipy` | deps installed ✅ |
 | `python -m pytest -m "not slow"` | **240 passed, 1 skipped in ~5s** ✅ |
 | `python _check_all_regressions.py` | **14/14 bugs caught** ✅ |
-| `python _check_github_templates.py` | **44/44 OK** ✅ |
+| `python _check_github_templates.py` | **45/45 OK** ✅ |
 | `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |
 | `python -m src.tmaudit audit-all ...` | report uploaded as artefact ✅ |
 | `python _build_pyz.py` | tmaudit.pyz built ✅ |
