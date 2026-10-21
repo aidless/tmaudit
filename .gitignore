@@ -91,3 +91,19 @@ tmp_audit_fork_*/
 *~
 ._*
 .nfs*
+
+
+# --- added by WorkBuddy takeover 2026-10-21 ---
+.env
+.env.*
+!.env.example
+!.env.template
+node_modules/
+*.pyc
+dist/
+*.log
+data/
+models/
+.regression_tmp/
+
+*.bak*
