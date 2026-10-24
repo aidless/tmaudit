@@ -4,6 +4,31 @@ All notable changes to `tmaudit` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.5.2] — 2026-10-24
+
+### Fixed
+
+- **The published wheel now ships `detector_config/detector.yaml`.** The file
+  was absent from the built distribution because `package-data` did not list
+  `detector_config/*.yaml`. A non-editable install — the path every
+  `pip install tmaudit` user takes — therefore fell back to the built-in
+  defaults, and `tests/test_detector_config.py` failed against the installed
+  package. Editable installs masked the omission.
+
+### Fixed
+
+- **A relative `--paper-dir` was resolved twice.** The forked script was
+  written to `paper/verify_generic.py` and then launched with `cwd=paper`, so a
+  relative path became `paper/paper/verify_generic.py`. `fork_*` now resolves
+  the directory first; a regression test covers the relative-path invocation.
+
+### Changed
+
+- **README rewritten around the external user**: a one-command quick start, a
+  real excerpt of the output, and an explicit statement that C1–C3/C6 are
+  per-paper while C4–C10 run on any manuscript. Added
+  `examples/sample-paper/` so the documented command has a runnable target.
+
 ## [Unreleased]
 
 ### Added

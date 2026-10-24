@@ -174,6 +174,23 @@ def test_cli_verify_paper_dir_runs_generic(tmp_path):
     assert (tmp_path / 'verify_generic.py').exists()
 
 
+def test_cli_verify_relative_paper_dir_is_not_resolved_twice(tmp_path, monkeypatch):
+    """Regression: a relative --paper-dir was joined twice.
+
+    The forked script is launched with cwd=target.parent, so passing the
+    still-relative target made Python look for
+    paper/paper/verify_generic.py. fork_* now resolves the directory first.
+    """
+    paper = tmp_path / 'paper'
+    paper.mkdir()
+    (paper / 'paper.tex').write_text(CLEAN_TEX, encoding='utf-8')
+    (paper / 'paper.bbl').write_text(CLEAN_BBL, encoding='utf-8')
+    monkeypatch.chdir(tmp_path)
+    rc = cli.main(['verify', '--paper-dir', 'paper'])
+    assert rc == 0, rc
+    assert (paper / 'verify_generic.py').exists()
+
+
 def test_cli_verify_paper_dir_dry_run_writes_nothing(tmp_path):
     rc = cli.main(['verify', '--paper-dir', str(tmp_path), '--dry-run'])
     assert rc == 0

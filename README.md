@@ -1,130 +1,116 @@
-# tmaudit — Deploy & Quick Start
+# tmaudit
+
+**Catch the reporting defects reviewers catch — before you submit.**
+
+`tmaudit` audits the LaTeX source of a machine-learning paper for the things
+that get flagged in review but are cheap to fix: a missing code/data statement,
+unreported seeds and hyperparameters, a figure whose label is never referenced,
+ceremonial citations, and significance claims with no power analysis. No API
+key, no network, and no required dependencies.
 
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Tests](https://img.shields.io/badge/tests-262%20passing-brightgreen)
-![Meta--tests](https://img.shields.io/badge/meta--tests-14%2F14%20caught-success)
-![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
-![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
-![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
-![Security](https://img.shields.io/badge/security-policy%20in%20place-green)
-![Version](https://img.shields.io/badge/version-0.5.1-blue)
-![Roadmap](https://img.shields.io/badge/roadmap-through%20v0.5.0-green)
+![Tests](https://img.shields.io/badge/tests-263%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-This directory is a **deployable Python package** named `tmaudit`. It
-ships three things in one place:
+```bash
+pipx install tmaudit
+tmaudit verify --paper-dir path/to/your/paper
+```
 
-1. The **templates** for the three operational scripts that every
-   `PAPER<N>_CONSOLIDATED/` directory needs
-   (`verify_p<N>.py`, `_compile_check.py`,
-   `_fix_abstract_unicode.py`).
-2. The **per-paper configurations** (C1..C10 audit rules: C1–C7
-   in v0.1.0–v0.2.0, plus C8 statistical power, C9 figure-caption,
-   and C10 reproducibility in v0.3.0; abstract Unicode
-   replacements) for Paper 1, 2, 3, 4, 5.
-3. A **CLI** (`tmaudit`) that forks the templates and (optionally)
-   runs them.
+Excerpt of real output from a deliberately flawed sample manuscript
+([`examples/sample-paper/`](examples/sample-paper/)):
 
-**Scope, stated plainly:** the built-in rulepack covers this
-project's five papers. `verify` / `compile` / `fix-unicode` /
-`audit-all` take `--paper 1..5`, and `--paper-dir` changes where the
-forked script is written — not which rules it contains. For a manuscript
-those configs were not written for, `tmaudit verify --paper-dir DIR`
-(no `--paper`) forks the **factory template** into `DIR`: the per-paper
-categories report *not applicable* and the generic categories run. To add
-checks the generic categories do not have, write your own plugin: see
-[docs/PLUGINS.md](docs/PLUGINS.md).
+```text
+Findings by category:
+  C9  [MEDIUM]  1 finding(s)
+  C10  [LOW]    5 finding(s)
 
-## Four ways to use it
+[MEDIUM] C9  (global)
+    MED: figure fig:unused is defined but never referenced in the body text
+    (no \ref{fig:unused} or \autoref{fig:unused}). Reviewer §5 #9.
 
-### (A) Run the single-file `tmaudit.pyz` (zero install)
+[LOW] C10  (global)
+    HIGH: paper has no code/data availability statement (no
+    \section{...Availability...}, no GitHub/GitLab/Zenodo URL, and no
+    "code is available" phrase). Reviewer §5 #10.
+```
+
+## What it checks
+
+| Category | What it catches |
+|---|---|
+| **C4** | citations that do not resolve to a `.bib`/`.bbl` entry |
+| **C5** | sample size and effect-size omissions |
+| **C7** | ceremonial citations (cited, never engaged with) |
+| **C8** | significance claims without a reported effect size or power analysis |
+| **C9** | figures without a caption below the graphic; `fig:` labels never referenced |
+| **C10** | no availability statement; missing seeds, hyperparameters, hardware, library versions |
+| **C1–C3, C6** | per-paper rulepack for five specific manuscripts: symbol definition, Bonferroni consistency, formalization, hype vocabulary |
+
+C4–C10 run on any LaTeX manuscript. C1–C3 and C6 are configuration-driven and
+report **not applicable** on a paper the rulepack was not written for — that is
+stated in the output, not silently reported as a pass.
+
+## Scope, stated plainly
+
+This is not a reviewer and does not judge novelty. It checks reporting
+completeness against a fixed rulepack, and it tells you when a category did not
+run. For checks the generic categories do not cover, write a plugin
+([`docs/PLUGINS.md`](docs/PLUGINS.md)) — the contract is a function that
+receives the paper root and returns `Finding` objects.
+
+## Install
 
 ```bash
-# on any machine with Python 3.9+
-python tmaudit.pyz list
-python tmaudit.pyz verify --paper 1
-python tmaudit.pyz compile --paper 5
-python tmaudit.pyz fix-unicode --paper 1
-python tmaudit.pyz audit-all
+pipx install tmaudit                 # or: pip install tmaudit
 ```
 
-The `.pyz` is a self-extracting Python zip archive; the user does not
-need to `pip install` anything. The file is `~64 KB` and contains all
-five `PAPER_CONFIGS` and all three templates.
-
-It is a convenient way to hand the tool to a **collaborator working in
-the same research tree**: the built-in configs point at
-`PAPER1..PAPER5_CONSOLIDATED`, so they will need
-`TMAUDIT_RESEARCH_DIR` set to a tree with that layout. For a manuscript
-outside those five papers the built-in commands will not audit it —
-write a plugin instead ([docs/PLUGINS.md](docs/PLUGINS.md)).
-
-### (B) `pip install --editable .` (development)
-
-```powershell
-cd <your tmaudit checkout>
-python -m pip install --editable .
-python -m pip install --editable ./tmaudit_example_plugin
-tmaudit list
-tmaudit verify --paper 1
-```
-
-**The second install is not optional for tests**: `tests/test_example_plugin.py`
-asserts that the in-repo demo plugin is discoverable via registered
-entry points. Without that editable install, 11 plugin tests fail with
-`KeyError: 'flag-long-abstract'`. The CI workflow (`ci.yml`) runs the
-same two installs.
-
-Edits to `src/tmaudit/templates/*.py` or
-`src/tmaudit/configs/*.py` are picked up immediately on the next
-`tmaudit` invocation. This is the **recommended form for ongoing
-development** of the templates themselves.
-
-### (C) `pip install .` (deployment to a venv)
+Zero-install single file (Python 3.9+, standard library only):
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate           # or .venv\Scripts\activate on Windows
-pip install .
-tmaudit list
+python tmaudit.pyz verify --paper-dir path/to/your/paper
 ```
 
-This produces a `tmaudit` console-script entry in the venv. The
-template and config files are inside the wheel.
-
-### (D) `pip install tmaudit` (from PyPI)
+From source, including the example plugin that the test suite expects:
 
 ```bash
-pip install tmaudit          # or: pipx install tmaudit
-tmaudit list
+git clone https://github.com/aidless/tmaudit
+cd tmaudit
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+pip install -e ./tmaudit_example_plugin
+python -m pytest -q
 ```
 
-Published on PyPI via trusted publishing (OIDC) from
-`.github/workflows/publish-pypi.yml`; new versions are cut from GitHub
-Releases. This is the quickest form for someone who just wants the CLI.
+## Try it on the sample, no paper needed
+
+```bash
+git clone https://github.com/aidless/tmaudit
+cd tmaudit
+pipx install tmaudit          # or: pip install -e .
+tmaudit verify --paper-dir examples/sample-paper
+```
+
+`verify` forks a `verify_generic.py` script into the target directory and runs
+it. That file is the entire audit, in the open: read it, edit the thresholds, or
+delete it after the run. It is generated, not a hidden binary.
 
 ## Extend it: your own checks
 
-The built-in categories are this project's rulepack for five papers. To
-add checks of your own — including for a manuscript those configs do not
-cover — write a plugin: a function decorated with `@check`, registered
-under the `tmaudit.plugins` entry-point group, receiving your paper's
-root `.tex` and returning `Finding` objects. (The generic categories run
-without a plugin via `tmaudit verify --paper-dir /path/to/your/paper`.)
+A plugin is a package exposing a function decorated with `@check` under the
+`tmaudit.plugins` entry-point group. It receives the paper's root `.tex` and
+returns `Finding` objects.
 
 ```bash
-tmaudit verify --paper-dir /path/to/your/paper   # generic checks, no config
-pip install -e ./my-paper-checks      # plugins are found via installed entry points
-tmaudit plugins list                  # confirm it registered
+tmaudit plugins list
 tmaudit plugins run my-check --paper-dir /path/to/your/paper
 ```
 
-The full contract, a copy-paste package layout, and what a plugin does
-and does not get are in [docs/PLUGINS.md](docs/PLUGINS.md). A working
-three-check example ships in
-[`tmaudit_example_plugin/`](tmaudit_example_plugin/).
+The full contract and a three-check example ship in
+[`tmaudit_example_plugin/`](tmaudit_example_plugin/) and
+[`docs/PLUGINS.md`](docs/PLUGINS.md).
 
 ## Self-audit: the audit core on 25 real papers
 

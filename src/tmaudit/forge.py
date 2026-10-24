@@ -307,8 +307,7 @@ def fork_verify(paper_number: int, paper_dir: Path | None = None) -> Path:
     if paper_number not in VERIFY_CONFIGS:
         raise KeyError(f'no VERIFY_CONFIGS for paper {paper_number}')
     cfg = VERIFY_CONFIGS[paper_number]
-    if paper_dir is None:
-        paper_dir = cfg['dir']
+    paper_dir = Path(paper_dir if paper_dir is not None else cfg['dir']).resolve()
     target = paper_dir / f'verify_p{paper_number}.py'
     template = _read_template('verify_TEMPLATE.py')
     out = _substitute_verify(template, cfg)
@@ -327,7 +326,10 @@ def fork_verify_generic(paper_dir: Path) -> Path:
     built-in defaults. Written as ``verify_generic.py``; reached through
     ``tmaudit verify --paper-dir DIR`` (no ``--paper``).
     """
-    paper_dir = Path(paper_dir)
+    # Absolute: the generated script is later launched with cwd=target.parent,
+    # so a relative paper_dir would be resolved twice and the launch would look
+    # for examples/sample-paper/examples/sample-paper/verify_generic.py.
+    paper_dir = Path(paper_dir).expanduser().resolve()
     template = _read_template('verify_TEMPLATE.py')
     out = template.replace(
         "ROOT = Path('F:/Research/PAPER1_CONSOLIDATED')",
@@ -344,8 +346,7 @@ def fork_compile(paper_number: int, paper_dir: Path | None = None) -> Path:
     if paper_number not in COMPILE_CONFIGS:
         raise KeyError(f'no COMPILE_CONFIGS for paper {paper_number}')
     cfg = COMPILE_CONFIGS[paper_number]
-    if paper_dir is None:
-        paper_dir = cfg['dir']
+    paper_dir = Path(paper_dir if paper_dir is not None else cfg['dir']).resolve()
     target = paper_dir / '_compile_check.py'
     template = _read_template('compile_check_TEMPLATE.py')
     out = _substitute_compile(template, cfg)
@@ -359,8 +360,7 @@ def fork_fix_unicode(paper_number: int, paper_dir: Path | None = None) -> Path:
     if paper_number not in COMPILE_CONFIGS:
         raise KeyError(f'no COMPILE_CONFIGS for paper {paper_number}')
     cfg = COMPILE_CONFIGS[paper_number]
-    if paper_dir is None:
-        paper_dir = cfg['dir']
+    paper_dir = Path(paper_dir if paper_dir is not None else cfg['dir']).resolve()
     target = paper_dir / '_fix_abstract_unicode.py'
     template = _read_template('fix_abstract_unicode_TEMPLATE.py')
     out = _substitute_fix_unicode(template, cfg)

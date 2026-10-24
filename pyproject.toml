@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmaudit"
-version = "0.5.1"
+version = "0.5.2"
 description = "Config-driven TMLR paper audit + LaTeX compile pipeline"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -96,4 +96,5 @@ tmaudit = [
     "templates/*.py",
     "templates/*.tex",
     "configs/*.py",
+    "detector_config/*.yaml",
 ]

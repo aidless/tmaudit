@@ -24,7 +24,7 @@ executable .pyz file with `python -m zipapp`.
 # Keep in lockstep with pyproject.toml — the published 0.5.1 wheel
 # previously reported 0.5.0 from this constant, and the cache key is
 # derived from it (cache.cache_key).
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 # Re-export the plugin API at the package level so users can
 # `from tmaudit import Finding, check` instead of
