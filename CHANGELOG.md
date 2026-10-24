@@ -14,9 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `pip install tmaudit` user takes — therefore fell back to the built-in
   defaults, and `tests/test_detector_config.py` failed against the installed
   package. Editable installs masked the omission.
-
-### Fixed
-
 - **A relative `--paper-dir` was resolved twice.** The forked script was
   written to `paper/verify_generic.py` and then launched with `cwd=paper`, so a
   relative path became `paper/paper/verify_generic.py`. `fork_*` now resolves
