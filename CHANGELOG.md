@@ -4,7 +4,7 @@ All notable changes to `tmaudit` are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [v0.7.0] — 2026-10-24
+## [v0.6.0] — 2026-10-24
 
 ### Added — `admission`: statistical certificates for self-evolving harness claims
 
@@ -85,7 +85,7 @@ a round-trip property test (`required_tasks` then `certify` must pass, and
 This defect was found and fixed independently on the other development
 branch as release 0.5.2; see `DIVERGENCE_ANALYSIS.md`.
 
-## [v0.6.0] — 2026-10-24
+## [v0.5.3] — 2026-10-24
 
 ### Added — `verify --target FILE`: audit a paper you do not own
 
@@ -163,7 +163,7 @@ citing paper resolves a bibliography. Marked `slow`.
 | 2 | did not complete: missing input, or a check crashed |
 | 3 | ran, no crash, but at least one category could not be observed |
 
-## [v0.5.2] — 2026-10-24
+## [v0.5.2] — 2026-10-24 (not yet on PyPI; publishing alongside v0.6.0)
 
 ### Fixed
 

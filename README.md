@@ -17,7 +17,7 @@ key, no network, and no required dependencies.
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-44%20checkboxes-blueviolet)
 ![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
 ![Security](https://img.shields.io/badge/security-policy%20in%20place-green)
-![Version](https://img.shields.io/badge/version-0.7.0-blue)
+![Version](https://img.shields.io/badge/version-0.6.0-blue)
 ![Roadmap](https://img.shields.io/badge/roadmap-through%20v0.5.0-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -190,7 +190,7 @@ The full contract and a three-check example ship in
 [`tmaudit_example_plugin/`](tmaudit_example_plugin/) and
 [`docs/PLUGINS.md`](docs/PLUGINS.md).
 
-## `tmaudit admission`: is a reported gain certifiable? (v0.7.0)
+## `tmaudit admission`: is a reported gain certifiable? (v0.6.0)
 
 Paper audits ask whether a claim is *internally consistent*. A self-evolving
 harness claim needs a different question: the revision was **selected against
@@ -267,14 +267,14 @@ defects replay: [`case-studies/arxiv-corpus/`](case-studies/arxiv-corpus/README.
 has the coverage matrix, the method, and what the numbers do **not**
 establish.
 
-### Round two (v0.7.0): the same corpus through `--target`
+### Round two (v0.6.0): the same corpus through `--target`
 
 The v0.5.0 round ran through `PAPER_CONFIGS`, i.e. with configs the author
 had written. The honest follow-up is to run the *external* path — the one a
 stranger uses — over the same 25 sources, with a six-line config generated
 per paper and nothing else tuned:
 
-| Metric | v0.5.1 | v0.7.0 via `--target` |
+| Metric | v0.5.1 | v0.6.0 via `--target` |
 |---|---|---|
 | Papers completing the audit | 21 / 25 | **25 / 25** |
 | Papers aborting (exit 2) | 4 | **0** |
@@ -349,7 +349,7 @@ tmaudit compile --paper N [--dry-run]     # fork _compile_check.py + 4-pass buil
 tmaudit fix-unicode --paper N [--dry-run] # fork _fix_abstract_unicode.py
 tmaudit audit-all [--start 1] [--end 5]   # verify all papers in a range
 tmaudit verify --target paper.toml        # audit a paper you do not own (v0.6.0)
-tmaudit admission --gain PP --tasks M     # certify a reported gain (v0.7.0)
+tmaudit admission --gain PP --tasks M     # certify a reported gain (v0.6.0)
 ```
 
 Every paper subcommand also accepts `--paper-dir PATH` to override the
