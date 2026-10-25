@@ -171,7 +171,15 @@ def test_main_no_abstract_with_c1_configured_is_error_not_finding(
         tmp_path, monkeypatch, capsys):
     """D6: C1 on a document without an abstract used to report a HIGH
     finding ('No abstract environment found.'). An observation failure
-    is an error, not a violation."""
+    is not a violation.
+
+    v0.6.0 changed *how* it is surfaced. It used to raise, which made
+    main() exit 2 and label the entire audit crashed; on an external
+    document a missing abstract says nothing about C2..C10, so the audit
+    now completes, marks C1 [not observed], and exits 3 so a pipeline
+    cannot read it as clean. The invariant this test protects is
+    unchanged: an observation failure must never appear as a finding.
+    """
     monkeypatch.setattr(verify_TEMPLATE, 'CHECKS_CONFIG', {
         'c1_symbols': [{'name': 'X', 'token': r'\bX\b',
                         'definition': r'X.{0,80}='}],
@@ -185,20 +193,118 @@ def test_main_no_abstract_with_c1_configured_is_error_not_finding(
         '\\end{document}\n'
     )
     rc, out = _run_main(tmp_path, monkeypatch, capsys, tex=tex)
-    assert rc == 2, out
-    assert 'C1  [ERROR]' in out, out
+    assert rc == 3, out
+    assert 'C1  [OK]     0 finding(s)  [not observed:' in out, out
     assert '[HIGH] C1' not in out, out
+    assert '[ERROR]' not in out, out
+    assert 'could not be observed' in out, out
 
 
-def test_c1_without_abstract_raises(monkeypatch):
-    """The C1 check itself raises (instead of returning a finding) when
-    the abstract cannot be located and the category is configured."""
+def test_c1_without_abstract_records_observation_failure(monkeypatch):
+    """The C1 check itself returns no findings and registers the category
+    as unobservable, instead of raising (v0.6.0) — so the other nine
+    categories still run on a document with no abstract."""
     monkeypatch.setattr(verify_TEMPLATE, 'CHECKS_CONFIG', {
         'c1_symbols': [{'name': 'X', 'token': r'\bX\b',
                         'definition': r'X.{0,80}='}],
     })
-    with pytest.raises(ValueError, match='no abstract'):
-        verify_TEMPLATE.check_c1_abstract_definitions('no abstract here')
+    monkeypatch.setattr(verify_TEMPLATE, 'OBSERVATION_FAILURES', {})
+    findings = verify_TEMPLATE.check_c1_abstract_definitions('no abstract here')
+    assert findings == []
+    assert 'C1' in verify_TEMPLATE.OBSERVATION_FAILURES
+    assert 'no abstract' in verify_TEMPLATE.OBSERVATION_FAILURES['C1']
+
+
+def test_clean_document_with_abstract_exits_0(tmp_path, monkeypatch, capsys):
+    """Guard against the exit-3 path firing when nothing is unobserved."""
+    monkeypatch.setattr(verify_TEMPLATE, 'CHECKS_CONFIG', {})
+    tex = (
+        '\\documentclass{article}\n'
+        '\\begin{document}\n'
+        '\\begin{abstract}\nAn abstract.\n\\end{abstract}\n'
+        '\\section{Code availability}\n'
+        'Code is available at https://github.com/example/repo, released '
+        'under MIT. Seeds: random seed 0. Hardware: one A100. '
+        'Library: PyTorch 2.1. Hyperparameters: learning rate 1e-4, '
+        'batch size 8, optimizer Adam. Results reproduced with p=0.01 '
+        'and n=100 under a McNemar test, d=0.5.\n'
+        '\\end{document}\n'
+    )
+    rc, out = _run_main(tmp_path, monkeypatch, capsys, tex=tex)
+    assert 'not observed' not in out, out
+    assert rc in (0, 1, 3), out
+
+
+# ---------------------------------------------------------------------------
+# C4 also understands a compiled .bbl (v0.6.0)
+# ---------------------------------------------------------------------------
+
+BBL_SIMPLE = (
+    '\\begin{thebibliography}{9}\n'
+    '\\bibitem{smith2020} Smith. \\newblock A paper. 2020.\n'
+    '\\bibitem[Smith and Doe(2021)]{doe2021} Doe. \\newblock Another. 2021.\n'
+    '\\bibitem{ spaced_key } Spaced. 2022.\n'
+    '\\end{thebibliography}\n'
+)
+
+
+def test_bbl_bibitem_keys_are_recognised():
+    """arXiv tarballs ship main.bbl and usually not refs.bib.
+
+    Before v0.6.0 C4 only parsed '@type{key,' so every cite key of an
+    arXiv-sourced paper was reported as missing.
+    """
+    keys = verify_TEMPLATE._bib_keys(BBL_SIMPLE)
+    assert keys == {'smith2020', 'doe2021', 'spaced_key'}
+
+
+def test_bbl_bibitem_with_optional_label_is_recognised():
+    keys = verify_TEMPLATE._bib_keys('\\bibitem[Preprint(2024)]{a2024}')
+    assert keys == {'a2024'}
+
+
+def test_bbl_multiline_optional_label_is_recognised():
+    """natbib wraps long author lists across lines inside the optional
+    label. A [^\\]]* pattern cannot cross those newlines, which made a real
+    arXiv .bbl report zero keys while C4 silently passed."""
+    bbl = (
+        '\\bibitem[Austin et~al.(2021)Austin, Odena, Nye\n'
+        '  and Others]{austin2021}\n'
+        'Austin. \\newblock A paper. 2021.\n'
+    )
+    assert verify_TEMPLATE._bib_keys(bbl) == {'austin2021'}
+
+
+def test_bbl_brackets_inside_the_label_are_tolerated():
+    bbl = '\\bibitem[Smith [and Doe](2020)]{smith2020} X.\n'
+    assert verify_TEMPLATE._bib_keys(bbl) == {'smith2020'}
+
+
+def test_bib_and_bbl_keys_are_unioned():
+    mixed = BBL_SIMPLE + '@article{frombib2023,\n  author = {X},\n}\n'
+    keys = verify_TEMPLATE._bib_keys(mixed)
+    assert {'smith2020', 'frombib2023'} <= keys
+
+
+def test_c4_passes_when_citations_resolve_against_bbl():
+    tex = 'Body \\cite{smith2020,doe2021} and \\citep{spaced_key}.'
+    findings = verify_TEMPLATE.check_c4_citation_hygiene(tex, BBL_SIMPLE)
+    # Only the self-cite sub-check could fire, and the default config has
+    # no prefix, so a clean .bbl must produce no C4 finding at all.
+    assert not any('missing from' in msg for _, msg, _ in findings), findings
+
+
+def test_c4_still_reports_a_genuinely_missing_key():
+    tex = 'Body \\cite{nothere2025}.'
+    findings = verify_TEMPLATE.check_c4_citation_hygiene(tex, BBL_SIMPLE)
+    assert any('missing from' in msg for _, msg, _ in findings), findings
+
+
+def test_empty_bibliography_does_not_silently_pass():
+    """A file with neither format must not be treated as "everything ok"."""
+    tex = 'Body \\cite{smith2020}.'
+    findings = verify_TEMPLATE.check_c4_citation_hygiene(tex, 'not a bib at all')
+    assert any('missing from' in msg for _, msg, _ in findings), findings
 
 
 # ---------------------------------------------------------------------------

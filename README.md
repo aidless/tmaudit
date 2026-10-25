@@ -11,7 +11,14 @@ key, no network, and no required dependencies.
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Tests](https://img.shields.io/badge/tests-263%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-391%20passing-brightgreen)
+![Meta--tests](https://img.shields.io/badge/meta--tests-14%2F14%20caught-success)
+![Categories](https://img.shields.io/badge/audit%20categories-C1..C10-blue)
+![PR%20Checks](https://img.shields.io/badge/PR%20checks-44%20checkboxes-blueviolet)
+![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
+![Security](https://img.shields.io/badge/security-policy%20in%20place-green)
+![Version](https://img.shields.io/badge/version-0.6.0-blue)
+![Roadmap](https://img.shields.io/badge/roadmap-through%20v0.5.0-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ```bash
@@ -37,6 +44,100 @@ Findings by category:
     "code is available" phrase). Reviewer §5 #10.
 ```
 
+## Four ways to use it
+
+### (0) Audit a paper you do not own (`--target`, v0.6.0)
+
+`--paper N` only works on this author's five directories. To audit any
+other paper, drop a config next to it and use the same command:
+
+```toml
+# paper.toml, next to main.tex
+schema = "tmaudit-target/1"
+
+[paper]
+name = "my-paper"          # optional: names the generated verify_my-paper.py
+tex_basename = "main"      # optional
+# bib = "references.bib"   # optional: auto-detected (.bib or compiled .bbl)
+
+[checks]
+c4_self_cite_prefix = "smith2025"
+
+[[checks.c1_symbols]]
+name = 'CAF'
+token = '\\bCAF\\b'
+definition = 'CAF.{0,80}='
+```
+
+```bash
+tmaudit verify --target paper.toml          # forks verify_my-paper.py and runs it
+tmaudit verify --target paper.toml --dry-run
+```
+
+Unknown keys are errors with a suggestion, not silent no-ops. `.json`
+works too, for Python 3.9/3.10 without `tmaudit[toml]`.
+
+Exit codes: `0` clean, `1` HIGH finding, `2` did not complete (missing
+input or a crashed check), `3` ran but at least one category could not be
+observed (e.g. C1 on a paper with no abstract).
+
+### (A) Run the single-file `tmaudit.pyz` (zero install)
+
+```bash
+# on any machine with Python 3.9+
+python tmaudit.pyz list
+python tmaudit.pyz verify --paper 1
+python tmaudit.pyz compile --paper 5
+python tmaudit.pyz fix-unicode --paper 1
+python tmaudit.pyz audit-all
+```
+
+The `.pyz` is a self-extracting Python zip archive; the user does not
+need to `pip install` anything. The file is `~87 KB` and contains all
+five `PAPER_CONFIGS` and all three templates.
+
+This is the **recommended distribution form** for handing the tool
+to a co-author or to the TMLR reviewers.
+
+### (B) `pip install --editable .` (development)
+
+```bash
+git clone https://github.com/aidless/tmaudit
+cd tmaudit
+python -m venv .venv && source .venv/bin/activate   # .venv\Scripts\activate on Windows
+pip install -e ".[dev]"
+pip install -e ./tmaudit_example_plugin   # the test suite expects this plugin
+python -m pytest -q
+```
+
+Edits to `src/tmaudit/templates/*.py` or
+`src/tmaudit/configs/*.py` are picked up immediately on the next
+`tmaudit` invocation. This is the **recommended form for ongoing
+development** of the templates themselves.
+
+### (C) `pip install .` (deployment to a venv)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate           # or .venv\Scripts\activate on Windows
+pip install .
+tmaudit list
+```
+
+This produces a `tmaudit` console-script entry in the venv. The
+template and config files are inside the wheel.
+
+### (D) `pip install tmaudit` (from PyPI)
+
+```bash
+pip install tmaudit          # or: pipx install tmaudit
+tmaudit list
+```
+
+Published on PyPI via trusted publishing (OIDC) from
+`.github/workflows/publish-pypi.yml`; new versions are cut from GitHub
+Releases. This is the quickest form for someone who just wants the CLI.
+
 ## What it checks
 
 | Category | What it catches |
@@ -60,29 +161,6 @@ completeness against a fixed rulepack, and it tells you when a category did not
 run. For checks the generic categories do not cover, write a plugin
 ([`docs/PLUGINS.md`](docs/PLUGINS.md)) — the contract is a function that
 receives the paper root and returns `Finding` objects.
-
-## Install
-
-```bash
-pipx install tmaudit                 # or: pip install tmaudit
-```
-
-Zero-install single file (Python 3.9+, standard library only):
-
-```bash
-python tmaudit.pyz verify --paper-dir path/to/your/paper
-```
-
-From source, including the example plugin that the test suite expects:
-
-```bash
-git clone https://github.com/aidless/tmaudit
-cd tmaudit
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-pip install -e ./tmaudit_example_plugin
-python -m pytest -q
-```
 
 ## Try it on the sample, no paper needed
 
@@ -112,6 +190,58 @@ The full contract and a three-check example ship in
 [`tmaudit_example_plugin/`](tmaudit_example_plugin/) and
 [`docs/PLUGINS.md`](docs/PLUGINS.md).
 
+## `tmaudit admission`: is a reported gain certifiable? (v0.6.0)
+
+Paper audits ask whether a claim is *internally consistent*. A self-evolving
+harness claim needs a different question: the revision was **selected against
+the same evidence that is later reported as the result**, so a positive delta is
+not by itself evidence of generalization.
+
+`admission` implements the sufficient condition of arXiv:2610.18813 §4.2
+(preprint; read, not re-derived):
+
+```
+Δ_k(H') ≤ Δ̂_k(H') + sqrt( 2 ln(KT/δ) / m )          eq. 8, "accept only candidates with negative upper bounds"
+Δ̂_k(H') + sqrt( 2 ln(KT/δ) / m ) + 2η < 0           eq. 9, evaluator-vs-target gap bounded by η
+```
+
+```bash
+# one claim: +7.3pp observed on 89 fresh tasks, K=5 candidates, T=10 rounds, δ=.05
+tmaudit admission --gain 7.3 --tasks 89
+# [NOT CERTIFIED] gain=+7.30pp  upper=+32.10pp  m=89  K=5  T=10  delta=0.05  eta=0.00pp
+# note: certifying this gain would need tasks m >= 2,593
+
+tmaudit admission --required-tasks 2.0        # invert eq. 8 → tasks m >= 34,539
+tmaudit admission --grid                       # table of (m, minimum certifiable gain)
+tmaudit admission --audit claims.json          # batch; exit 1 if any claim fails
+```
+
+Exit codes: `0` every claim certified, `1` at least one uncertified (so it
+gates CI), `2` bad input.
+
+**Two rules that decide most verdicts**, both from the source paper:
+
+1. **`m` counts fresh independent *tasks*, not rollouts.** Extra rollouts on
+   the same task raise precision without raising the sample size, so `--tasks`
+   is not "number of runs". At K=5, T=10, δ=.05 and m=89 tasks, the smallest
+   gain the rule can certify at all is **39.4 pp**; at m=500 it is 16.6 pp, and
+   at m=2,000 it is 8.3 pp (`--grid` prints the whole table).
+2. **η is not free.** The term enters eq. 9 as `2η` and sits on the *same* side
+   as the confidence width, so an η of 2 pp adds 4 pp to the margin: a 7.3 pp
+   gain moves from "needs 2,593 tasks" to "needs 12,687 tasks", and once
+   `2η ≥ gain` no sample size certifies at all (`--eta-pp` then reports
+   "no m suffices").
+
+Also included: `retention_ledger()` for eq. (6) —
+`E R_s(H_k) ≤ E R̂_s(H_s) + β_{s,s} + Σ ε_{s,u}` — where the per-round `ε`
+terms are *separate assumptions* that accumulate, so once their sum reaches the
+gain being defended the bound is vacuous by construction.
+
+What the tool does **not** do: it certifies a *gain*, never a *cause*. A
+certified delta still says nothing about which harness component produced it,
+and the bound covers the historical task mixture, not an arbitrary future
+distribution.
+
 ## Self-audit: the audit core on 25 real papers
 
 The rulepack is per-paper by design, so the sharpest question a reader can
@@ -136,6 +266,30 @@ evidence, and the harness restores the v0.5.0 config so the config-driven
 defects replay: [`case-studies/arxiv-corpus/`](case-studies/arxiv-corpus/README.md)
 has the coverage matrix, the method, and what the numbers do **not**
 establish.
+
+### Round two (v0.6.0): the same corpus through `--target`
+
+The v0.5.0 round ran through `PAPER_CONFIGS`, i.e. with configs the author
+had written. The honest follow-up is to run the *external* path — the one a
+stranger uses — over the same 25 sources, with a six-line config generated
+per paper and nothing else tuned:
+
+| Metric | v0.5.1 | v0.6.0 via `--target` |
+|---|---|---|
+| Papers completing the audit | 21 / 25 | **25 / 25** |
+| Papers aborting (exit 2) | 4 | **0** |
+| Papers with a category `[not observed]` | — | **0** |
+| Papers whose bibliography resolved | 21 | **25** |
+| Bibliography filenames handled | `refs.bib` | `main.bbl`, `bib.bib`, `references.bib` |
+
+The three defects this round found are the ones v0.6.0 fixed: C4 did not
+read `.bbl` (what an arXiv tarball actually ships), C1 crashed the entire
+audit when a document had no `\begin{abstract}`, and the bibliography
+filename was assumed rather than detected. Each aborted a *different*
+paper, which is why one hand-chosen paper would not have found any of them.
+
+Run install-free, from the built wheel, in an environment with no
+third-party packages.
 
 ### Auditing a paper the rulepack was not written for
 
@@ -194,9 +348,11 @@ tmaudit verify --paper N [--dry-run]      # fork verify_pN.py + run audit
 tmaudit compile --paper N [--dry-run]     # fork _compile_check.py + 4-pass build
 tmaudit fix-unicode --paper N [--dry-run] # fork _fix_abstract_unicode.py
 tmaudit audit-all [--start 1] [--end 5]   # verify all papers in a range
+tmaudit verify --target paper.toml        # audit a paper you do not own (v0.6.0)
+tmaudit admission --gain PP --tasks M     # certify a reported gain (v0.6.0)
 ```
 
-Every subcommand also accepts `--paper-dir PATH` to override the
+Every paper subcommand also accepts `--paper-dir PATH` to override the
 default paper directory.
 
 ## The standard 3-step protocol for any new paper

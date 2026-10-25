@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmaudit"
-version = "0.5.2"
+version = "0.6.0"
 description = "Config-driven TMLR paper audit + LaTeX compile pipeline"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -59,6 +59,13 @@ dev = [
     "scipy>=1.10",
     "PyYAML>=6.0",
 ]
+# Reading `verify --target paper.toml` on Python 3.9/3.10 needs a TOML
+# parser (3.11+ ships tomllib). Deliberately an extra, not a hard
+# dependency: `dependencies = []` is a real property of this package, and
+# the .json config path works on every supported Python with stdlib only.
+toml = [
+    "tomli>=1.1.0; python_version < '3.11'",
+]
 
 [project.urls]
 Homepage = "https://github.com/aidless/tmaudit"
@@ -96,5 +103,11 @@ tmaudit = [
     "templates/*.py",
     "templates/*.tex",
     "configs/*.py",
+    # detector_config/detector.yaml is read at runtime. Without it here,
+    # a non-editable install — the path every `pip install tmaudit` user
+    # takes — silently falls back to the built-in defaults, so the shipped
+    # wheel behaves differently from the source tree it was built from.
+    # Editable installs read straight from src/ and hide the omission.
+    # Found independently on both branches (0.5.2 and 0.7.0).
     "detector_config/*.yaml",
 ]

@@ -90,7 +90,6 @@ def find_main_tex(paper_dir: Path, default_name: str = 'main.tex') -> Path | Non
         return candidates[0]
     return None
 
-
 # ---------------------------------------------------------------------------
 # Substitutions for the verify template
 # ---------------------------------------------------------------------------
@@ -140,8 +139,21 @@ def _format_c6_blacklist(words: list[str]) -> str:
     return '    ' + repr(words) + ','
 
 
-def _substitute_verify(template: str, cfg: dict) -> str:
-    """Inject the per-paper CHECKS_CONFIG block into the verify template."""
+def _substitute_verify(
+    template: str,
+    cfg: dict,
+    *,
+    include_extended: bool = False,
+) -> str:
+    """Inject the per-paper CHECKS_CONFIG block into the verify template.
+
+    Args:
+        include_extended: also emit the C7..C11 keys. Off by default so
+            the five in-repo papers keep producing byte-identical
+            scripts (their C7..C10 values were never injected before);
+            external configs opt in, because a stranger's config must be
+            able to set C8/C9/C10 without editing the generated script.
+    """
     out = template.replace(
         "ROOT = Path('F:/Research/PAPER1_CONSOLIDATED')",
         f"ROOT = Path({cfg['dir'].as_posix()!r})",
@@ -150,6 +162,22 @@ def _substitute_verify(template: str, cfg: dict) -> str:
         out = out.replace(
             "TEX_BASENAME = 'main'",
             f"TEX_BASENAME = {cfg['tex_basename']!r}",
+        )
+        # The verify template hardcodes MAIN = ROOT / 'main.tex'. Without
+        # this, a paper whose source is paper.tex would fork a script
+        # that audits a file which does not exist.
+        out = out.replace(
+            "MAIN = ROOT / 'main.tex'",
+            f"MAIN = ROOT / {(cfg['tex_basename'] + '.tex')!r}",
+        )
+    bib_name = cfg.get('bib', 'refs.bib')
+    if bib_name != 'refs.bib':
+        # Same reasoning as MAIN: the template hardcodes the bibliography
+        # filename, and a project using references.bib would otherwise be
+        # audited against a file that does not exist.
+        out = out.replace(
+            "REFS = ROOT / 'refs.bib'",
+            f"REFS = ROOT / {bib_name!r}",
         )
 
     parts = []
@@ -186,6 +214,20 @@ def _substitute_verify(template: str, cfg: dict) -> str:
     parts.append("    'c6_blacklist':")
     parts.append(_format_c6_blacklist(
         cfg.get('c6_blacklist', ['paradigm', 'yield', 'reveal'])))
+    if include_extended:
+        parts.append('')
+        parts.append("    'c7_max_ceremonial': %r,"
+                     % (cfg.get('c7_max_ceremonial', 2),))
+        parts.append("    'c8_claimed_effects': %r,"
+                     % (cfg.get('c8_claimed_effects', []),))
+        parts.append("    'c9_figure_keywords': %r,"
+                     % (cfg.get('c9_figure_keywords', []),))
+        parts.append("    'c10_reproducibility_claims': %r,"
+                     % (cfg.get('c10_reproducibility_claims', []),))
+        parts.append("    'c11_plugins_enabled': %r,"
+                     % (cfg.get('c11_plugins_enabled', []),))
+        parts.append("    'c11_plugins_disabled': %r,"
+                     % (cfg.get('c11_plugins_disabled', []),))
     parts.append('}')
     new_block = '\n'.join(parts)
 
@@ -307,7 +349,8 @@ def fork_verify(paper_number: int, paper_dir: Path | None = None) -> Path:
     if paper_number not in VERIFY_CONFIGS:
         raise KeyError(f'no VERIFY_CONFIGS for paper {paper_number}')
     cfg = VERIFY_CONFIGS[paper_number]
-    paper_dir = Path(paper_dir if paper_dir is not None else cfg['dir']).resolve()
+    if paper_dir is None:
+        paper_dir = cfg['dir']
     target = paper_dir / f'verify_p{paper_number}.py'
     template = _read_template('verify_TEMPLATE.py')
     out = _substitute_verify(template, cfg)
@@ -341,12 +384,41 @@ def fork_verify_generic(paper_dir: Path) -> Path:
     return target
 
 
+def fork_verify_for_target(spec, paper_dir: Path | None = None) -> Path:
+    """Fork a verify script for an external (on-disk) paper config.
+
+    Same template, same substitution, same generated-script shape as
+    ``fork_verify()``. The three differences are:
+
+    1. the config comes from a file (``TargetSpec``) rather than
+       ``PAPER_CONFIGS``, so no paper number is needed;
+    2. the script is named after ``[paper].name`` instead of
+       ``verify_p<N>.py``, so two strangers' scripts do not collide;
+    3. C7..C11 keys are emitted, so an external config can configure
+       C8/C9/C10 without hand-editing the generated file.
+
+    ``paper_dir`` overrides only where the script is written. The
+    script's ``ROOT`` stays ``spec.dir``, matching the ``--paper-dir``
+    semantics of the in-repo path.
+    """
+    cfg = spec.to_cfg()
+    target_dir = Path(paper_dir) if paper_dir is not None else Path(spec.dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target = target_dir / spec.script_name()
+    template = _read_template('verify_TEMPLATE.py')
+    out = _substitute_verify(template, cfg, include_extended=True)
+    _write_target(target, out)
+    target.write_text(out, encoding='utf-8')
+    return target
+
+
 def fork_compile(paper_number: int, paper_dir: Path | None = None) -> Path:
     """Fork _compile_check.py for the given paper."""
     if paper_number not in COMPILE_CONFIGS:
         raise KeyError(f'no COMPILE_CONFIGS for paper {paper_number}')
     cfg = COMPILE_CONFIGS[paper_number]
-    paper_dir = Path(paper_dir if paper_dir is not None else cfg['dir']).resolve()
+    if paper_dir is None:
+        paper_dir = cfg['dir']
     target = paper_dir / '_compile_check.py'
     template = _read_template('compile_check_TEMPLATE.py')
     out = _substitute_compile(template, cfg)
@@ -360,7 +432,8 @@ def fork_fix_unicode(paper_number: int, paper_dir: Path | None = None) -> Path:
     if paper_number not in COMPILE_CONFIGS:
         raise KeyError(f'no COMPILE_CONFIGS for paper {paper_number}')
     cfg = COMPILE_CONFIGS[paper_number]
-    paper_dir = Path(paper_dir if paper_dir is not None else cfg['dir']).resolve()
+    if paper_dir is None:
+        paper_dir = cfg['dir']
     target = paper_dir / '_fix_abstract_unicode.py'
     template = _read_template('fix_abstract_unicode_TEMPLATE.py')
     out = _substitute_fix_unicode(template, cfg)

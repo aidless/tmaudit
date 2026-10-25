@@ -25,11 +25,22 @@ the cache safe.
 Usage (caller side):
 
     from tmaudit.plugins import load_plugins
-    plugins = load_plugins()
-    for name, check_fn in plugins.items():
-        findings = check_fn(tex=tex, config=paper_config)
+    from tmaudit.target import TexTarget
 
-Usage (author side):
+    plugins = load_plugins()
+    target = TexTarget(Path('main.tex'))
+    for name, check_fn in plugins.items():
+        findings = check_fn(target, config=paper_config)
+
+A plugin may declare its first parameter as **either** ``tex`` (a raw
+string, the pre-v0.6.0 convention) **or** ``target`` (a ``Target`` from
+``tmaudit.target``). ``run_plugin`` inspects the signature and adapts:
+legacy plugins keep receiving a ``str``, so every existing plugin works
+unchanged, and a ``str`` handed to a Target-aware plugin is wrapped in a
+``TextTarget``. The audited object is therefore no longer an implicit
+constant of the plugin API.
+
+Usage (author side, legacy signature):
 
     from tmaudit.plugins import Finding, check
 
@@ -39,17 +50,29 @@ Usage (author side):
                         f'TODO at line {i+1}', i+1)
                 for i, line in enumerate(tex.splitlines())
                 if 'TODO' in line]
+
+Usage (author side, structured signature):
+
+    @check(name='heading-depth', severity='LOW')
+    def check_depth(target, config=None):
+        return [Finding('STRUCT', 'LOW',
+                        f'section {s.title!r} nested at level {s.level}',
+                        s.line)
+                for s in target.sections() if s.level > 2]
 """
 from __future__ import annotations
 
+import inspect
 import logging
 import time as _time
 from dataclasses import dataclass, field
 from importlib.metadata import EntryPoint, entry_points
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Protocol, Union
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from .target import Target
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +81,10 @@ PLUGIN_GROUP = "tmaudit.plugins"
 
 # Valid severity values. Reused by Finding.__post_init__.
 VALID_SEVERITIES = ("HIGH", "MEDIUM", "LOW", "MED")
+
+# Sentinel for "argument not supplied", so that tex=None stays a legal
+# value for a plugin that genuinely wants to be called with None.
+_UNSET: Any = object()
 
 
 # ============================================================================
@@ -99,7 +126,7 @@ class CheckFn(Protocol):
 
     def __call__(
         self,
-        tex: str,
+        target: Union[str, "Target"],
         config: Optional[Dict[str, Any]] = None,
     ) -> List[Finding]:
         ...
@@ -107,7 +134,7 @@ class CheckFn(Protocol):
 
 @dataclass(frozen=True)
 class _DecoratedCheck:
-    fn: Callable[[str, Optional[Dict[str, Any]]], List[Finding]]
+    fn: Callable[..., List[Finding]]
     name: str
     severity: str
     requires_config: bool
@@ -116,10 +143,22 @@ class _DecoratedCheck:
 
     def __call__(
         self,
-        tex: str,
+        target: Any = _UNSET,
         config: Optional[Dict[str, Any]] = None,
+        *,
+        tex: Any = _UNSET,
     ) -> List[Finding]:
-        return self.fn(tex, config)
+        # Called directly (as tests and third-party code do) this adapts
+        # the argument to the wrapped function's declared convention.
+        # Called through run_plugin() the value is already adapted, and
+        # adapt() is idempotent for both str and Target inputs.
+        if tex is not _UNSET:
+            if target is not _UNSET:
+                raise TypeError("plugin() got both 'target' and 'tex'")
+            target = tex
+        if target is _UNSET:
+            raise TypeError("plugin() is missing the audited object")
+        return self.fn(adapt(self, target), config)
 
     @property
     def __tmaudit_meta__(self) -> Dict[str, Any]:
@@ -302,13 +341,69 @@ def filter_active(
     return dict(plugins)
 
 
+# ============================================================================
+# Signature adaptation (v0.6.0)
+# ============================================================================
+
+# Parameter names that opt a plugin into receiving a Target rather than a
+# raw string. The first parameter's *name* is the switch: a positional
+# convention (e.g. always passing a Target) would break every plugin and
+# test written before v0.6.0, and silently change what `tex.splitlines()`
+# means for third-party code.
+_TARGET_PARAM_NAMES = frozenset({"target", "target_or_tex", "doc"})
+
+
+def wants_target(plugin: Any) -> bool:
+    """True when this plugin's first parameter asks for a Target."""
+    fn = getattr(plugin, "fn", plugin)
+    try:
+        params = list(inspect.signature(fn).parameters)
+    except (TypeError, ValueError):
+        # C builtins and mocks without an introspectable signature fall
+        # back to the legacy string convention.
+        return False
+    return bool(params) and params[0] in _TARGET_PARAM_NAMES
+
+
+def adapt(plugin: Any, value: Any) -> Any:
+    """Coerce ``value`` into whatever ``plugin`` expects.
+
+    Target-aware plugins get a ``Target``; legacy plugins get a ``str``.
+    A ``str`` reaching a Target-aware plugin is wrapped in a
+    ``TextTarget``, so the API stays total.
+    """
+    from .target import as_target, as_text
+
+    return as_target(value) if wants_target(plugin) else as_text(value)
+
+
 def run_plugin(
     plugin: CheckFn,
-    tex: str,
+    target: Any = None,
     config: Optional[Dict[str, Any]] = None,
     paper_id: Optional[str] = None,
+    *,
+    tex: Any = None,
 ) -> List[Finding]:
-    findings = plugin(tex, config)
+    """Run one plugin against one audited object.
+
+    Args:
+        plugin: a ``@check``-decorated function.
+        target: a ``Target``, a ``str`` of source text, or a ``Path``.
+            Adapted to the plugin's declared convention before the call.
+        config: the per-paper config dict.
+        paper_id: stamped onto every emitted Finding that has no id yet.
+        tex: legacy alias for ``target``; kept so callers written before
+            v0.6.0 keep working. Passing both is an error.
+    """
+    if tex is not None:
+        if target is not None:
+            raise TypeError("run_plugin() got both 'target' and 'tex'")
+        target = tex
+    if target is None:
+        raise TypeError("run_plugin() is missing the audited object")
+
+    findings = plugin(adapt(plugin, target), config)
     if paper_id is None:
         return findings
     out = []
@@ -328,14 +423,23 @@ def run_plugin(
 
 def run_all_plugins(
     plugins: Dict[str, CheckFn],
-    tex: str,
+    target: Any = None,
     config: Optional[Dict[str, Any]] = None,
     paper_id: Optional[str] = None,
+    *,
+    tex: Any = None,
 ) -> List[Finding]:
+    if tex is not None:
+        if target is not None:
+            raise TypeError("run_all_plugins() got both 'target' and 'tex'")
+        target = tex
+    if target is None:
+        raise TypeError("run_all_plugins() is missing the audited object")
+
     out: List[Finding] = []
     for name, plugin in plugins.items():
         try:
-            out.extend(run_plugin(plugin, tex, config, paper_id))
+            out.extend(run_plugin(plugin, target, config, paper_id))
         except Exception as e:
             log.warning(
                 "tmaudit plugin %r raised during execution: %s",
@@ -376,6 +480,7 @@ def audit_plugins(
     """
     from pathlib import Path as _Path
     from . import cache as _cache
+    from .target import TexTarget, Target
 
     paper_dir = _Path(paper_dir)
     main_tex = paper_dir / "main.tex"
@@ -384,11 +489,12 @@ def audit_plugins(
             "audit_plugins: main.tex not found at %s; returning []",
             main_tex,
         )
-    tex = (
-        main_tex.read_text(encoding="utf-8", errors="replace")
-        if main_tex.exists()
-        else ""
-    )
+    target: Target
+    if main_tex.exists():
+        target = TexTarget(main_tex)
+    else:
+        target = TexTarget("", name=main_tex.stem)
+    tex = target.read()
 
     # If `enabled` is not passed explicitly, read it from
     # the per-paper config. This is the canonical entry
@@ -436,7 +542,7 @@ def audit_plugins(
                     continue
 
             findings = run_plugin(
-                plugin, tex=tex, config=config,
+                plugin, target=target, config=config,
                 paper_id=str(paper_n),
             )
             if db is not None and cache_key_str is not None:

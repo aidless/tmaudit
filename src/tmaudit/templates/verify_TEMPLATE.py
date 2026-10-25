@@ -206,11 +206,18 @@ def check_c1_abstract_definitions(tex: str) -> list[tuple[str, str, int]]:
 
     abs_result = extract_abstract(tex)
     if abs_result is None:
-        # v0.5.1 (defect D6): "no abstract" is an observation failure,
-        # not a violation — it used to be reported as a HIGH finding.
-        # Raise so main() records this category as an error instead.
-        raise ValueError(
+        # v0.5.1 (defect D6): "no abstract" is an observation failure, not a
+        # violation — it used to be reported as a HIGH finding.
+        #
+        # Raising here made main() exit 2 and label the *whole* audit crashed.
+        # That is defensible for the author's own papers, where an abstract is
+        # a precondition, but wrong for an external document: a missing
+        # abstract says nothing about the other nine categories. Recorded as
+        # an observation failure and returned as no findings — C1 could not
+        # see, so it does not claim the paper passed C1 either.
+        OBSERVATION_FAILURES['C1'] = (
             'no abstract environment found: C1 cannot be observed')
+        return []
     abstract, abs_start = abs_result
     abs_line_start = line_of(tex, abs_start)
 
@@ -362,26 +369,28 @@ def check_c3_formalization(tex: str) -> list[tuple[str, str, int]]:
 # sources; see case-studies/arxiv-corpus/.)
 _BIB_KEY_RE = re.compile(r'@\w+\{\s*([^,\s]+)\s*,')
 
-# A key from a compiled .bbl. A submission that ships only the .bbl
-# (no .bib) still defines every cite key this way:
+# A \bibitem key from a compiled .bbl, e.g. \bibitem[Smith et al.(2020)]{smith2020}
+# or \bibitem{smith2020}. arXiv source tarballs ship the .bbl and usually NOT
+# the .bib, so a C4 that only understands BibTeX reports every cite key as
+# missing on exactly the papers most likely to be audited by a stranger.
 #
-#     \bibitem[Author(2024)]{somekey2024}
-#
-# Parsing both sources lets C4 run on a paper whose .bib was withheld.
+# The optional label can wrap across lines (natbib) and can itself contain
+# brackets ([see [Smith 2020]]), so it cannot be matched with [^\]]* alone.
 _BBL_KEY_RE = re.compile(
-    r'\\bibitem\s*(?:\[[^\]]*\])?\s*\{\s*([^}\s]+)\s*\}'
+    r'\\bibitem\s*(?:\[(?:[^\]\[]|\[[^\]]*\])*\])?\s*\{\s*([^}\s]+)\s*\}',
+    re.DOTALL,
 )
 
 
 def _bib_keys(bib: str) -> set[str]:
-    """Cite keys defined in a bibliography source.
+    """Keys declared by a bibliography file.
 
-    Accepts an authored .bib (``@type{key,``) or a compiled .bbl
-    (``\\bibitem[label]{key}``) and returns the union, so a paper that
-    ships only its .bbl can still be checked for missing cite keys.
+    Accepts both formats because both arrive in practice: a .bib from an
+    author's project, a .bbl from an arXiv tarball. A file that contains
+    neither yields the empty set, which C4 reports as "every key missing"
+    rather than silently passing.
     """
     return set(_BIB_KEY_RE.findall(bib)) | set(_BBL_KEY_RE.findall(bib))
-
 
 def check_c4_citation_hygiene(
     tex: str, bib: str | None,
@@ -1734,6 +1743,15 @@ def _resolve_main(default: Path) -> Path | None:
     return None
 
 
+# Categories that ran without crashing but had nothing to look at. Kept
+# separate from `errors` (a crashed check) and from findings (a violation):
+# a document with no \begin{abstract} says nothing about its other nine
+# categories, so C1 must not be silently reported as a pass, and must not
+# take the whole audit down with it either. Reported as [not observed] and
+# reflected in the exit code (3).
+OBSERVATION_FAILURES: dict[str, str] = {}
+
+
 def _resolve_bib(default: Path) -> Path | None:
     """Locate a bibliography source for the cite-key check.
 
@@ -1855,6 +1873,8 @@ def main() -> int:
         marker = '[OK]' if n == 0 else f'[{sev}]'
         st = run_status.get(cat, '')
         note = f'  [{st}]' if st.startswith('not applicable') else ''
+        if cat in OBSERVATION_FAILURES and not note:
+            note = '  [not observed: %s]' % OBSERVATION_FAILURES[cat]
         print(f'  {cat}  {marker:7s}  {n} finding(s){note}')
     for cat, err in errors:
         print(f'  {cat}  [ERROR]   check crashed: {err}')
@@ -1890,6 +1910,16 @@ def main() -> int:
         print(f'{len(errors)} check(s) crashed — a crashed check is not a '
               'passed check; exit code 2.')
         return 2
+
+    if OBSERVATION_FAILURES:
+        # Exit 3: every check that could run, ran and did not crash, but at
+        # least one category had nothing to look at. Kept distinct from 0/1
+        # so a pipeline cannot read "unobserved" as "clean", and from 2 so a
+        # caller can tell a blind spot from a broken tool.
+        print('%d categor(y/ies) could not be observed: %s — exit code 3.'
+              % (len(OBSERVATION_FAILURES),
+                 ', '.join(sorted(OBSERVATION_FAILURES))))
+        return 3
 
     return 1 if any(SEVERITY[c] == 'HIGH' for c, _, _ in all_findings) else 0
 
