@@ -1,8 +1,8 @@
 """Minimal detector: only the config surface + 1 toy detector.
 
-This is a standalone subset of F:\\Research\\_inbox\\方法论\\mm3_hallucination_detector.py
+This is a standalone subset of the author's mm3 hallucination detector (not bundled)
 (约 60 行), so unit tests can import without pulling in the full detector
-(arXiv API, GitHub API, pdfplumber, etc.) or the rest of F:\\Research.
+(arXiv API, GitHub API, pdfplumber, etc.) or the rest of the author's research workspace.
 
 The behavior is intentionally identical to the production detector
 with respect to:

@@ -1,7 +1,7 @@
 # Engineering Notes: 6 Bugs in the `verify_p<N>.py` Template Generator
 
 **Authors:** Liu Zewen
-**Repo path:** `F:\Research\TEMPLATE\`
+**Repo path:** local TEMPLATE checkout
 **Date:** 2026-07-10
 **Scope:** debugging `gen_verify_scripts.py` — the config-driven fork tool that
 turns `_verify_TEMPLATE.py` into per-paper `verify_p<N>.py` audit scripts.
