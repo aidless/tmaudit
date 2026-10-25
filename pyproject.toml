@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmaudit"
-version = "0.5.1"
+version = "0.7.0"
 description = "Config-driven TMLR paper audit + LaTeX compile pipeline"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -58,6 +58,13 @@ dev = [
     # them installed system-wide.
     "scipy>=1.10",
     "PyYAML>=6.0",
+]
+# Reading `verify --target paper.toml` on Python 3.9/3.10 needs a TOML
+# parser (3.11+ ships tomllib). Deliberately an extra, not a hard
+# dependency: `dependencies = []` is a real property of this package, and
+# the .json config path works on every supported Python with stdlib only.
+toml = [
+    "tomli>=1.1.0; python_version < '3.11'",
 ]
 
 [project.urls]

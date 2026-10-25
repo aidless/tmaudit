@@ -4,11 +4,21 @@ Usage:
     tmaudit list
     tmaudit verify --paper N [--paper-dir PATH] [--dry-run]
                      [--no-cache] [--clear-cache] [--cache-info]
+    tmaudit verify --target paper.toml [--paper-dir PATH] [--dry-run]
     tmaudit compile --paper N [--paper-dir PATH]
     tmaudit fix-unicode --paper N [--paper-dir PATH] [--apply]
     tmaudit audit-all [--start 1] [--end 5]
     tmaudit cache-info
     tmaudit cache-clear
+    tmaudit admission --gain 7.3 --tasks 89 [--candidates K] [--rounds T]
+    tmaudit admission --required-tasks 7.3
+    tmaudit admission --audit claims.json
+    tmaudit admission --grid [--sizes 89 500 2000]
+
+``--paper N`` selects one of the author's five papers from PAPER_CONFIGS.
+``--target FILE`` instead loads a config file (``.toml`` or ``.json``)
+from disk and runs the *same* verify path against it — that is the entry
+point for anyone who does not own a ``PAPER<N>_CONSOLIDATED`` directory.
 
 The CLI works equally well when the package is installed via
 `pip install` or when it is run as a zipapp via `python tmaudit.pyz`.
@@ -23,6 +33,7 @@ from .configs.compile_configs import PAPER_CONFIGS as COMPILE_CONFIGS
 from .configs.paper_configs import PAPER_CONFIGS as VERIFY_CONFIGS
 from . import forge
 from . import cache as _cache
+from . import admission as _admission
 
 
 def _add_paper_arg(parser: argparse.ArgumentParser) -> None:
@@ -51,9 +62,58 @@ def cmd_list(args: argparse.Namespace) -> int:
     return 0
 
 
+def _verify_external_target(args: argparse.Namespace) -> int:
+    """verify --target FILE: same path as --paper, config from disk."""
+    from .configs.target_config import TargetConfigError, load_target_config
+
+    try:
+        spec = load_target_config(args.target)
+    except TargetConfigError as e:
+        print(f'ERROR: {e}', file=sys.stderr)
+        return 2
+
+    for warning in spec.warnings():
+        print(f'[WARN] {warning}', file=sys.stderr)
+
+    out_dir = Path(args.paper_dir) if args.paper_dir else Path(spec.dir)
+    if args.dry_run:
+        print(f'[DRY-RUN] would fork {spec.script_name()} '
+              f'for target {spec.name!r}')
+        print(f'  config: {spec.source}')
+        print(f'  root:   {spec.dir}')
+        print(f'  target: {out_dir / spec.script_name()}')
+        return 0
+
+    if getattr(args, 'clear_cache', False):
+        db = _cache.CacheDB()
+        n = db.clear()
+        print(f'[CACHE] Cleared {n} entries before running')
+        db.close()
+
+    target = forge.fork_verify_for_target(spec, args.paper_dir)
+    print(f'[WRITE] {target} ({target.stat().st_size:,} chars)')
+    rc = subprocess.run(
+        [sys.executable, str(target)],
+        cwd=target.parent,
+    ).returncode
+
+    if getattr(args, 'cache_info', False):
+        cmd_cache_info(argparse.Namespace())
+
+    return rc
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
+    has_target = getattr(args, 'target', None) is not None
+    if has_target and args.paper is not None:
+        print('ERROR: --paper and --target are mutually exclusive',
+              file=sys.stderr)
+        return 2
+    if has_target:
+        return _verify_external_target(args)
     if args.paper is None:
-        print('ERROR: --paper N is required for verify', file=sys.stderr)
+        print('ERROR: --paper N or --target FILE is required for verify',
+              file=sys.stderr)
         return 2
     if args.paper not in VERIFY_CONFIGS:
         print(f'ERROR: no VERIFY_CONFIGS for paper {args.paper}', file=sys.stderr)
@@ -386,6 +446,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     _add_paper_arg(p_verify)
     p_verify.add_argument(
+        '--target', type=Path, default=None,
+        help='load an external paper config (.toml or .json) instead of '
+             '--paper N; runs the same verify path against it',
+    )
+    p_verify.add_argument(
         '--no-cache', action='store_true',
         help='bypass the cache: do not read or write audit results',
     )
@@ -470,6 +535,65 @@ def main(argv: list[str] | None = None) -> int:
     p_plugins_run.add_argument('name', help='plugin name')
     _add_paper_arg(p_plugins_run)
     p_plugins_run.set_defaults(func=cmd_plugins_run)
+
+    # Statistical admission certificates for self-evolving harness claims
+    # (added in v0.7.0). See tmaudit/admission.py for the derivations.
+    p_adm = sub.add_parser(
+        'admission',
+        help='certify a reported harness gain against the fresh-validation '
+             'admission rule (arXiv:2610.18813 eq. 8/9)',
+    )
+    p_adm.add_argument(
+        '--gain', type=float, default=None, metavar='PP',
+        help='observed paired improvement in percentage points',
+    )
+    p_adm.add_argument(
+        '--tasks', type=int, default=None, metavar='M',
+        help='number of fresh, independent TASKS in the validation set '
+             '(not rollouts)',
+    )
+    p_adm.add_argument(
+        '--candidates', type=int, default=5, metavar='K',
+        help='max candidates compared per round (default: 5)',
+    )
+    p_adm.add_argument(
+        '--rounds', type=int, default=10, metavar='T',
+        help='total rounds covered by the union bound (default: 10)',
+    )
+    p_adm.add_argument(
+        '--delta', type=float, default=0.05,
+        help='failure probability budget (default: 0.05)',
+    )
+    p_adm.add_argument(
+        '--eta-pp', type=float, default=0.0,
+        help='upper bound on the evaluator-vs-target risk gap, in pp '
+             '(eq. 9; requires external evidence)',
+    )
+    p_adm.add_argument(
+        '--required-tasks', type=float, default=None, metavar='PP',
+        help='invert the rule: report the m needed to certify this gain',
+    )
+    p_adm.add_argument(
+        '--audit', type=Path, default=None, metavar='FILE',
+        help='certify every claim in a JSON file (list of '
+             '{name, gain_pp, tasks, ...})',
+    )
+    p_adm.add_argument(
+        '--grid', action='store_true',
+        help='print the m -> minimum-certifiable-gain table',
+    )
+    p_adm.add_argument(
+        '--sizes', type=int, nargs='+',
+        default=[89, 200, 500, 1000, 2000, 5000, 10000, 20000],
+        metavar='M',
+        help='task counts for --grid (default: 89 200 500 1000 2000 5000 '
+             '10000 20000)',
+    )
+    p_adm.add_argument(
+        '--json', action='store_true',
+        help='also print the verdict as JSON',
+    )
+    p_adm.set_defaults(func=_admission.cmd_admission)
 
     args = parser.parse_args(argv)
     return args.func(args)

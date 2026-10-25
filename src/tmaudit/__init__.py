@@ -1,16 +1,22 @@
 """tmaudit — config-driven TMLR paper audit + LaTeX compile pipeline.
 
 This package bundles:
-  * The generic 6-category audit template
+  * The generic 10-category audit template (C1..C10)
   * The generic 4-pass LaTeX compile script
   * The generic abstract-Unicode -> LaTeX-math fixer
   * Per-paper PAPER_CONFIGS for all five TMLR papers
   * A plugin API (added in v0.4.0) for user-written audit checks
+  * External paper configs (added in v0.6.0): `verify --target FILE`
+    runs the same audit path on a paper that is not in PAPER_CONFIGS
+  * A read-only `Target` view (added in v0.6.0) over the audited object,
+    so a plugin can ask for sections and citations instead of re-parsing
+    LaTeX
 
 and exposes a single CLI:
 
     tmaudit --list
     tmaudit verify --paper N [--paper-dir PATH]
+    tmaudit verify --target paper.toml [--paper-dir PATH]
     tmaudit compile --paper N
     tmaudit fix-unicode --paper N
     tmaudit audit-all
@@ -20,7 +26,7 @@ The package can be installed with `pip install tmaudit/` (or
 `pip install -e .` for editable mode) and shipped as a single
 executable .pyz file with `python -m zipapp`.
 """
-__version__ = '0.5.0'
+__version__ = '0.7.0'
 
 # Re-export the plugin API at the package level so users can
 # `from tmaudit import Finding, check` instead of
@@ -40,6 +46,17 @@ from .plugins import (
     run_plugin,
 )
 
+# The audited-object view, re-exported for plugin authors.
+from .target import (
+    CitationRef,
+    Section,
+    Target,
+    TexTarget,
+    TextTarget,
+    as_target,
+    as_text,
+)
+
 __all__ = [
     "__version__",
     "Finding",
@@ -53,6 +70,13 @@ __all__ = [
     "reset_loader_cache",
     "run_all_plugins",
     "run_plugin",
+    "CitationRef",
+    "Section",
+    "Target",
+    "TexTarget",
+    "TextTarget",
+    "as_target",
+    "as_text",
     # Re-exported for plugin authors. CHANGELOG.md records them as public API, so
     # listing them here is what tells pyflakes they are not dead imports.
     "CacheDB",

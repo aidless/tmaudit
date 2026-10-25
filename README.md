@@ -9,7 +9,7 @@
 ![PR%20Checks](https://img.shields.io/badge/PR%20checks-40%20checkboxes-blueviolet)
 ![Issues](https://img.shields.io/badge/issues-4%20templates-blueviolet)
 ![Security](https://img.shields.io/badge/security-policy%20in%20place-green)
-![Version](https://img.shields.io/badge/version-0.5.1-blue)
+![Version](https://img.shields.io/badge/version-0.7.0-blue)
 ![Roadmap](https://img.shields.io/badge/roadmap-through%20v0.5.0-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -28,6 +28,41 @@ ships three things in one place:
    directory and (optionally) runs them.
 
 ## Four ways to use it
+
+### (0) Audit a paper you do not own (`--target`, v0.6.0)
+
+`--paper N` only works on this author's five directories. To audit any
+other paper, drop a config next to it and use the same command:
+
+```toml
+# paper.toml, next to main.tex
+schema = "tmaudit-target/1"
+
+[paper]
+name = "my-paper"          # optional: names the generated verify_my-paper.py
+tex_basename = "main"      # optional
+# bib = "references.bib"   # optional: auto-detected (.bib or compiled .bbl)
+
+[checks]
+c4_self_cite_prefix = "smith2025"
+
+[[checks.c1_symbols]]
+name = 'CAF'
+token = '\\bCAF\\b'
+definition = 'CAF.{0,80}='
+```
+
+```bash
+tmaudit verify --target paper.toml          # forks verify_my-paper.py and runs it
+tmaudit verify --target paper.toml --dry-run
+```
+
+Unknown keys are errors with a suggestion, not silent no-ops. `.json`
+works too, for Python 3.9/3.10 without `tmaudit[toml]`.
+
+Exit codes: `0` clean, `1` HIGH finding, `2` did not complete (missing
+input or a crashed check), `3` ran but at least one category could not be
+observed (e.g. C1 on a paper with no abstract).
 
 ### (A) Run the single-file `tmaudit.pyz` (zero install)
 
@@ -83,6 +118,58 @@ tmaudit list
 Published on PyPI via trusted publishing (OIDC) from
 `.github/workflows/publish-pypi.yml`; new versions are cut from GitHub
 Releases. This is the quickest form for someone who just wants the CLI.
+
+## `tmaudit admission`: is a reported gain certifiable? (v0.7.0)
+
+Paper audits ask whether a claim is *internally consistent*. A self-evolving
+harness claim needs a different question: the revision was **selected against
+the same evidence that is later reported as the result**, so a positive delta is
+not by itself evidence of generalization.
+
+`admission` implements the sufficient condition of arXiv:2610.18813 §4.2
+(preprint; read, not re-derived):
+
+```
+Δ_k(H') ≤ Δ̂_k(H') + sqrt( 2 ln(KT/δ) / m )          eq. 8, "accept only candidates with negative upper bounds"
+Δ̂_k(H') + sqrt( 2 ln(KT/δ) / m ) + 2η < 0           eq. 9, evaluator-vs-target gap bounded by η
+```
+
+```bash
+# one claim: +7.3pp observed on 89 fresh tasks, K=5 candidates, T=10 rounds, δ=.05
+tmaudit admission --gain 7.3 --tasks 89
+# [NOT CERTIFIED] gain=+7.30pp  upper=+32.10pp  m=89  K=5  T=10  delta=0.05  eta=0.00pp
+# note: certifying this gain would need tasks m >= 2,593
+
+tmaudit admission --required-tasks 2.0        # invert eq. 8 → tasks m >= 34,539
+tmaudit admission --grid                       # table of (m, minimum certifiable gain)
+tmaudit admission --audit claims.json          # batch; exit 1 if any claim fails
+```
+
+Exit codes: `0` every claim certified, `1` at least one uncertified (so it
+gates CI), `2` bad input.
+
+**Two rules that decide most verdicts**, both from the source paper:
+
+1. **`m` counts fresh independent *tasks*, not rollouts.** Extra rollouts on
+   the same task raise precision without raising the sample size, so `--tasks`
+   is not "number of runs". At K=5, T=10, δ=.05 and m=89 tasks, the smallest
+   gain the rule can certify at all is **39.4 pp**; at m=500 it is 16.6 pp, and
+   at m=2,000 it is 8.3 pp (`--grid` prints the whole table).
+2. **η is not free.** The term enters eq. 9 as `2η` and sits on the *same* side
+   as the confidence width, so an η of 2 pp adds 4 pp to the margin: a 7.3 pp
+   gain moves from "needs 2,593 tasks" to "needs 12,687 tasks", and once
+   `2η ≥ gain` no sample size certifies at all (`--eta-pp` then reports
+   "no m suffices").
+
+Also included: `retention_ledger()` for eq. (6) —
+`E R_s(H_k) ≤ E R̂_s(H_s) + β_{s,s} + Σ ε_{s,u}` — where the per-round `ε`
+terms are *separate assumptions* that accumulate, so once their sum reaches the
+gain being defended the bound is vacuous by construction.
+
+What the tool does **not** do: it certifies a *gain*, never a *cause*. A
+certified delta still says nothing about which harness component produced it,
+and the bound covers the historical task mixture, not an arbitrary future
+distribution.
 
 ## Self-audit: the audit core on 25 real papers
 

@@ -6,6 +6,139 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [v0.7.0] — 2026-10-24
+
+### Added — `admission`: statistical certificates for self-evolving harness claims
+
+A class of 2026 papers reports that an agent's harness (prompts, tools,
+memory, middleware, control logic) was revised by an automated loop while
+model weights were held fixed, and cites a benchmark delta as evidence the
+revision worked. Selecting on empirical fitness does not establish
+generalization: the reported delta comes from the same tasks the loop
+optimised against.
+
+`arXiv:2610.18813` (Self-evolving Agent Harness, §4.2) states a sufficient
+condition for admitting a revision with a fresh, independent validation set:
+
+    Delta_hat + sqrt( 2 * ln(K*T/delta) / m ) < 0                  (eq. 8, p.7)
+    Delta_hat + sqrt( 2 * ln(K*T/delta) / m ) + 2*eta < 0          (eq. 9, p.8)
+
+`tmaudit admission` implements both inequalities, the retention bookkeeping
+of eq. (6), and the inversion of eq. (8):
+
+```
+tmaudit admission --gain 7.3 --tasks 89
+# [NOT CERTIFIED] gain=+7.30pp  upper=+32.10pp  m=89  K=5  T=10  delta=0.05
+# note: certifying this gain would need tasks m >= 2,593
+
+tmaudit admission --required-tasks 7.3      # -> tasks m >= 2,593
+tmaudit admission --grid                    # m -> minimum certifiable gain
+tmaudit admission --audit claims.json       # batch; exit 1 if any uncertified
+```
+
+Design notes:
+
+- `--tasks` is the number of fresh, independent **tasks**, not rollouts.
+  The source is explicit that extra rollouts raise precision without
+  raising the sample size (p.7, "Scope of the guarantees"), so the flag
+  refuses `m < 2` and the docstring says so.
+- Exit codes: `0` certified, `1` uncertified, `2` bad input. The batch mode
+  exits `1` if any claim in the file fails, so it can gate CI.
+- Stdlib only. `dependencies = []` remains true.
+- `--eta-pp` implements eq. (9). Providing it *raises* the required gain by
+  `2*eta`; it is not a correction in the candidate's favour.
+- `RetentionLedger` (eq. 6) reports when the accumulated regression
+  allowance `sum(eps)` has consumed the gain being defended, i.e. when the
+  retention bound has become vacuous.
+
+Tests: `tests/test_admission.py` (41 cases). Every numeric assertion is
+re-derived by hand from eq. (8) — `2*ln(5000) = 17.0344`,
+`sqrt(13.8155/89) = 39.4pp`, `ceil(13.8155/0.073**2) = 2593` — so a
+regression in the formula cannot be masked by a captured snapshot. Includes
+a round-trip property test (`required_tasks` then `certify` must pass, and
+`m-1` must fail).
+
+### Changed
+- Version bump to 0.7.0.
+
+## [v0.6.0] — 2026-10-24
+
+### Added — `verify --target FILE`: audit a paper you do not own
+
+`PAPER_CONFIGS` is keyed by `int` 1..5 and points at five directories on
+the author's machine, so `tmaudit verify --paper 1` was unusable to
+anyone else. `--target` loads a config from disk (`.toml`, or `.json` on
+Python 3.9/3.10 without the `toml` extra) and runs the **same** verify
+path: same template, same substitution, same checks, same report.
+
+```
+tmaudit verify --target paper.toml
+tmaudit verify --target paper.toml --dry-run
+```
+
+`PAPER_CONFIGS` is unchanged. `.toml` needs `tomllib` (3.11+) or
+`pip install 'tmaudit[toml]'`; `dependencies` stays empty.
+
+Validation is strict on purpose: an unknown key is an error with a
+"did you mean" suggestion, never a silent no-op — a config typo that
+quietly disables a check produces exactly the unverifiable audit this
+tool exists to prevent.
+
+### Added — `tmaudit.target`: the audited object is no longer a bare string
+
+`Target` is a read-only view (`read`, `lines`, `sections`, `citations`,
+`metadata`). `TexTarget` implements it over LaTeX; `TextTarget` wraps a
+plain string so a Target-aware plugin can still be driven from text.
+
+A plugin opts in by naming its first parameter `target` (or
+`target_or_tex` / `doc`); otherwise it keeps receiving `str`. **Every
+plugin written before v0.6.0 works unchanged**, including direct calls
+with `tex=`.
+
+### Added — bibliography detection
+
+`[paper].bib` is optional. When absent the bibliography is detected:
+conventional names first, then a content sniff over top-level files, so
+`bib.bib`, `custom.bib` and an arXiv tarball's `main.bbl` all work with
+no config edit. `[paper].tex_basename` also now reaches the generated
+script's `MAIN`, which it previously did not.
+
+### Fixed
+
+- **C4 only understood BibTeX.** A `.bbl` (what an arXiv source tarball
+  ships, usually without the `.bib`) produced "every cite key missing".
+  `_bib_keys()` now unions `@type{key,` and `\bibitem{key}` forms,
+  including natbib's multi-line optional label.
+- **C4 reported 0 keys for a real `.bbl`.** The `\bibitem[...]` label can
+  wrap across lines; the pattern now crosses newlines and tolerates
+  brackets inside the label.
+- **A missing abstract crashed the whole audit.** C1 raised, which made
+  `main()` exit 2 and label every category crashed. A document without
+  `\begin{abstract}` now completes: C1 is reported `[not observed]` and
+  the exit code is 3, distinct from 0/1 (ran) and 2 (broken). The
+  original invariant — an observation failure must never be printed as a
+  finding — still holds.
+- **`__version__` said 0.5.0 while `pyproject.toml` said 0.5.1**, and the
+  tag v0.5.1 had already shipped, so every `audit-all` Markdown report
+  carried the wrong version. Both now read 0.6.0 and a test asserts they
+  agree.
+- Report line hardcoded `refs.bib` regardless of the file actually read.
+
+### Added — corpus regression suite
+
+`tests/test_corpus_regression.py` runs the audit over all 15 papers in
+`case-studies/arxiv-corpus/_corpus` and asserts no run aborts and every
+citing paper resolves a bibliography. Marked `slow`.
+
+### Exit codes (unchanged meaning, one new value)
+
+| code | meaning |
+|---|---|
+| 0 | ran, no HIGH finding |
+| 1 | ran, HIGH finding present |
+| 2 | did not complete: missing input, or a check crashed |
+| 3 | ran, no crash, but at least one category could not be observed |
+
 ## [v0.5.1] — 2026-10-16
 
 ### Fixed (self-audit defects D1-D6)
