@@ -436,6 +436,17 @@ def main(argv: list[str] | None = None) -> int:
         prog='tmaudit',
         description='Config-driven TMLR paper audit + LaTeX compile pipeline.',
     )
+    # `--version` has to work before any subcommand, because the first thing
+    # anyone does after `pip install` is ask what they just installed. It also
+    # matters here: reports embed __version__, and 0.5.1 shipped reports that
+    # said 0.5.0 because the two numbers had drifted apart.
+    try:
+        from . import __version__ as _cli_version
+    except Exception:  # pragma: no cover - only if the package is half-built
+        _cli_version = 'unknown'
+    parser.add_argument(
+        '--version', action='version', version=f'tmaudit {_cli_version}',
+    )
     sub = parser.add_subparsers(dest='command', required=True)
 
     p_list = sub.add_parser('list', help='list known paper configurations')

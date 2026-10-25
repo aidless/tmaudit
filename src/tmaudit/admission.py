@@ -55,7 +55,7 @@ from __future__ import annotations
 import json
 import math
 import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -178,6 +178,11 @@ def certify(
     Verdict
     """
     half_width_pp = margin(tasks, candidates, rounds, delta) * 100.0
+    # eq. (8) is stated on Delta = -gain, so the upper confidence bound is
+    #   Delta_hat + half_width = -gain + half_width = half_width - gain,
+    # and the candidate is admitted exactly when that bound is negative --
+    # i.e. when the gain exceeds the half-width. At gain == half_width the
+    # bound is 0, which is not < 0, so the boundary is not certified.
     upper_pp = half_width_pp - gain_pp + 2.0 * eta_pp
     return Verdict(
         gain_pp=float(gain_pp),

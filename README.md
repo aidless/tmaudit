@@ -196,6 +196,30 @@ defects replay: [`case-studies/arxiv-corpus/`](case-studies/arxiv-corpus/README.
 has the coverage matrix, the method, and what the numbers do **not**
 establish.
 
+### Round two (v0.7.0): the same corpus through `--target`
+
+The v0.5.0 round ran through `PAPER_CONFIGS`, i.e. with configs the author
+had written. The honest follow-up is to run the *external* path — the one a
+stranger uses — over the same 25 sources, with a six-line config generated
+per paper and nothing else tuned:
+
+| Metric | v0.5.1 | v0.7.0 via `--target` |
+|---|---|---|
+| Papers completing the audit | 21 / 25 | **25 / 25** |
+| Papers aborting (exit 2) | 4 | **0** |
+| Papers with a category `[not observed]` | — | **0** |
+| Papers whose bibliography resolved | 21 | **25** |
+| Bibliography filenames handled | `refs.bib` | `main.bbl`, `bib.bib`, `references.bib` |
+
+The three defects this round found are the ones v0.6.0 fixed: C4 did not
+read `.bbl` (what an arXiv tarball actually ships), C1 crashed the entire
+audit when a document had no `\begin{abstract}`, and the bibliography
+filename was assumed rather than detected. Each aborted a *different*
+paper, which is why one hand-chosen paper would not have found any of them.
+
+Run install-free, from the built wheel, in an environment with no
+third-party packages.
+
 ## v0.3.0 highlights
 
 **Released: 2026-07-10.** This release adds 3 new audit categories

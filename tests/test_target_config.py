@@ -403,3 +403,32 @@ class TestCli:
         )
         assert proc.returncode in (0, 1), proc.stderr
         assert "ERROR: missing" not in proc.stderr
+
+
+class TestVersionFlag:
+    """`--version` must work before any subcommand is required.
+
+    Reports embed ``__version__``; 0.5.1 shipped reports that said 0.5.0
+    because the two numbers drifted apart. A version flag that does not
+    answer at the top level is how that drift stays invisible.
+    """
+
+    def test_version_prints_package_version(self, capsys):
+        with pytest.raises(SystemExit) as exc:
+            cli_main(["--version"])
+        assert exc.value.code == 0
+        out = capsys.readouterr().out.strip()
+        from tmaudit import __version__
+
+        assert out == f"tmaudit {__version__}"
+
+    def test_version_matches_pyproject(self):
+        import re
+        from pathlib import Path
+
+        from tmaudit import __version__
+
+        root = Path(__file__).resolve().parents[1]
+        text = (root / "pyproject.toml").read_text(encoding="utf-8")
+        declared = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+        assert declared and declared.group(1) == __version__

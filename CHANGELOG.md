@@ -60,6 +60,11 @@ a round-trip property test (`required_tasks` then `certify` must pass, and
 
 ### Changed
 - Version bump to 0.7.0.
+- `tmaudit --version` now works. Previously the top-level parser had no
+  version flag, so `tmaudit --version` exited 2 with "the following
+  arguments are required: command". Since reports embed `__version__` and
+  0.5.1 shipped reports carrying 0.5.0, an install whose version cannot be
+  queried at the top level is exactly how that drift stays invisible.
 
 ## [v0.6.0] — 2026-10-24
 
