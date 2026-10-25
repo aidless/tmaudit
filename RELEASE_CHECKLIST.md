@@ -3,7 +3,6 @@
 > **Status**: artifacts built and verified locally; **not uploaded**.
 > **Prepared**: 2026-10-24
 > **Supersedes**: `PYPI_PREP_v0.4.1_archive.md` (kept for the name check only).
-
 Uploading to PyPI is irreversible — a version number cannot be reused or
 withdrawn. Everything below §6 has been executed. §6 needs a human decision
 and a credential, so it is deliberately left unticked.
@@ -77,22 +76,56 @@ who does not own paper 1 through 5.
 
 ## 6. Upload (NOT DONE — needs explicit approval)
 
+### Name status (re-checked 2026-10-24, supersedes the 2026-07-10 archive note)
+
+| Index | Status |
+|---|---|
+| PyPI | **Owned by this project.** 0.5.0 and 0.5.1 uploaded 2026-10-17. Author email matches `pyproject.toml`. |
+| TestPyPI | **404 — never published there.** 0.7.0 will be its first release on TestPyPI. |
+
+Two consequences:
+
+1. The archive note's worry about the name being taken is resolved — it is
+   already ours. The remaining risk on the real index is therefore *only*
+   that a version number cannot be reused, not that the name is unavailable.
+2. Because nothing was ever published to TestPyPI, the first install from
+   TestPyPI will exercise a code path that has never run before. That is an
+   argument *for* doing TestPyPI first, not against it.
+
+Metadata confirmed on the published 0.5.1: `license_expression = MIT` and
+`license = None`. That `None` is not a defect — PEP 639 moved the license to
+`License-Expression`, and PyPI exposes it under the new key. The 0.7.0 wheel
+carries `License-Expression: MIT`, so both agree.
+
+### Command (twine 7 dropped `--repository`; use `--repository-url`)
+
 ```bash
-# 1. Confirm the credential exists and points at the real PyPI.
-#    A typo here uploads to TestPyPI, which is harmless but wastes a version.
-twine upload --repository testpypi dist/*
-# 2. Verify install from TestPyPI in a clean venv, then:
-twine upload dist/*
+# TestPyPI first. Zero cost if it fails: no real version number is consumed.
+python -m twine upload \
+  --repository-url https://test.pypi.org/legacy/ \
+  --username __token__ \
+  --password <TESTPYPI_TOKEN> \
+  dist/*
+
+# Then install from TestPyPI and smoke-test before touching the real index.
+python -m venv /tmp/tp-venv
+/tmp/tp-venv/bin/pip install \
+  --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple/ \
+  tmaudit==0.7.0
+/tmp/tp-venv/bin/tmaudit --version
+/tmp/tp-venv/bin/tmaudit admission --gain 7.3 --tasks 89
+
+# Only after that passes:
+python -m twine upload dist/*
 ```
 
 Before running either command:
 
-- [ ] Confirm `tmaudit` is still unclaimed or already owned by this account.
-      The archive note records it FREE as of 2026-07-10, which is over three
-      months stale.
-- [ ] Confirm the `tmaudit` API token, not a password.
+- [ ] Confirm the `tmaudit` API token for **the right index** — a TestPyPI
+      token will not authenticate against PyPI and vice versa.
 - [ ] Decide whether to tag `v0.7.0` and push the tag **before** uploading.
-      The commit exists (`3d78dc7`) but is not pushed.
+      The commits exist (`3d78dc7`, `e5bdc23`) but are not pushed.
 
 ## 7. Known gaps after release
 

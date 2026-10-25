@@ -39,8 +39,18 @@ def main() -> int:
     BUILD.mkdir()
 
     # Copy tmaudit package tree (preserve structure)
+    #
+    # `__pycache__` must not go in. It never used to matter because the
+    # archive was built on a clean tree, but any run of the test suite or an
+    # editable install leaves bytecode in src/, and copytree copies it
+    # verbatim: the archive grows, carries .pyc compiled against whatever
+    # interpreter built it, and CI's freshness gate (_check_pyz_fresh.py)
+    # rejects it outright.
     target_pkg = BUILD / 'tmaudit'
-    shutil.copytree(PKG, target_pkg)
+    shutil.copytree(
+        PKG, target_pkg,
+        ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.pyo'),
+    )
 
     # Build the .pyz
     if OUT.exists():

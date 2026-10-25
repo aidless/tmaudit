@@ -66,6 +66,27 @@ a round-trip property test (`required_tasks` then `certify` must pass, and
   0.5.1 shipped reports carrying 0.5.0, an install whose version cannot be
   queried at the top level is exactly how that drift stays invisible.
 
+### Fixed (packaging)
+
+- **The wheel shipped without `detector_config/detector.yaml`.**
+  `package-data` listed `templates/*` and `configs/*` but not the yaml, so a
+  non-editable install — the path every `pip install tmaudit` user takes —
+  fell back to the built-in defaults and behaved differently from the source
+  tree it was built from. The suite stayed green because it runs against
+  `src/` via `PYTHONPATH`, where the file exists; an editable install hides
+  it the same way. `tests/test_package_data.py` now reads the built wheel
+  rather than the source tree, and was confirmed to fail on the wheel that
+  exposed this before being fixed.
+- **`tmaudit.pyz` carried `.pyc` bytecode.** `_build_pyz.py` copied the
+  package tree with no filter, so any prior test run or editable install left
+  `__pycache__` inside `src/`, and it was archived verbatim: the artifact
+  doubled in size (157 KB vs 85 KB) and shipped bytecode compiled against
+  whichever interpreter built it. `copytree` now ignores
+  `__pycache__`/`*.pyc`/`*.pyo`.
+
+This defect was found and fixed independently on the other development
+branch as release 0.5.2; see `DIVERGENCE_ANALYSIS.md`.
+
 ## [v0.6.0] — 2026-10-24
 
 ### Added — `verify --target FILE`: audit a paper you do not own

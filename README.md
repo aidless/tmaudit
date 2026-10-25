@@ -265,9 +265,11 @@ tmaudit verify --paper N [--dry-run]      # fork verify_pN.py + run audit
 tmaudit compile --paper N [--dry-run]     # fork _compile_check.py + 4-pass build
 tmaudit fix-unicode --paper N [--dry-run] # fork _fix_abstract_unicode.py
 tmaudit audit-all [--start 1] [--end 5]   # verify all papers in a range
+tmaudit verify --target paper.toml        # audit a paper you do not own (v0.6.0)
+tmaudit admission --gain PP --tasks M     # certify a reported gain (v0.7.0)
 ```
 
-Every subcommand also accepts `--paper-dir PATH` to override the
+Every paper subcommand also accepts `--paper-dir PATH` to override the
 default paper directory.
 
 ## The standard 3-step protocol for any new paper
