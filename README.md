@@ -202,7 +202,7 @@ default paper directory.
 ## The standard 3-step protocol for any new paper
 
 ```powershell
-cd F:\Research\PAPER<N>_CONSOLIDATED
+cd path\to\PAPER<N>_CONSOLIDATED
 
 # 1. audit
 tmaudit verify --paper N
