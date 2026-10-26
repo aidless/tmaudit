@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Job 1: install tmaudit, run the 263-test pytest suite, upload JUnit XML
+  # Job 1: install tmaudit, run the 264-test pytest suite, upload JUnit XML
   # --------------------------------------------------------------------------
   pytest:
     name: pytest (Python ${{ matrix.python-version }})

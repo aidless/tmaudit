@@ -11,13 +11,25 @@ key, no network, and no required dependencies.
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![Tests](https://img.shields.io/badge/tests-263%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-264%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ```bash
-pipx install tmaudit
+# zero install: run the demo from a checkout
+git clone https://github.com/aidless/tmaudit && cd tmaudit
+bash examples/run_demo.sh
+
+# install the current source (PyPI 0.5.1 is the previous release)
+pipx install "git+https://github.com/aidless/tmaudit.git"
 tmaudit verify --paper-dir path/to/your/paper
 ```
+
+`pipx install tmaudit` still gives the 0.5.1 PyPI release; the repository is
+0.5.2. Use the git URL above for the current source.
+
+`verify` writes a forked `verify_generic.py` into the paper directory so you
+can inspect or edit the rulepack. The demo runs on a temporary copy, so the
+checkout stays clean. `--dry-run` shows the write plan without running the audit.
 
 Excerpt of real output from a deliberately flawed sample manuscript
 ([`examples/sample-paper/`](examples/sample-paper/)):
@@ -36,6 +48,21 @@ Findings by category:
     \section{...Availability...}, no GitHub/GitLab/Zenodo URL, and no
     "code is available" phrase). Reviewer §5 #10.
 ```
+
+## 60-second demo
+
+No install, no API key. The demo copies the sample paper to a temporary
+directory, runs the C4–C10 checks, and removes the copy:
+
+```bash
+git clone https://github.com/aidless/tmaudit && cd tmaudit
+bash examples/run_demo.sh
+```
+
+![tmaudit terminal demo](docs/assets/demo.gif)
+
+That run produces **6 findings** (1 medium, 5 low) in about 0.2 seconds and
+leaves the working tree unchanged. The static excerpt above is the same audit.
 
 ## What it checks
 

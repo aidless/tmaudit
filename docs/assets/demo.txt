@@ -1,0 +1,47 @@
+# captured 2026-10-25 from: bash examples/run_demo.sh (rc=0, 234 ms)
+# raw stdout; docs/assets/demo.gif is a curated view of this run
+========================================================================
+PAPER AUDIT  (verify_generic.py)
+========================================================================
+Source: /tmp/tmp.oCJViHF1II/main.tex
+Size:   569 chars
+Refs:   1 entries in refs.bib
+
+Findings by category:
+  C1  [OK]     0 finding(s)  [not applicable: no per-paper config]
+  C2  [OK]     0 finding(s)  [not applicable: no per-paper config]
+  C3  [OK]     0 finding(s)  [not applicable: no per-paper config]
+  C4  [OK]     0 finding(s)
+  C5  [OK]     0 finding(s)
+  C6  [OK]     0 finding(s)  [not applicable: no per-paper config]
+  C7  [OK]     0 finding(s)
+  C8  [OK]     0 finding(s)
+  C9  [MEDIUM]  1 finding(s)
+  C10  [LOW]    5 finding(s)
+
+------------------------------------------------------------------------
+DETAILED FINDINGS
+------------------------------------------------------------------------
+
+[MEDIUM] C9  (global)
+    MED: figure fig:unused is defined but never referenced in the body text (no \ref{fig:unused} or \autoref{fig:unused}). Reviewer §5 #9.
+
+[LOW] C10  (global)
+    HIGH: paper has no code/data availability statement (no \section{...Availability...}, no GitHub/GitLab/Zenodo URL, and no "code is available" phrase). Reviewer §5 #10.
+
+[LOW] C10  (global)
+    LOW: no hyperparameters reported (no "learning rate", "batch size", or "optimizer" found). Reviewer §5 #10.
+
+[LOW] C10  (global)
+    LOW: no random seed reported (no "random seed" or "torch.manual_seed" found). Reviewer §5 #10.
+
+[LOW] C10  (global)
+    LOW: no hardware specs reported (no "GPU", "RTX", "A100", or "T4" found). Reviewer §5 #10.
+
+[LOW] C10  (global)
+    LOW: no library version reported (no "PyTorch 2", "TensorFlow 2", or "transformers 4" found). Reviewer §5 #10.
+
+========================================================================
+TOTAL: 6 findings (HIGH=0, MEDIUM=1, LOW=5)
+========================================================================
+[WRITE] /tmp/tmp.oCJViHF1II/verify_generic.py (76,606 chars)
