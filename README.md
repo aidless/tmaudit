@@ -88,6 +88,48 @@ run. For checks the generic categories do not cover, write a plugin
 ([`docs/PLUGINS.md`](docs/PLUGINS.md)) — the contract is a function that
 receives the paper root and returns `Finding` objects.
 
+## What tmaudit proves (and what it does not)
+
+**Problem this tool addresses.** The most common — and most avoidable —
+reviewer complaints on ML submissions are reporting defects: a missing
+code/data availability statement, unreported seeds and hyperparameters, a
+figure defined but never referenced, ceremonial citations, significance
+claims with no power analysis. These are cheap to fix but expensive to
+discover by hand before submission.
+
+**Why it matters.** tmaudit catches them *before* you submit, automatically,
+on the LaTeX source — no API key, no network, no required dependencies
+(Python 3.9+ standard library only, or a zero-install single-file `.pyz`).
+
+**What I used.** A fixed rulepack (C1–C10) with per-paper configuration.
+C4–C10 run on any manuscript; C1–C3 and C6 are configuration-driven and
+report **not applicable** rather than silently passing. The whole audit
+forks an editable `verify_generic.py` into the target directory, so the
+"tool" is open source in the literal sense — you can read and edit what it
+checks.
+
+**What the numbers show.** The test suite is **264 passing + 3 skipped**
+(2026-11-01, `python -m pytest -q` from repo root). The 60-second demo on a
+deliberately flawed sample paper returns **6 findings (1 medium, 5 low)**
+and leaves the working tree unchanged — reproduced below with
+`bash examples/run_demo.sh`. The audit core was also run over **25 real
+arXiv `cs.CL` LaTeX sources**; it found 4 defects in the tool itself
+(a config leak, "clean" meaning "did not run", a `KeyError`, and a BibTeX
+pattern bug), **all four fixed in v0.5.1** with regression tests
+([`case-studies/arxiv-corpus/`](case-studies/arxiv-corpus/README.md)).
+
+**What tmaudit does NOT prove.**
+- It is **not a reviewer and judges no novelty** — it checks reporting
+  completeness against a fixed rulepack, not whether the science is right.
+- A category reporting zero findings **is not a pass** unless it *ran*:
+  configuration-driven categories that did not run print
+  `[not applicable: no per-paper config]` instead of silently passing.
+- The 25-paper self-audit **does not establish** that the rulepack generalizes
+  to all of `cs.CL` — it is a corpus probe, not a proof (see the case-study
+  README for what the numbers do and do not establish).
+- The demo's 6 findings describe a **deliberately flawed sample**, not a
+  claim about real manuscripts.
+
 ## Install
 
 ```bash
