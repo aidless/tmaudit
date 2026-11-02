@@ -130,6 +130,31 @@ pattern bug), **all four fixed in v0.5.1** with regression tests
 - The demo's 6 findings describe a **deliberately flawed sample**, not a
   claim about real manuscripts.
 
+## Related work and how tmaudit compares
+
+tmaudit sits in the reporting-completeness slice of ML paper tooling, and its
+approach is deliberately different from the three alternatives a reader is most
+likely to reach for:
+
+| Approach | What it does | Where tmaudit differs |
+|---|---|---|
+| **Manual self-review** | The author reads the manuscript for missing availability statements, unreported seeds, uncited figures. | Costly, non-repeatable, and exactly the "cheap to fix, expensive to discover by hand" gap tmaudit targets. tmaudit runs the same checks every time from a fixed rulepack. |
+| **LaTeX static linters** (e.g. `chktex`-class tools) | Flag typographic/lexical issues in the `.tex` source. | Focus on typesetting, not *reporting completeness*: whether a code/data statement exists, whether a figure label is referenced, whether a significance claim has a power analysis. tmaudit's C5/C8/C9/C10 target those, and are orthogonal to typography. |
+| **Peer review** | A human referee judges novelty and correctness. | tmaudit **is not a reviewer and judges no novelty** — it checks reporting completeness against a fixed rulepack, and tells you when a category did not run. |
+
+The design choice that separates it from a "linter" framing: tmaudit is
+**configuration-driven** — C1–C3 and C6 are a per-paper rulepack, and a category
+with no configuration reports **not applicable** rather than silently passing.
+That fail-closed reporting is what lets a reader trust a "zero findings" line,
+because it is only printed after a category actually ran.
+
+The closest published analogue in scope is the corpus of ML *checklist* and
+*reproducibility-standards* work (the reporting standards that reviewers cite in
+the C8/C10 categories). tmaudit's contribution relative to that is **not** a new
+standard — it is a **zero-dependency, open-source, per-paper-configurable
+automation** of the checks those standards already name, over the LaTeX source a
+submission actually ships.
+
 ## Install
 
 ```bash
