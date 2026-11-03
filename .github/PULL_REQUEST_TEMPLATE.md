@@ -78,8 +78,8 @@ the human author must still verify the rest.
 
 - [ ] `pytest` passes locally (46 tests, ~0.4s)
 - [ ] `python _check_all_regressions.py` reports 6/6 caught
-- [ ] `python _build_pyz.py` produces a working `tmaudit.pyz`
-- [ ] `python tmaudit.pyz list` lists the correct papers
+- [ ] `python _build_pyz.py` produces a working `dist/tmaudit.pyz`
+- [ ] `python dist/tmaudit.pyz list` lists the correct papers
 - [ ] `python _check_yaml.py` reports `ci.yml` is valid
 - [ ] GitHub Actions CI is green on this branch
 - [ ] Pre-commit hook passed (or `--no-verify` was justified in PR description)

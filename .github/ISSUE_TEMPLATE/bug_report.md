@@ -88,7 +88,7 @@ gives maintainers everything they need to reproduce.
 
   pytest -v
   python _check_all_regressions.py
-  python tmaudit.pyz list    (if you use the .pyz)
+  python dist/tmaudit.pyz list    (if you use the .pyz)
   python tmaudit verify --paper N  (the failing command)
   tmaudit --version
 -->

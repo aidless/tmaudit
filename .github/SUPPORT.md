@@ -23,7 +23,7 @@ and keeps the maintainers' attention focused.
    ```bash
    pytest
    python _check_all_regressions.py
-   python tmaudit.pyz list
+   python dist/tmaudit.pyz list
    ```
    and paste the full output. This is the most helpful
    thing you can include.

@@ -146,7 +146,7 @@ jobs:
       - name: Build tmaudit.pyz (smoke)
         run: |
           python _build_pyz.py
-          python tmaudit.pyz list
+          python dist/tmaudit.pyz list
 
   # --------------------------------------------------------------------------
   # Job 3: validate GitHub community files
