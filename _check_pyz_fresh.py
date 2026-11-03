@@ -30,7 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 PKG = ROOT / 'src' / 'tmaudit'
-PYZ = ROOT / 'tmaudit.pyz'
+PYZ = ROOT / 'dist' / 'tmaudit.pyz'
 
 # What belongs in the archive is source (.py) and data (.yaml) under the
 # package directory -- and nothing else.

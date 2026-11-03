@@ -8,4 +8,4 @@ trap 'rm -rf "$TMP"' EXIT
 
 cp -R "$ROOT/examples/sample-paper/." "$TMP/"
 cd "$ROOT"
-python3 tmaudit.pyz verify --paper-dir "$TMP"
+python3 dist/tmaudit.pyz verify --paper-dir "$TMP"

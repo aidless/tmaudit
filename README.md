@@ -163,7 +163,7 @@ pipx install tmaudit                 # or: pip install tmaudit
 Zero-install single file (Python 3.9+, standard library only):
 
 ```bash
-python tmaudit.pyz verify --paper-dir path/to/your/paper
+python dist/tmaudit.pyz verify --paper-dir path/to/your/paper
 ```
 
 From source, including the example plugin that the test suite expects:
@@ -313,7 +313,7 @@ tmaudit compile --paper N
 ```
 TEMPLATE/
 ├── pyproject.toml                            # build config
-├── tmaudit.pyz                               # single-file distribution (64 KB)
+├── dist/tmaudit.pyz                               # single-file distribution (64 KB)
 ├── README.md                                 # this file
 ├── engineering_notes_verify_template.md      # 6-bug engineering diary
 ├── _setup_pkg.py                             # one-time: copy templates into src/
@@ -368,7 +368,7 @@ python _build_pyz.py
 
 # Copy tmaudit.pyz to a fresh machine with no Python packages installed
 # (only a base Python 3.9+ interpreter):
-scp tmaudit.pyz other-host:/tmp/
+scp dist/tmaudit.pyz other-host:/tmp/
 ssh other-host 'python /tmp/tmaudit.pyz list'
 # -> should print the same 5-paper table
 ```
@@ -439,7 +439,7 @@ pytest
 python _check_all_regressions.py
 python _check_pyz_fresh.py
 python _build_pyz.py
-python tmaudit.pyz list
+python dist/tmaudit.pyz list
 python -m pyflakes src/tmaudit/ tests/
 ```
 
@@ -505,7 +505,7 @@ we have already executed successfully on the host:
 | `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |
 | `python -m src.tmaudit audit-all ...` | report uploaded as artefact ✅ |
 | `python _build_pyz.py` | tmaudit.pyz built ✅ |
-| `python tmaudit.pyz list` | 5 papers listed ✅ |
+| `python dist/tmaudit.pyz list` | 5 papers listed ✅ |
 | `python -m pyflakes src/tmaudit/ tests/` | 0 errors ✅ |
 
 ### What `_act_*` cannot simulate

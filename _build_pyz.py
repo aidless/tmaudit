@@ -24,7 +24,7 @@ ROOT = Path(os.environ.get('TMAUDIT_TEMPLATE_DIR',
                            str(Path(__file__).resolve().parent)))
 PKG = ROOT / 'src' / 'tmaudit'
 BUILD = ROOT / 'build_pyz'
-OUT = ROOT / 'tmaudit.pyz'
+OUT = ROOT / 'dist' / 'tmaudit.pyz'
 
 
 def _exclude_byproducts(_dir: str, names: list) -> list:

@@ -30,7 +30,7 @@ def _archive_from_source(path: Path, drop: str = "") -> None:
 
 
 def test_accepts_the_committed_archive(capsys):
-    rc = guard.main([str(ROOT / "tmaudit.pyz")])
+    rc = guard.main([str(ROOT / "dist" / "tmaudit.pyz")])
     out, err = capsys.readouterr()
     assert rc == 0, err
     assert "OK:" in out
