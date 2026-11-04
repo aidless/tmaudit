@@ -39,7 +39,7 @@ Fill in the relevant fields. Delete any that don't apply.
 - **tmaudit version**: <!-- run `tmaudit --version` or `python -c "import tmaudit; print(tmaudit.__version__)"` -->
 - **Python version**: <!-- run `python --version` -->
 - **Operating system**: <!-- Windows 10 / macOS 14 / Ubuntu 22.04 / WSL2 / ... -->
-- **Installation method**: <!-- `pip install -e .` / `pip install tmaudit==0.1.0` / `python tmaudit.pyz` / Docker / ... -->
+- **Installation method**: <!-- `pip install -e .` / `pip install tmaudit==0.1.0` / `python dist/tmaudit.pyz` / Docker / ... -->
 - **Paper affected** (if any): <!-- Paper 1 / Paper 2 / ... / N/A -->
 
 ## Steps to reproduce
