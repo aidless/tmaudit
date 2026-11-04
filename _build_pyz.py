@@ -7,8 +7,8 @@ Python 3.9+ system without any prior install.
 
 Usage:
     python _build_pyz.py
-    python tmaudit.pyz --help
-    python tmaudit.pyz verify --paper 1
+    python dist/tmaudit.pyz --help
+    python dist/tmaudit.pyz verify --paper 1
 """
 import os
 import shutil

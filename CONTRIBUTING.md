@@ -265,7 +265,7 @@ Before opening a pull request, make sure:
 - [ ] `pytest` passes (46 tests, ~0.35s)
 - [ ] `python _check_all_regressions.py` shows 6/6 caught
 - [ ] `python _build_pyz.py` produces a working `tmaudit.pyz`
-- [ ] `python tmaudit.pyz list` lists the correct papers
+- [ ] `python dist/tmaudit.pyz list` lists the correct papers
 - [ ] `python _check_yaml.py` reports `ci.yml` is valid
 - [ ] If you added a paper, you added a `TestEndToEndAudit` case for it
 - [ ] If you added a fix for a bug, you added a regression test for it

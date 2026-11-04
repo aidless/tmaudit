@@ -364,7 +364,7 @@ tmaudit verify --paper 6   # fork + run; will report any HIGH-severity
 ```bash
 # On the source machine:
 python _build_pyz.py
-# -> tmaudit.pyz (64 KB)
+# -> dist/tmaudit.pyz (64 KB)
 
 # Copy tmaudit.pyz to a fresh machine with no Python packages installed
 # (only a base Python 3.9+ interpreter):
