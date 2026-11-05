@@ -18,10 +18,27 @@ key, no network, and no required dependencies.
 git clone https://github.com/aidless/tmaudit && cd tmaudit
 bash examples/run_demo.sh
 
+# one command for everything this README claims (install, tests, demo, figure)
+make repro
+
 # install the current source (PyPI 0.5.1 is the previous release)
 pipx install "git+https://github.com/aidless/tmaudit.git"
 tmaudit verify --paper-dir path/to/your/paper
 ```
+
+**What it actually does on papers it was not written for.** Run over 25 real
+arXiv `cs.CL` LaTeX sources, the v0.5.0 rulepack fired on 2/25–25/25 papers per
+category; three categories fired on **0/25** because they were silently
+unconfigured — that run is what exposed the four defects fixed in v0.5.1. The
+measured fire rates are in [`figures/CORPUS.md`](figures/CORPUS.md), regenerated
+by `scripts/make_corpus_figure.py` from
+[`case-studies/arxiv-corpus/results.json`](case-studies/arxiv-corpus/results.json):
+
+![per-category fire rate on 25 real arXiv cs.CL papers](figures/corpus_fire_rates.png)
+
+Read that figure as a defect report, not a feature list: C3/C5/C8 at 0% were
+the "did not run" failure mode, and C2 at 100% is a citation-style rule that
+every paper in the corpus tripped.
 
 `pipx install tmaudit` still gives the 0.5.1 PyPI release; the repository is
 0.5.2. Use the git URL above for the current source.
