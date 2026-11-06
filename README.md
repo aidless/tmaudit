@@ -423,7 +423,7 @@ It consists of **seven** jobs:
 
 1. **pytest** (matrix: Python 3.9, 3.10, 3.11, 3.12, 3.13 on
    `ubuntu-latest` — every version `requires-python >=3.9` claims)
-   — runs the **246-test** suite and uploads JUnit XML artifacts.
+   — runs the **267-test** suite (2 slow tests deselected, so 264 passed + 1 skipped per run) and uploads JUnit XML artifacts.
 2. **meta-test** (Python 3.11) — runs `_check_all_regressions.py`
    to verify that each of the **14 regression tests** actually catches
    its target bug, then runs `_check_pyz_fresh.py` to confirm the
@@ -460,13 +460,13 @@ python dist/tmaudit.pyz list
 python -m pyflakes src/tmaudit/ tests/
 ```
 
-`pytest` runs the full suite: **246 passed, 3 skipped** on a machine
+`pytest` runs the full suite: **264 passed, 3 skipped** on a machine
 without the research tree — the two `@pytest.mark.slow` end-to-end audit
 tests require the real `PAPER<N>_CONSOLIDATED` papers and auto-skip when
 the directory is absent (point `TMAUDIT_RESEARCH_DIR` at the tree to run
 them). **Scope note:** CI runs `pytest -m "not slow"`, which deselects
-those two and reports **246 passed, 1 skipped, 2 deselected** — both
-lines above are the same 249 collected tests, differing only in the two
+those two and reports **264 passed, 1 skipped, 2 deselected** — both
+lines above are the same 267 collected tests, differing only in the two
 deselected slow tests.
 
 ### Local CI simulation (`act` / `_act_*`)
@@ -516,7 +516,7 @@ we have already executed successfully on the host:
 |---|---|
 | `python -m pip install -e .` | tmaudit installed ✅ |
 | `python -m pip install pytest scipy` | deps installed ✅ |
-| `python -m pytest -m "not slow"` | **246 passed, 1 skipped in ~5s** ✅ |
+| `python -m pytest -m "not slow"` | **264 passed, 1 skipped, 2 deselected in ~5s** ✅ |
 | `python _check_all_regressions.py` | **14/14 bugs caught** ✅ |
 | `python _check_github_templates.py` | **44/44 OK** ✅ |
 | `python -m src.tmaudit audit-all ...` | audit-report.md generated ✅ |
