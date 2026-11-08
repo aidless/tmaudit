@@ -292,8 +292,8 @@ Paper 3, Paper 4 (was placeholder in v0.1.1). All 5 papers
 (reproducibility). Empty list = opt-out (with graceful degradation
 in C9 and C10).
 
-See [`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md) for the
-full release notes and [`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md)
+See [`docs/history/releases/RELEASE_NOTES_v0.3.0.md`](./docs/history/releases/RELEASE_NOTES_v0.3.0.md) for the
+full release notes and [`docs/history/engineering_notes_verify_template.md`](./docs/history/engineering_notes_verify_template.md)
 §12 (C8+C10) and §13 (C9) for the design rationale.
 
 ## CLI reference
@@ -330,24 +330,30 @@ tmaudit compile --paper N
 ```
 TEMPLATE/
 ├── pyproject.toml                            # build config
-├── dist/tmaudit.pyz                               # single-file distribution (64 KB)
+├── dist/tmaudit.pyz                          # single-file distribution (≈68 KB)
 ├── README.md                                 # this file
-├── engineering_notes_verify_template.md      # 6-bug engineering diary
-├── _setup_pkg.py                             # one-time: copy templates into src/
+├── CHANGELOG.md / PREREG.md / ROADMAP.md     # release + preregistration + roadmap
+├── docs/
+│   ├── history/engineering_notes_verify_template.md  # 14-bug engineering diary
+│   ├── history/act_summary.md                # simulation transcript
+│   ├── history/releases/                     # archived release notes
+│   └── PLUGINS.md                            # plugin API guide
 ├── _build_pyz.py                             # rebuild tmaudit.pyz after any src/ change
-├── _compile_appendix.py                      # LaTeX compile for the appendix
-├── _regen_appendix.py                        # regenerate appendix_engineering.tex
-├── _status.py                                # TEMPLATE/ state summary
+├── _check_all_regressions.py                 # inject 16 bugs, assert the tests catch them
+├── _check_pyz_fresh.py                       # pyz still matches src/
+├── _check_yaml.py / _check_github_templates.py
 └── src/
     └── tmaudit/                              # the actual package
         ├── __init__.py
         ├── __main__.py                       # `python -m tmaudit`
         ├── cli.py                            # argparse CLI
         ├── forge.py                          # template-substitution engine
+        ├── cache.py / report.py / plugins.py / llm_fallback.py
+        ├── detector_config/                  # detector thresholds (YAML)
         ├── templates/
         │   ├── __init__.py
-        │   ├── verify_TEMPLATE.py            # ≈ 22 KB, ~400 lines
-        │   ├── compile_check_TEMPLATE.py     # ≈ 4.5 KB
+        │   ├── verify_TEMPLATE.py            # ≈ 77 KB, ~1.9k lines
+        │   ├── compile_check_TEMPLATE.py     # ≈ 5.5 KB
         │   └── fix_abstract_unicode_TEMPLATE.py  # ≈ 5 KB
         └── configs/
             ├── __init__.py                   # re-exports
@@ -381,7 +387,7 @@ tmaudit verify --paper 6   # fork + run; will report any HIGH-severity
 ```bash
 # On the source machine:
 python _build_pyz.py
-# -> dist/tmaudit.pyz (64 KB)
+# -> dist/tmaudit.pyz (≈68 KB)
 
 # Copy tmaudit.pyz to a fresh machine with no Python packages installed
 # (only a base Python 3.9+ interpreter):
@@ -395,9 +401,9 @@ library). It works on Linux, macOS, and Windows alike.
 
 ## Bug history
 
-The **twelve historical bugs** encountered while building this
+The **fourteen historical bugs** encountered while building this
 package are documented in
-[`engineering_notes_verify_template.md`](./engineering_notes_verify_template.md).
+[`docs/history/engineering_notes_verify_template.md`](./docs/history/engineering_notes_verify_template.md).
 Each bug has a dedicated regression test in
 `tests/test_forge_happy.py`, `tests/test_bug5_unit.py`,
 `tests/test_c6_threshold.py`, `tests/test_c7_citation_context.py`,
@@ -553,4 +559,4 @@ before pushing).
 
 For the full simulation transcript (including the 5 sandbox
 issues encountered and how they were worked around), see
-[`act_summary.md`](./act_summary.md).
+[`docs/history/act_summary.md`](./docs/history/act_summary.md).
