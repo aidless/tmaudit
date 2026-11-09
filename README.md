@@ -9,6 +9,10 @@ ceremonial citations, and significance claims with no power analysis. No API
 key, no network, and no required dependencies.
 
 [![CI](https://github.com/aidless/tmaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/tmaudit/actions/workflows/ci.yml)
+
+> ⬇️ Quickstart 实录（本机录制，非模拟输出）:
+
+![quickstart demo](docs/demo.gif)
 [![PyPI](https://img.shields.io/pypi/v/tmaudit)](https://pypi.org/project/tmaudit/)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
