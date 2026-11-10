@@ -71,6 +71,12 @@ Findings by category:
 
 ## 60-second demo
 
+> Pipeline context: tmaudit is the reviewer pre-check layer of the three-layer
+> eval pipeline ([eval-sandbox](https://github.com/aidless/eval-sandbox) →
+> [eval-gate](https://github.com/aidless/eval-gate) → rubric). The verdict layer's
+> frozen demo suite is benchmark-verified:
+> [eval-gate docs/BENCHMARK.md](https://github.com/aidless/eval-gate/blob/main/docs/BENCHMARK.md).
+
 No install, no API key. The demo copies the sample paper to a temporary
 directory, runs the C4–C10 checks, and removes the copy:
 
