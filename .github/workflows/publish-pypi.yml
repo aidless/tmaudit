@@ -51,6 +51,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade build
 
+        if: ${{ hashFiles('pyproject.toml', 'setup.py', 'setup.cfg') != '' }}
       - name: Build sdist and wheel
         run: python -m build
 
@@ -64,6 +65,7 @@ jobs:
           test -f dist/*.tar.gz
           test -f dist/*.whl
 
+        if: ${{ hashFiles('pyproject.toml', 'setup.py', 'setup.cfg') != '' }}
       - name: Publish to PyPI
         # No `password:` field — uses OIDC trusted
         # publishing. The `repository_url` defaults to
