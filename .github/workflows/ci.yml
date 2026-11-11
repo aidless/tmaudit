@@ -17,6 +17,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
 jobs:
   # --------------------------------------------------------------------------
   # Job 1: install tmaudit, run the pytest suite (267 collected; 264 passed +
