@@ -29,6 +29,8 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions:
+  contents: read
 jobs:
   pypi-publish:
     name: Publish to PyPI
