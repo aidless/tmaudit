@@ -27,7 +27,6 @@ Usage:
 """
 from __future__ import annotations
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -204,7 +203,7 @@ def _check_bug(
         for line in out.splitlines()[-25:]:
             print(f'    | {line}')
         return False
-    print(f'  RESTORE OK: test passes again after restore (rc=0)')
+    print('  RESTORE OK: test passes again after restore (rc=0)')
     return True
 
 
@@ -347,9 +346,9 @@ def inject_bug4() -> None:
         # Bug 4 is in the verify_TEMPLATE.py, so we need to run
         # the end-to-end audit (which executes the template code).
         if not _paper_dirs_present():
-            print(f'  SKIPPED: Bug 4 is checked through an end-to-end test')
+            print('  SKIPPED: Bug 4 is checked through an end-to-end test')
             print('           that audits a real paper. TMAUDIT_RESEARCH_DIR')
-            print(f'           has no PAPER1_CONSOLIDATED/verify_p1.py,')
+            print('           has no PAPER1_CONSOLIDATED/verify_p1.py,')
             print('           so the check cannot run here.')
             return
         _check_bug_inside_patch('4', 'tests/test_forge_happy.py::TestEndToEndAudit::test_paper_1_forks_and_passes')
@@ -407,9 +406,9 @@ def inject_bug6() -> None:
             encoding='utf-8',
         )
         if not _paper_dirs_present():
-            print(f'  SKIPPED: Bug 6 is checked through an end-to-end test')
+            print('  SKIPPED: Bug 6 is checked through an end-to-end test')
             print('           that audits a real paper. TMAUDIT_RESEARCH_DIR')
-            print(f'           has no PAPER5_CONSOLIDATED/verify_p5.py,')
+            print('           has no PAPER5_CONSOLIDATED/verify_p5.py,')
             print('           so the check cannot run here.')
             return
         _check_bug_inside_patch('6', 'tests/test_forge_happy.py::TestEndToEndAudit::test_paper_5_forks_and_passes')
@@ -953,7 +952,7 @@ def main() -> int:
               'TMAUDIT_RESEARCH_DIR has no paper directories)')
     rc, out = _run_pytest('tests/', ['-m', 'not slow'] if slow_excluded else None)
     if rc == 0:
-        print(f'  OK: full test suite passes (rc=0)')
+        print('  OK: full test suite passes (rc=0)')
     else:
         print(f'  WARN: full test suite returns rc={rc} after all restores')
         print('  --- pytest output (last 25 lines) ---')

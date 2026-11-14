@@ -21,7 +21,6 @@ import re
 import sys
 from itertools import product
 from pathlib import Path
-from typing import Any
 
 import yaml
 
